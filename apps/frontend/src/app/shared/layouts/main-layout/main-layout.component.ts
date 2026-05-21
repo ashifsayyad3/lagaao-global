@@ -10,6 +10,7 @@ import { LoadingService } from '../../../core/services/loading.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
+import { AnnouncementBarComponent } from '../../components/announcement-bar/announcement-bar.component';
 
 @Component({
   selector: 'lg-main-layout',
@@ -18,9 +19,12 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
   imports: [
     RouterOutlet, RouterLink,
     MatIconModule, MatButtonModule,
-    ToastContainerComponent, SearchBarComponent,
+    ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent,
   ],
   template: `
+    <!-- Announcement bar -->
+    <lg-announcement-bar></lg-announcement-bar>
+
     <!-- Global progress bar -->
     @if (loading.isLoading()) {
       <div class="fixed top-0 left-0 right-0 h-0.5 bg-primary-600 z-[overlay] animate-pulse"></div>
@@ -148,11 +152,12 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
             </ul>
           </div>
           <div>
-            <h4 class="font-semibold text-white mb-3 text-sm">Support</h4>
+            <h4 class="font-semibold text-white mb-3 text-sm">Company</h4>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Returns</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+              <li><a routerLink="/blog" class="hover:text-white transition-colors">Blog</a></li>
+              <li><a routerLink="/pages/about" class="hover:text-white transition-colors">About Us</a></li>
+              <li><a routerLink="/pages/contact" class="hover:text-white transition-colors">Contact</a></li>
+              <li><a routerLink="/pages/careers" class="hover:text-white transition-colors">Careers</a></li>
             </ul>
           </div>
         </div>
@@ -160,9 +165,9 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
                     items-center gap-4 text-xs text-gray-500">
           <p>&copy; {{ year }} Lagaao.com — All rights reserved</p>
           <div class="flex gap-4">
-            <a href="#" class="hover:text-gray-300">Privacy</a>
-            <a href="#" class="hover:text-gray-300">Terms</a>
-            <a href="#" class="hover:text-gray-300">Cookies</a>
+            <a routerLink="/pages/privacy" class="hover:text-gray-300">Privacy</a>
+            <a routerLink="/pages/terms" class="hover:text-gray-300">Terms</a>
+            <a routerLink="/pages/cookies" class="hover:text-gray-300">Cookies</a>
           </div>
         </div>
       </div>

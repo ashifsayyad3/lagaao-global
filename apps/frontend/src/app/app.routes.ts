@@ -68,6 +68,23 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES),
       },
+      {
+        path: 'blog',
+        loadComponent: () =>
+          import('./features/blog/blog-list/blog-list.component').then(m => m.BlogListComponent),
+        title: 'Blog — Lagaao',
+      },
+      {
+        path: 'blog/:slug',
+        loadComponent: () =>
+          import('./features/blog/blog-post/blog-post.component').then(m => m.BlogPostComponent),
+        title: 'Blog — Lagaao',
+      },
+      {
+        path: 'pages/:slug',
+        loadComponent: () =>
+          import('./features/cms-page/cms-page.component').then(m => m.CmsPageComponent),
+      },
     ],
   },
   {

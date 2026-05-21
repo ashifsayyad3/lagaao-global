@@ -28,6 +28,7 @@ import couponRoutes     from './modules/coupon/coupon.routes';
 import checkoutRoutes   from './modules/checkout/checkout.routes';
 import ordersRoutes, { adminOrdersRouter } from './modules/orders/orders.routes';
 import vendorPublicRoutes, { vendorRouter, adminVendorRouter } from './modules/vendor/vendor.routes';
+import cmsRoutes, { adminCmsRouter } from './modules/cms/cms.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -78,6 +79,8 @@ app.use('/api/v1/admin/orders',   adminOrdersRouter);
 app.use('/api/v1/vendors',        vendorPublicRoutes);
 app.use('/api/v1/vendor',         vendorRouter);
 app.use('/api/v1/admin/vendors',  adminVendorRouter);
+app.use('/api/v1/cms',            cmsRoutes);
+app.use('/api/v1/admin/cms',      adminCmsRouter);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

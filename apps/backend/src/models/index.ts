@@ -1,9 +1,17 @@
 import { Sequelize } from 'sequelize-typescript';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
-import { User } from './user.model';
-import { Address } from './address.model';
-import { RefreshToken } from './refreshToken.model';
+
+import { User }            from './user.model';
+import { Address }         from './address.model';
+import { RefreshToken }    from './refreshToken.model';
+import { Category }        from './category.model';
+import { Brand }           from './brand.model';
+import { Attribute, AttributeValue } from './attribute.model';
+import { Product }         from './product.model';
+import { ProductImage }    from './productImage.model';
+import { ProductVariant }  from './productVariant.model';
+import { Inventory, InventoryLog } from './inventory.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -12,8 +20,13 @@ export const sequelize = new Sequelize({
   database: env.DB_NAME,
   username: env.DB_USER,
   password: env.DB_PASS,
-  models:   [User, Address, RefreshToken],
-  logging:  env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
+  models: [
+    User, Address, RefreshToken,
+    Category, Brand, Attribute, AttributeValue,
+    Product, ProductImage, ProductVariant,
+    Inventory, InventoryLog,
+  ],
+  logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
   define: {
     underscored:     true,
@@ -23,7 +36,12 @@ export const sequelize = new Sequelize({
   },
 });
 
-export { User, Address, RefreshToken };
+export {
+  User, Address, RefreshToken,
+  Category, Brand, Attribute, AttributeValue,
+  Product, ProductImage, ProductVariant,
+  Inventory, InventoryLog,
+};
 
 export async function connectDB(): Promise<void> {
   await sequelize.authenticate();

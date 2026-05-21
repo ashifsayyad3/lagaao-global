@@ -15,8 +15,12 @@ import { connectRedis } from './config/redis';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { globalRateLimit } from './middleware/rateLimit.middleware';
 import { auditLog } from './middleware/audit.middleware';
-import authRoutes from './modules/auth/auth.routes';
-import usersRoutes from './modules/users/users.routes';
+import authRoutes       from './modules/auth/auth.routes';
+import usersRoutes      from './modules/users/users.routes';
+import categoriesRoutes from './modules/categories/categories.routes';
+import brandsRoutes     from './modules/brands/brands.routes';
+import productsRoutes   from './modules/products/products.routes';
+import inventoryRoutes  from './modules/inventory/inventory.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -52,8 +56,12 @@ app.get('/health', (_req, res) => {
 });
 
 // ─── API Routes ────────────────────────────────────────────────
-app.use('/api/v1/auth',  authRoutes);
-app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/auth',        authRoutes);
+app.use('/api/v1/users',       usersRoutes);
+app.use('/api/v1/categories',  categoriesRoutes);
+app.use('/api/v1/brands',      brandsRoutes);
+app.use('/api/v1/products',    productsRoutes);
+app.use('/api/v1/inventory',   inventoryRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

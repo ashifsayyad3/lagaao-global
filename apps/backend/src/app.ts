@@ -12,6 +12,7 @@ import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDB } from './models';
 import { connectRedis } from './config/redis';
+import { connectES } from './config/elasticsearch';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { globalRateLimit } from './middleware/rateLimit.middleware';
 import { auditLog } from './middleware/audit.middleware';
@@ -21,6 +22,7 @@ import categoriesRoutes from './modules/categories/categories.routes';
 import brandsRoutes     from './modules/brands/brands.routes';
 import productsRoutes   from './modules/products/products.routes';
 import inventoryRoutes  from './modules/inventory/inventory.routes';
+import searchRoutes     from './modules/search/search.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -62,6 +64,7 @@ app.use('/api/v1/categories',  categoriesRoutes);
 app.use('/api/v1/brands',      brandsRoutes);
 app.use('/api/v1/products',    productsRoutes);
 app.use('/api/v1/inventory',   inventoryRoutes);
+app.use('/api/v1/search',      searchRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -75,6 +78,7 @@ app.use(errorHandler);
 async function bootstrap(): Promise<void> {
   await connectDB();
   await connectRedis();
+  await connectES();
 
   http.listen(env.PORT, () => {
     logger.info(`🚀 Lagaao API running on http://localhost:${env.PORT}`);

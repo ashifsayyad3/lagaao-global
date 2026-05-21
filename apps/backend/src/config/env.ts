@@ -29,6 +29,10 @@ const schema = z.object({
 
   OPENAI_API_KEY: z.string().optional(),
 
+  ELASTIC_NODE:     z.string().default('http://localhost:9200'),
+  ELASTIC_USERNAME: z.string().optional(),
+  ELASTIC_PASSWORD: z.string().optional(),
+
   RAZORPAY_KEY_ID:     z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
 });

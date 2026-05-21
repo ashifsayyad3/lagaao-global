@@ -8,6 +8,7 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { ToastContainerComponent } from '../../components/toast/toast.component';
 import { LoadingService } from '../../../core/services/loading.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 
 @Component({
   selector: 'lg-main-layout',
@@ -16,7 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [
     RouterOutlet, RouterLink,
     MatIconModule, MatButtonModule,
-    ToastContainerComponent,
+    ToastContainerComponent, SearchBarComponent,
   ],
   template: `
     <!-- Global progress bar -->
@@ -38,21 +39,7 @@ import { AuthService } from '../../../core/services/auth.service';
 
         <!-- Search bar (desktop) -->
         <div class="flex-1 max-w-xl hidden md:flex items-center">
-          <div class="w-full relative">
-            <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted !w-5 !h-5 !text-xl">
-              search
-            </mat-icon>
-            <input
-              type="search"
-              placeholder="Search products, brands, categories..."
-              class="w-full pl-10 pr-4 h-10 bg-surface-100 dark:bg-surface-800
-                     border border-border-default rounded-full text-sm
-                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-                     transition-all placeholder:text-text-muted"
-              routerLink="/search"
-              readonly
-            />
-          </div>
+          <lg-search-bar class="w-full"></lg-search-bar>
         </div>
 
         <!-- Actions -->

@@ -7,6 +7,88 @@ import { getPagination } from '../../shared/utils/paginate.util';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /orders:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Place a new order
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [addressId, paymentMethod]
+ *             properties:
+ *               addressId:     { type: integer }
+ *               paymentMethod: { type: string, enum: [cod, upi, card, netbanking, wallet] }
+ *               couponCode:    { type: string }
+ *               paymentRef:    { type: string, description: Razorpay payment ID }
+ *     responses:
+ *       201:
+ *         description: Order created
+ *       400:
+ *         description: Validation or inventory error
+ *
+ *   get:
+ *     tags: [Orders]
+ *     summary: List the current user's orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Paginated order list
+ *
+ * /orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get order detail
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Order with items, timeline, and address
+ *       404:
+ *         description: Not found
+ *
+ * /orders/{id}/cancel:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Cancel an order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason: { type: string }
+ *     responses:
+ *       200:
+ *         description: Cancelled
+ */
+
 // All customer routes require auth
 router.use(authenticate);
 

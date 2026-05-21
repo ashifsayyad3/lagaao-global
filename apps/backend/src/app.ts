@@ -8,6 +8,8 @@ import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDB } from './models';
@@ -112,6 +114,17 @@ app.get('/health', async (_req, res) => {
     checks,
   });
 });
+
+// ─── Swagger UI ───────────────────────────────────────────────
+// Disable Helmet's CSP for /docs so Swagger assets load correctly
+app.use('/docs', (_req, _res, next) => {
+  _res.removeHeader('Content-Security-Policy');
+  next();
+}, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Lagaao API Docs',
+  swaggerOptions: { persistAuthorization: true },
+}));
+app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
 
 // ─── API Routes ────────────────────────────────────────────────
 app.use('/api/v1/auth',            authRoutes);

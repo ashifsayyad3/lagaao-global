@@ -50,6 +50,16 @@ import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
 
         <!-- Actions -->
         <div class="flex items-center gap-1">
+          <!-- Admin link -->
+          @if (auth.user()?.role === 'admin' || auth.user()?.role === 'super_admin') {
+            <a routerLink="/admin/dashboard"
+               class="hidden md:flex items-center gap-1 text-sm font-medium text-text-secondary
+                      hover:text-primary-600 transition-colors px-2">
+              <mat-icon class="!text-base">admin_panel_settings</mat-icon>
+              <span>Admin</span>
+            </a>
+          }
+
           <!-- Sell link -->
           <a routerLink="/sell"
              class="hidden md:flex items-center gap-1 text-sm font-medium text-text-secondary

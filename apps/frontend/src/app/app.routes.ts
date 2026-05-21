@@ -85,6 +85,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/cms-page/cms-page.component').then(m => m.CmsPageComponent),
       },
+      {
+        path: 'admin/dashboard',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
+        title: 'Admin Dashboard — Lagaao',
+      },
     ],
   },
   {

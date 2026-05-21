@@ -6,6 +6,7 @@ import { Category } from './category.model';
 import { Brand } from './brand.model';
 import { ProductVariant } from './productVariant.model';
 import { ProductImage } from './productImage.model';
+// VendorProfile imported lazily to avoid circular deps — vendorId stored as plain FK below
 
 export type ProductStatus = 'draft' | 'active' | 'inactive' | 'archived';
 
@@ -84,6 +85,10 @@ export class Product extends Model {
 
   @Column({ type: DataType.INTEGER, allowNull: true })
   createdBy!: number | null;
+
+  // Marketplace: null = platform product, non-null = vendor product
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  vendorId!: number | null;
 
   @HasMany(() => ProductVariant)
   variants!: ProductVariant[];

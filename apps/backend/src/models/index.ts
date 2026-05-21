@@ -15,6 +15,7 @@ import { Inventory, InventoryLog } from './inventory.model';
 import { Cart, CartItem } from './cart.model';
 import { Coupon } from './coupon.model';
 import { Order, OrderItem, OrderStatusHistory } from './order.model';
+import { VendorProfile, VendorPayout } from './vendor.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -30,6 +31,7 @@ export const sequelize = new Sequelize({
     Inventory, InventoryLog,
     Cart, CartItem, Coupon,
     Order, OrderItem, OrderStatusHistory,
+    VendorProfile, VendorPayout,
   ],
   logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
@@ -48,6 +50,7 @@ export {
   Inventory, InventoryLog,
   Cart, CartItem, Coupon,
   Order, OrderItem, OrderStatusHistory,
+  VendorProfile, VendorPayout,
 };
 
 export async function connectDB(): Promise<void> {

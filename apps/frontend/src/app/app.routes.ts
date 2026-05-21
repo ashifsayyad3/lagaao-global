@@ -38,6 +38,25 @@ export const routes: Routes = [
         title: 'Checkout — Lagaao',
       },
       {
+        path: 'sell',
+        loadComponent: () =>
+          import('./features/vendor/become-seller/become-seller.component').then(m => m.BecomeSellerComponent),
+        title: 'Become a Seller — Lagaao',
+      },
+      {
+        path: 'vendor/dashboard',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/vendor/dashboard/vendor-dashboard.component').then(m => m.VendorDashboardComponent),
+        title: 'Vendor Dashboard — Lagaao',
+      },
+      {
+        path: 'vendors/:storeSlug',
+        loadComponent: () =>
+          import('./features/vendor/store/vendor-store.component').then(m => m.VendorStoreComponent),
+        title: 'Store — Lagaao',
+      },
+      {
         path: 'orders',
         canActivate: [authGuard],
         loadChildren: () =>

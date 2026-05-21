@@ -4,6 +4,7 @@ import { ok, created, paginated } from '../../shared/utils/response.util';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/rbac.middleware';
 import { Role } from '../../shared/types/roles';
+import { VendorProfile } from '../../models';
 
 const router = Router();
 
@@ -33,7 +34,13 @@ router.get('/:id/related', async (req, res, next) => {
 // ─── Admin / Vendor ───────────────────────────────────────────
 router.post('/', authenticate, authorize(Role.VENDOR), async (req, res, next) => {
   try {
-    const p = await productsService.create({ ...req.body, createdBy: req.user!.id });
+    let vendorId: number | null = null;
+    if (req.user!.role === Role.VENDOR) {
+      const vp = await VendorProfile.findOne({ where: { userId: req.user!.id, status: 'active' } });
+      if (!vp) { res.status(403).json({ success: false, message: 'Vendor account is not active' }); return; }
+      vendorId = vp.id;
+    }
+    const p = await productsService.create({ ...req.body, createdBy: req.user!.id, vendorId });
     created(res, p);
   } catch (e) { next(e); }
 });

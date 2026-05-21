@@ -27,6 +27,7 @@ import cartRoutes       from './modules/cart/cart.routes';
 import couponRoutes     from './modules/coupon/coupon.routes';
 import checkoutRoutes   from './modules/checkout/checkout.routes';
 import ordersRoutes, { adminOrdersRouter } from './modules/orders/orders.routes';
+import vendorPublicRoutes, { vendorRouter, adminVendorRouter } from './modules/vendor/vendor.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -73,7 +74,10 @@ app.use('/api/v1/cart',        cartRoutes);
 app.use('/api/v1/coupons',     couponRoutes);
 app.use('/api/v1/checkout',    checkoutRoutes);
 app.use('/api/v1/orders',      ordersRoutes);
-app.use('/api/v1/admin/orders', adminOrdersRouter);
+app.use('/api/v1/admin/orders',   adminOrdersRouter);
+app.use('/api/v1/vendors',        vendorPublicRoutes);
+app.use('/api/v1/vendor',         vendorRouter);
+app.use('/api/v1/admin/vendors',  adminVendorRouter);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

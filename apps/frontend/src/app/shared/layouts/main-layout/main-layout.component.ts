@@ -45,6 +45,14 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
 
         <!-- Actions -->
         <div class="flex items-center gap-1">
+          <!-- Sell link -->
+          <a routerLink="/sell"
+             class="hidden md:flex items-center gap-1 text-sm font-medium text-text-secondary
+                    hover:text-primary-600 transition-colors px-2">
+            <mat-icon class="!text-base">store</mat-icon>
+            <span>Sell</span>
+          </a>
+
           <!-- Theme toggle -->
           <button
             class="w-9 h-9 rounded-full flex items-center justify-center
@@ -134,8 +142,8 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
           <div>
             <h4 class="font-semibold text-white mb-3 text-sm">Sellers</h4>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors">Sell on Lagaao</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Vendor Dashboard</a></li>
+              <li><a routerLink="/sell" class="hover:text-white transition-colors">Sell on Lagaao</a></li>
+              <li><a routerLink="/vendor/dashboard" class="hover:text-white transition-colors">Vendor Dashboard</a></li>
               <li><a href="#" class="hover:text-white transition-colors">Seller Policies</a></li>
             </ul>
           </div>

@@ -23,6 +23,9 @@ import brandsRoutes     from './modules/brands/brands.routes';
 import productsRoutes   from './modules/products/products.routes';
 import inventoryRoutes  from './modules/inventory/inventory.routes';
 import searchRoutes     from './modules/search/search.routes';
+import cartRoutes       from './modules/cart/cart.routes';
+import couponRoutes     from './modules/coupon/coupon.routes';
+import checkoutRoutes   from './modules/checkout/checkout.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -65,6 +68,9 @@ app.use('/api/v1/brands',      brandsRoutes);
 app.use('/api/v1/products',    productsRoutes);
 app.use('/api/v1/inventory',   inventoryRoutes);
 app.use('/api/v1/search',      searchRoutes);
+app.use('/api/v1/cart',        cartRoutes);
+app.use('/api/v1/coupons',     couponRoutes);
+app.use('/api/v1/checkout',    checkoutRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

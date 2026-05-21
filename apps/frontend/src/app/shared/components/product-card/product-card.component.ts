@@ -8,6 +8,7 @@ import { CurrencyInrPipe } from '../../pipes/currency-inr.pipe';
 import { LazyImgDirective } from '../../directives/lazy-img.directive';
 import type { Product } from '../../../core/services/product.service';
 import { ProductService } from '../../../core/services/product.service';
+import { CartService } from '../../../core/services/cart.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
@@ -124,6 +125,7 @@ export class ProductCardComponent {
   @Input({ required: true }) product!: Product;
 
   readonly productSvc = inject(ProductService);
+  readonly #cartSvc   = inject(CartService);
   readonly #toast     = inject(ToastService);
 
   readonly wishlisted = signal(false);
@@ -158,7 +160,9 @@ export class ProductCardComponent {
 
   addToCart(e: Event): void {
     e.preventDefault();
-    this.#toast.success('Added to cart', this.product.name);
-    // Cart service integration in Phase 5
+    this.#cartSvc.addItem(this.product.id).subscribe({
+      next: () => this.#toast.success('Added to cart', this.product.name),
+      error: err => this.#toast.error('Error', err?.error?.message ?? 'Could not add to cart'),
+    });
   }
 }

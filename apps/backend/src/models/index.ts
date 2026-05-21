@@ -12,6 +12,8 @@ import { Product }         from './product.model';
 import { ProductImage }    from './productImage.model';
 import { ProductVariant }  from './productVariant.model';
 import { Inventory, InventoryLog } from './inventory.model';
+import { Cart, CartItem } from './cart.model';
+import { Coupon } from './coupon.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -25,6 +27,7 @@ export const sequelize = new Sequelize({
     Category, Brand, Attribute, AttributeValue,
     Product, ProductImage, ProductVariant,
     Inventory, InventoryLog,
+    Cart, CartItem, Coupon,
   ],
   logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
@@ -41,6 +44,7 @@ export {
   Category, Brand, Attribute, AttributeValue,
   Product, ProductImage, ProductVariant,
   Inventory, InventoryLog,
+  Cart, CartItem, Coupon,
 };
 
 export async function connectDB(): Promise<void> {

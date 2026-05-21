@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, inject
+  Component, ChangeDetectionStrategy, inject, OnInit
 } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,7 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { ToastContainerComponent } from '../../components/toast/toast.component';
 import { LoadingService } from '../../../core/services/loading.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { CartService } from '../../../core/services/cart.service';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 
 @Component({
@@ -72,10 +73,12 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
                    hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors relative"
           >
             <mat-icon class="text-text-secondary">shopping_bag</mat-icon>
-            <span class="absolute top-1 right-1 w-4 h-4 bg-accent text-white
-                         text-[10px] font-bold rounded-full flex items-center justify-center">
-              2
-            </span>
+            @if (cart.itemCount() > 0) {
+              <span class="absolute top-1 right-1 w-4 h-4 bg-accent text-white
+                           text-[10px] font-bold rounded-full flex items-center justify-center">
+                {{ cart.itemCount() > 9 ? '9+' : cart.itemCount() }}
+              </span>
+            }
           </button>
 
           <!-- Profile / Auth -->
@@ -161,9 +164,14 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
     <lg-toast-container></lg-toast-container>
   `,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   readonly theme   = inject(ThemeService);
   readonly loading = inject(LoadingService);
   readonly auth    = inject(AuthService);
+  readonly cart    = inject(CartService);
   readonly year    = new Date().getFullYear();
+
+  ngOnInit(): void {
+    this.cart.load().subscribe();
+  }
 }

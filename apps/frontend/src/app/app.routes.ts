@@ -32,6 +32,12 @@ export const routes: Routes = [
         title: 'Cart — Lagaao',
       },
       {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
+        title: 'Checkout — Lagaao',
+      },
+      {
         path: 'orders',
         canActivate: [authGuard],
         loadChildren: () =>

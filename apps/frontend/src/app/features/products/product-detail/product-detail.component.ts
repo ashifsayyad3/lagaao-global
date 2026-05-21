@@ -1,10 +1,11 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit, computed
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ProductService, Product, ProductVariant } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { CartService } from '../../../core/services/cart.service';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -234,7 +235,9 @@ import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive'
 })
 export class ProductDetailComponent implements OnInit {
   readonly #route      = inject(ActivatedRoute);
+  readonly #router     = inject(Router);
   readonly productSvc  = inject(ProductService);
+  readonly #cartSvc    = inject(CartService);
   readonly #toast      = inject(ToastService);
 
   readonly product         = signal<Product | null>(null);
@@ -323,12 +326,20 @@ export class ProductDetailComponent implements OnInit {
   decrementQty(): void { this.qty.update(q => q > 1 ? q - 1 : 1); }
 
   addToCart(): void {
-    this.#toast.success('Added to cart', this.product()!.name);
-    // Phase 5: cart integration
+    const p = this.product()!;
+    const variantId = this.selectedVariant()?.id ?? null;
+    this.#cartSvc.addItem(p.id, variantId, this.qty()).subscribe({
+      next: () => this.#toast.success('Added to cart', p.name),
+      error: err => this.#toast.error('Error', err?.error?.message ?? 'Could not add to cart'),
+    });
   }
 
   buyNow(): void {
-    this.#toast.info('Checkout', 'Redirecting to checkout...');
-    // Phase 5: checkout integration
+    const p = this.product()!;
+    const variantId = this.selectedVariant()?.id ?? null;
+    this.#cartSvc.addItem(p.id, variantId, this.qty()).subscribe({
+      next: () => this.#router.navigate(['/checkout']),
+      error: err => this.#toast.error('Error', err?.error?.message ?? 'Could not add to cart'),
+    });
   }
 }

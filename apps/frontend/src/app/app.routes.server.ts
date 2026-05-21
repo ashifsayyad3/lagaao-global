@@ -8,5 +8,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'orders',                renderMode: RenderMode.Server },
   { path: 'profile',               renderMode: RenderMode.Server },
   { path: 'cart',                  renderMode: RenderMode.Server },
+  { path: 'checkout',              renderMode: RenderMode.Server },
+  { path: 'search',                renderMode: RenderMode.Server },
   { path: '**',                    renderMode: RenderMode.Prerender },
 ];

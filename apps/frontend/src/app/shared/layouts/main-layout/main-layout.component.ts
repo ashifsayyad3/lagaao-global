@@ -1,14 +1,13 @@
 import {
-  Component, ChangeDetectionStrategy, inject, computed
+  Component, ChangeDetectionStrategy, inject
 } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatBadgeModule } from '@angular/material/badge';
 import { ThemeService } from '../../../core/services/theme.service';
 import { ToastContainerComponent } from '../../components/toast/toast.component';
 import { LoadingService } from '../../../core/services/loading.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'lg-main-layout',
@@ -92,15 +91,23 @@ import { LoadingService } from '../../../core/services/loading.service';
             </span>
           </button>
 
-          <!-- Profile -->
-          <button
-            routerLink="/auth/login"
-            class="ml-1 h-9 px-3 rounded-full bg-primary-600 hover:bg-primary-700
-                   text-white text-sm font-medium transition-colors flex items-center gap-1.5"
-          >
-            <mat-icon class="!text-base !w-4 !h-4">person</mat-icon>
-            <span class="hidden sm:block">Sign In</span>
-          </button>
+          <!-- Profile / Auth -->
+          @if (auth.isLoggedIn()) {
+            <a routerLink="/profile"
+               class="ml-1 w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-accent
+                      flex items-center justify-center text-white text-sm font-bold">
+              {{ auth.user()?.name?.[0]?.toUpperCase() }}
+            </a>
+          } @else {
+            <button
+              routerLink="/auth/login"
+              class="ml-1 h-9 px-3 rounded-full bg-primary-600 hover:bg-primary-700
+                     text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+            >
+              <mat-icon class="!text-base !w-4 !h-4">person</mat-icon>
+              <span class="hidden sm:block">Sign In</span>
+            </button>
+          }
         </div>
       </div>
     </header>
@@ -170,5 +177,6 @@ import { LoadingService } from '../../../core/services/loading.service';
 export class MainLayoutComponent {
   readonly theme   = inject(ThemeService);
   readonly loading = inject(LoadingService);
+  readonly auth    = inject(AuthService);
   readonly year    = new Date().getFullYear();
 }

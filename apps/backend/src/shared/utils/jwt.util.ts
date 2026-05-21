@@ -17,14 +17,16 @@ export interface TokenPair {
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
-  return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (jwt.sign as any)(payload, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN,
     issuer:    'lagaao.com',
   });
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, env.JWT_SECRET, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (jwt.verify as any)(token, env.JWT_SECRET, {
     issuer: 'lagaao.com',
   }) as AccessTokenPayload;
 }

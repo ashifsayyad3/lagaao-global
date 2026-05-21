@@ -1,17 +1,22 @@
+import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 
 import { env } from './config/env';
 import { logger } from './config/logger';
-import { connectDB } from './config/database';
+import { connectDB } from './models';
 import { connectRedis } from './config/redis';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { globalRateLimit } from './middleware/rateLimit.middleware';
+import { auditLog } from './middleware/audit.middleware';
+import authRoutes from './modules/auth/auth.routes';
+import usersRoutes from './modules/users/users.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -28,24 +33,29 @@ io.on('connection', (socket) => {
 });
 
 // ─── Security & Middleware ────────────────────────────────────
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
-app.use(compression() as express.RequestHandler);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+app.use(compression() as any);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+app.use(cookieParser() as any);
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(globalRateLimit);
+app.use(auditLog);
 
-// ─── Health check ────────────────────────────────────────────
+// ─── Health ────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString(), env: env.NODE_ENV });
 });
 
-// ─── API Routes (mounted per phase) ──────────────────────────
-// Phase 2+: app.use('/api/v1/auth',    authRouter);
-// Phase 3+: app.use('/api/v1/products', productRouter);
+// ─── API Routes ────────────────────────────────────────────────
+app.use('/api/v1/auth',  authRoutes);
+app.use('/api/v1/users', usersRoutes);
 
-// ─── 404 ─────────────────────────────────────────────────────
+// ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });

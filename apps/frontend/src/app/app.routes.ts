@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
 import { AuthLayoutComponent } from './shared/layouts/auth-layout/auth-layout.component';
+import { authGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -32,11 +33,13 @@ export const routes: Routes = [
       },
       {
         path: 'orders',
+        canActivate: [authGuard],
         loadChildren: () =>
           import('./features/orders/orders.routes').then(m => m.ORDER_ROUTES),
       },
       {
         path: 'profile',
+        canActivate: [authGuard],
         loadChildren: () =>
           import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES),
       },
@@ -48,15 +51,23 @@ export const routes: Routes = [
     children: [
       {
         path: 'login',
+        canActivate: [guestGuard],
         loadComponent: () =>
           import('./features/auth/login/login.component').then(m => m.LoginComponent),
         title: 'Sign In — Lagaao',
       },
       {
         path: 'register',
+        canActivate: [guestGuard],
         loadComponent: () =>
           import('./features/auth/register/register.component').then(m => m.RegisterComponent),
         title: 'Create Account — Lagaao',
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
+        title: 'Forgot Password — Lagaao',
       },
     ],
   },

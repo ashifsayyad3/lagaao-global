@@ -11,26 +11,28 @@ import { Server as SocketServer } from 'socket.io';
 import { env } from './config/env';
 import { logger } from './config/logger';
 import { connectDB } from './models';
-import { connectRedis } from './config/redis';
-import { connectES } from './config/elasticsearch';
+import { connectRedis, redis } from './config/redis';
+import { connectES, esClient } from './config/elasticsearch';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { globalRateLimit } from './middleware/rateLimit.middleware';
 import { auditLog } from './middleware/audit.middleware';
-import authRoutes       from './modules/auth/auth.routes';
-import usersRoutes      from './modules/users/users.routes';
-import categoriesRoutes from './modules/categories/categories.routes';
-import brandsRoutes     from './modules/brands/brands.routes';
-import productsRoutes   from './modules/products/products.routes';
-import inventoryRoutes  from './modules/inventory/inventory.routes';
-import searchRoutes     from './modules/search/search.routes';
-import cartRoutes       from './modules/cart/cart.routes';
-import couponRoutes     from './modules/coupon/coupon.routes';
-import checkoutRoutes   from './modules/checkout/checkout.routes';
+import { sanitizeInput } from './middleware/sanitize.middleware';
+import { suspiciousActivityGuard } from './middleware/security.middleware';
+import authRoutes            from './modules/auth/auth.routes';
+import usersRoutes           from './modules/users/users.routes';
+import categoriesRoutes      from './modules/categories/categories.routes';
+import brandsRoutes          from './modules/brands/brands.routes';
+import productsRoutes        from './modules/products/products.routes';
+import inventoryRoutes       from './modules/inventory/inventory.routes';
+import searchRoutes          from './modules/search/search.routes';
+import cartRoutes            from './modules/cart/cart.routes';
+import couponRoutes          from './modules/coupon/coupon.routes';
+import checkoutRoutes        from './modules/checkout/checkout.routes';
 import ordersRoutes, { adminOrdersRouter } from './modules/orders/orders.routes';
 import vendorPublicRoutes, { vendorRouter, adminVendorRouter } from './modules/vendor/vendor.routes';
 import cmsRoutes, { adminCmsRouter } from './modules/cms/cms.routes';
-import aiRoutes        from './modules/ai/ai.routes';
-import analyticsRoutes from './modules/analytics/analytics.routes';
+import aiRoutes              from './modules/ai/ai.routes';
+import analyticsRoutes       from './modules/analytics/analytics.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -46,44 +48,90 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => logger.debug(`Socket disconnected: ${socket.id}`));
 });
 
-// ─── Security & Middleware ────────────────────────────────────
+// ─── Security ─────────────────────────────────────────────────
 app.set('trust proxy', 1);
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'"],
+      styleSrc:    ["'self'", "'unsafe-inline'"],
+      imgSrc:      ["'self'", 'data:', 'https:'],
+      connectSrc:  ["'self'"],
+      fontSrc:     ["'self'", 'https:'],
+      objectSrc:   ["'none'"],
+      frameSrc:    ["'none'"],
+      upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
+  crossOriginEmbedderPolicy: false, // needed for some image CDNs
+  hsts: env.NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+    : false,
+}));
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use(compression() as any);
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));  // tightened from 10mb
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use(cookieParser() as any);
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(globalRateLimit);
+app.use(sanitizeInput);
+app.use(suspiciousActivityGuard);
 app.use(auditLog);
 
 // ─── Health ────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString(), env: env.NODE_ENV });
+app.get('/health', async (_req, res) => {
+  const checks: Record<string, 'ok' | 'degraded' | 'down'> = {};
+
+  // MySQL
+  try {
+    const { sequelize } = await import('./models');
+    await sequelize.authenticate();
+    checks['mysql'] = 'ok';
+  } catch { checks['mysql'] = 'down'; }
+
+  // Redis
+  try {
+    await redis.ping();
+    checks['redis'] = 'ok';
+  } catch { checks['redis'] = 'degraded'; }
+
+  // Elasticsearch
+  checks['elasticsearch'] = esClient ? 'ok' : 'degraded';
+
+  const allOk = Object.values(checks).every(v => v === 'ok');
+  res.status(allOk ? 200 : 503).json({
+    status:  allOk ? 'ok' : 'degraded',
+    ts:      new Date().toISOString(),
+    env:     env.NODE_ENV,
+    version: process.env['npm_package_version'] ?? '1.0.0',
+    uptime:  Math.floor(process.uptime()),
+    checks,
+  });
 });
 
 // ─── API Routes ────────────────────────────────────────────────
-app.use('/api/v1/auth',        authRoutes);
-app.use('/api/v1/users',       usersRoutes);
-app.use('/api/v1/categories',  categoriesRoutes);
-app.use('/api/v1/brands',      brandsRoutes);
-app.use('/api/v1/products',    productsRoutes);
-app.use('/api/v1/inventory',   inventoryRoutes);
-app.use('/api/v1/search',      searchRoutes);
-app.use('/api/v1/cart',        cartRoutes);
-app.use('/api/v1/coupons',     couponRoutes);
-app.use('/api/v1/checkout',    checkoutRoutes);
-app.use('/api/v1/orders',      ordersRoutes);
-app.use('/api/v1/admin/orders',   adminOrdersRouter);
-app.use('/api/v1/vendors',        vendorPublicRoutes);
-app.use('/api/v1/vendor',         vendorRouter);
-app.use('/api/v1/admin/vendors',  adminVendorRouter);
-app.use('/api/v1/cms',            cmsRoutes);
-app.use('/api/v1/admin/cms',      adminCmsRouter);
-app.use('/api/v1/ai',             aiRoutes);
+app.use('/api/v1/auth',            authRoutes);
+app.use('/api/v1/users',           usersRoutes);
+app.use('/api/v1/categories',      categoriesRoutes);
+app.use('/api/v1/brands',          brandsRoutes);
+app.use('/api/v1/products',        productsRoutes);
+app.use('/api/v1/inventory',       inventoryRoutes);
+app.use('/api/v1/search',          searchRoutes);
+app.use('/api/v1/cart',            cartRoutes);
+app.use('/api/v1/coupons',         couponRoutes);
+app.use('/api/v1/checkout',        checkoutRoutes);
+app.use('/api/v1/orders',          ordersRoutes);
+app.use('/api/v1/admin/orders',    adminOrdersRouter);
+app.use('/api/v1/vendors',         vendorPublicRoutes);
+app.use('/api/v1/vendor',          vendorRouter);
+app.use('/api/v1/admin/vendors',   adminVendorRouter);
+app.use('/api/v1/cms',             cmsRoutes);
+app.use('/api/v1/admin/cms',       adminCmsRouter);
+app.use('/api/v1/ai',              aiRoutes);
 app.use('/api/v1/admin/analytics', analyticsRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
@@ -101,8 +149,8 @@ async function bootstrap(): Promise<void> {
   await connectES();
 
   http.listen(env.PORT, () => {
-    logger.info(`🚀 Lagaao API running on http://localhost:${env.PORT}`);
-    logger.info(`   Environment: ${env.NODE_ENV}`);
+    logger.info(`Lagaao API running on http://localhost:${env.PORT}`);
+    logger.info(`  Environment: ${env.NODE_ENV}`);
   });
 }
 

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
 import { ok, created } from '../../shared/utils/response.util';
 import { env } from '../../config/env';
+import { verifyAccessToken } from '../../shared/utils/jwt.util';
+import { blockToken } from '../../middleware/security.middleware';
 
 const REFRESH_COOKIE = 'lg_refresh';
 
@@ -61,6 +63,17 @@ export class AuthController {
     try {
       const raw = req.cookies?.[REFRESH_COOKIE];
       if (raw) await authService.logout(raw);
+
+      // Block the current access token so it can't be reused
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const payload = verifyAccessToken(authHeader.slice(7));
+          const jti = `${payload.sub}:${payload.iat ?? 0}`;
+          await blockToken(jti);
+        } catch { /* token already invalid — ignore */ }
+      }
+
       res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
       ok(res, null, 'Logged out');
     } catch (e) { next(e); }

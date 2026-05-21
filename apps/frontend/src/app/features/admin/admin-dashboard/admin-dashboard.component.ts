@@ -12,6 +12,7 @@ import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { LineChartComponent, ChartSeries } from '../../../shared/components/line-chart/line-chart.component';
+import { MonitoringService, HealthCheck } from '../../../core/services/monitoring.service';
 
 type AdminTab = 'overview' | 'products' | 'vendors' | 'orders';
 
@@ -210,6 +211,29 @@ type AdminTab = 'overview' | 'products' | 'vendors' | 'orders';
               </table>
             </div>
           </div>
+
+          <!-- System Health -->
+          @if (health()) {
+            <div class="lg:col-span-3 rounded-2xl border border-border bg-bg-base p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-text-primary text-sm">System Health</h2>
+                <span class="text-xs text-text-secondary">
+                  Uptime: {{ formatUptime(health()!.uptime) }} · v{{ health()!.version }}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-4">
+                @for (entry of healthEntries(); track entry.service) {
+                  <div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-border">
+                    <span class="w-2 h-2 rounded-full"
+                          [class]="entry.status === 'ok' ? 'bg-green-500' : entry.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'">
+                    </span>
+                    <span class="text-sm font-medium text-text-primary capitalize">{{ entry.service }}</span>
+                    <span class="text-xs text-text-secondary">{{ entry.status }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </div>
       }
 
@@ -346,7 +370,8 @@ type AdminTab = 'overview' | 'products' | 'vendors' | 'orders';
   `,
 })
 export class AdminDashboardComponent implements OnInit {
-  readonly #analytics = inject(AnalyticsService);
+  readonly #analytics  = inject(AnalyticsService);
+  readonly #monitoring = inject(MonitoringService);
 
   summaryLoading = signal(true);
   chartLoading   = signal(true);
@@ -361,6 +386,13 @@ export class AdminDashboardComponent implements OnInit {
   statusBreakdown = signal<StatusBreak[]>([]);
   categories      = signal<CatBreak[]>([]);
   recentOrders    = signal<RecentOrder[]>([]);
+  health          = signal<HealthCheck | null>(null);
+
+  readonly healthEntries = computed(() => {
+    const h = this.health();
+    if (!h) return [];
+    return Object.entries(h.checks).map(([service, status]) => ({ service, status }));
+  });
 
   readonly tabs = [
     { key: 'overview' as AdminTab, label: 'Overview',  icon: 'dashboard' },
@@ -428,6 +460,7 @@ export class AdminDashboardComponent implements OnInit {
     this.#analytics.getTopProducts().subscribe({ next: r => this.topProducts.set(r.data), error: () => {} });
     this.#analytics.getTopVendors().subscribe({ next: r => this.topVendors.set(r.data), error: () => {} });
     this.#analytics.getRecentOrders().subscribe({ next: r => this.recentOrders.set(r.data), error: () => {} });
+    this.#monitoring.getHealth().subscribe({ next: h => this.health.set(h), error: () => {} });
     this.loadTrends(this.trendDays());
   }
 
@@ -459,6 +492,12 @@ export class AdminDashboardComponent implements OnInit {
       cancelled:        '#ef4444',
     };
     return map[status] ?? '#94a3b8';
+  }
+
+  formatUptime(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
   orderStatusVariant(status: string): 'default' | 'success' | 'warning' | 'error' | 'info' {

@@ -1,5 +1,5 @@
 import {
-  ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode
+  ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode, ErrorHandler,
 } from '@angular/core';
 import {
   provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions
@@ -12,10 +12,13 @@ import { routes } from './app.routes';
 import { loadingInterceptor } from './core/interceptors/loading.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { securityInterceptor } from './core/interceptors/security.interceptor';
+import { GlobalErrorHandler } from './core/handlers/global-error.handler';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideRouter(
       routes,
       withComponentInputBinding(),
@@ -26,7 +29,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor, loadingInterceptor, errorInterceptor]),
+      withInterceptors([securityInterceptor, authInterceptor, loadingInterceptor, errorInterceptor]),
     ),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

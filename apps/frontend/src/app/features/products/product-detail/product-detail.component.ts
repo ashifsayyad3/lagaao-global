@@ -12,6 +12,8 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive';
+import { AiService, AiProduct } from '../../../core/services/ai.service';
+import { ProductCarouselComponent } from '../../../shared/components/product-carousel/product-carousel.component';
 
 @Component({
   selector: 'lg-product-detail',
@@ -20,7 +22,7 @@ import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive'
   imports: [
     RouterLink, MatIconModule,
     ProductCardComponent, SkeletonComponent, BadgeComponent, ButtonComponent,
-    CurrencyInrPipe, LazyImgDirective,
+    CurrencyInrPipe, LazyImgDirective, ProductCarouselComponent,
   ],
   template: `
     <div class="max-w-screen-xl mx-auto px-4 md:px-6 py-8">
@@ -229,6 +231,13 @@ import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive'
             </div>
           </div>
         }
+
+        <!-- Also Bought -->
+        @if (alsoBought().length > 0) {
+          <div class="mt-4 border-t border-border-default">
+            <lg-product-carousel title="Customers Also Bought" [products]="alsoBought()"></lg-product-carousel>
+          </div>
+        }
       }
     </div>
   `,
@@ -239,9 +248,11 @@ export class ProductDetailComponent implements OnInit {
   readonly productSvc  = inject(ProductService);
   readonly #cartSvc    = inject(CartService);
   readonly #toast      = inject(ToastService);
+  readonly #ai         = inject(AiService);
 
   readonly product         = signal<Product | null>(null);
   readonly related         = signal<Product[]>([]);
+  readonly alsoBought      = signal<AiProduct[]>([]);
   readonly loading         = signal(true);
   readonly activeImageUrl  = signal<string>('');
   readonly selectedVariant = signal<ProductVariant | null>(null);
@@ -295,10 +306,15 @@ export class ProductDetailComponent implements OnInit {
           if (res.data.variants?.length) this.selectedVariant.set(res.data.variants[0]);
           this.loading.set(false);
 
-          // Load related
+          // Load related + AI recommendations
           this.productSvc.getRelated(res.data.id).subscribe({
             next: r => this.related.set(r.data),
           });
+          this.#ai.getAlsoBought(res.data.id).subscribe({
+            next: r => this.alsoBought.set(r.data),
+            error: () => {},
+          });
+          this.#ai.trackView(res.data.id).subscribe({ error: () => {} });
         },
         error: () => this.loading.set(false),
       });

@@ -11,6 +11,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { AnnouncementBarComponent } from '../../components/announcement-bar/announcement-bar.component';
+import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
 
 @Component({
   selector: 'lg-main-layout',
@@ -19,7 +20,7 @@ import { AnnouncementBarComponent } from '../../components/announcement-bar/anno
   imports: [
     RouterOutlet, RouterLink,
     MatIconModule, MatButtonModule,
-    ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent,
+    ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent,
   ],
   template: `
     <!-- Announcement bar -->
@@ -175,6 +176,9 @@ import { AnnouncementBarComponent } from '../../components/announcement-bar/anno
 
     <!-- Toast notifications -->
     <lg-toast-container></lg-toast-container>
+
+    <!-- AI Chat widget -->
+    <lg-ai-chat></lg-ai-chat>
   `,
 })
 export class MainLayoutComponent implements OnInit {

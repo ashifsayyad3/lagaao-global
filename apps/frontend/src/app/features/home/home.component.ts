@@ -6,7 +6,10 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
 import { NewsletterComponent } from '../../shared/components/newsletter/newsletter.component';
+import { ProductCarouselComponent } from '../../shared/components/product-carousel/product-carousel.component';
 import { CmsService, Banner } from '../../core/services/cms.service';
+import { AiService, AiProduct } from '../../core/services/ai.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'lg-home',
@@ -15,7 +18,7 @@ import { CmsService, Banner } from '../../core/services/cms.service';
   imports: [
     RouterLink, MatIconModule,
     SkeletonCardComponent, BadgeComponent, ButtonComponent, CurrencyInrPipe,
-    NewsletterComponent,
+    NewsletterComponent, ProductCarouselComponent,
   ],
   template: `
     <!-- Hero Section -->
@@ -234,6 +237,18 @@ import { CmsService, Banner } from '../../core/services/cms.service';
       </div>
     </section>
 
+    <!-- For You / Recently Viewed -->
+    @if (forYou().length > 0) {
+      <section class="max-w-screen-2xl mx-auto px-4 md:px-6">
+        <lg-product-carousel title="Picked For You" [products]="forYou()" viewAllLink="/search"></lg-product-carousel>
+      </section>
+    }
+    @if (recentlyViewed().length > 0) {
+      <section class="max-w-screen-2xl mx-auto px-4 md:px-6">
+        <lg-product-carousel title="Recently Viewed" [products]="recentlyViewed()"></lg-product-carousel>
+      </section>
+    }
+
     <!-- Newsletter -->
     <section class="py-10">
       <div class="max-w-screen-2xl mx-auto px-4 md:px-6">
@@ -243,11 +258,15 @@ import { CmsService, Banner } from '../../core/services/cms.service';
   `,
 })
 export class HomeComponent implements OnInit {
-  readonly #cms = inject(CmsService);
+  readonly #cms  = inject(CmsService);
+  readonly #ai   = inject(AiService);
+  readonly #auth = inject(AuthService);
 
-  heroBanners  = signal<Banner[]>([]);
-  midBanners   = signal<Banner[]>([]);
-  activeBanner = signal(0);
+  heroBanners    = signal<Banner[]>([]);
+  midBanners     = signal<Banner[]>([]);
+  activeBanner   = signal(0);
+  forYou         = signal<AiProduct[]>([]);
+  recentlyViewed = signal<AiProduct[]>([]);
 
   categories = [
     { label: 'Electronics',  emoji: '📱', slug: 'electronics' },
@@ -265,5 +284,9 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.#cms.getBanners('hero').subscribe(r => this.heroBanners.set(r.data));
     this.#cms.getBanners('mid').subscribe(r => this.midBanners.set(r.data));
+    this.#ai.getRecentlyViewed().subscribe({ next: r => this.recentlyViewed.set(r.data), error: () => {} });
+    if (this.#auth.isLoggedIn()) {
+      this.#ai.getForYou().subscribe({ next: r => this.forYou.set(r.data), error: () => {} });
+    }
   }
 }

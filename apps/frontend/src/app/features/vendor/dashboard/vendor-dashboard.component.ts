@@ -4,7 +4,9 @@ import {
 import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { FormsModule } from '@angular/forms';
 import { VendorService, DashboardStats, VendorProfile } from '../../../core/services/vendor.service';
+import { AiService, GenerateDescResult } from '../../../core/services/ai.service';
 import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -17,7 +19,7 @@ type ActiveTab = 'overview' | 'products' | 'orders' | 'settings';
   selector: 'lg-vendor-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, CurrencyInrPipe, DecimalPipe, SkeletonComponent, BadgeComponent, ButtonComponent, TimeAgoPipe],
+  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe, DecimalPipe, SkeletonComponent, BadgeComponent, ButtonComponent, TimeAgoPipe],
   template: `
     <div class="max-w-screen-2xl mx-auto px-4 md:px-6 py-8">
 
@@ -260,7 +262,7 @@ type ActiveTab = 'overview' | 'products' | 'orders' | 'settings';
 
         <!-- Settings tab -->
         @if (activeTab() === 'settings') {
-          <div class="max-w-lg space-y-6">
+          <div class="max-w-2xl space-y-6">
             <div class="rounded-2xl border border-border-default bg-bg-base p-6">
               <h3 class="font-semibold text-text-primary mb-4">Store Info</h3>
               <div class="space-y-1 text-sm">
@@ -286,6 +288,72 @@ type ActiveTab = 'overview' | 'products' | 'orders' | 'settings';
                 </div>
               </div>
             </div>
+
+            <!-- AI Description Generator -->
+            <div class="rounded-2xl border border-border-default bg-bg-base p-6">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent flex items-center justify-center">
+                  <mat-icon class="!text-sm text-white">auto_awesome</mat-icon>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-text-primary">AI Description Generator</h3>
+                  <p class="text-xs text-text-muted">Generate compelling copy for your listings instantly</p>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <input [(ngModel)]="aiForm.productName" name="aiProduct"
+                       placeholder="Product name (e.g. Wireless Earbuds Pro)"
+                       class="input-field w-full" />
+                <input [(ngModel)]="aiForm.category" name="aiCategory"
+                       placeholder="Category (e.g. Electronics)"
+                       class="input-field w-full" />
+                <textarea [(ngModel)]="aiForm.features" name="aiFeatures" rows="3"
+                          placeholder="Key features, comma separated (e.g. 30h battery, ANC, USB-C, IPX5)"
+                          class="input-field w-full resize-none"></textarea>
+                <div class="flex items-center gap-3">
+                  <select [(ngModel)]="aiForm.tone" name="aiTone" class="input-field flex-1">
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual & Friendly</option>
+                    <option value="luxury">Premium / Luxury</option>
+                  </select>
+                  <lg-button variant="primary" size="sm" prefixIcon="auto_awesome"
+                             [disabled]="aiGenerating()"
+                             (click)="generateDescription()">
+                    {{ aiGenerating() ? 'Generating…' : 'Generate' }}
+                  </lg-button>
+                </div>
+              </div>
+
+              @if (aiResult()) {
+                <div class="mt-5 space-y-4 border-t border-border-default pt-5">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Short Description</p>
+                      <button class="text-xs text-primary-600 hover:underline" (click)="copyText(aiResult()!.shortDescription)">Copy</button>
+                    </div>
+                    <p class="text-sm text-text-primary bg-surface-50 dark:bg-surface-800 rounded-xl p-3">
+                      {{ aiResult()!.shortDescription }}
+                    </p>
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Full Description</p>
+                      <button class="text-xs text-primary-600 hover:underline" (click)="copyText(aiResult()!.description)">Copy HTML</button>
+                    </div>
+                    <div class="prose prose-sm dark:prose-invert max-w-none bg-surface-50 dark:bg-surface-800 rounded-xl p-3"
+                         [innerHTML]="aiResult()!.description"></div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Suggested Tags</p>
+                    <div class="flex flex-wrap gap-2">
+                      @for (tag of aiResult()!.tags; track tag) {
+                        <span class="px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 text-xs rounded-full">{{ tag }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         }
       }
@@ -294,6 +362,7 @@ type ActiveTab = 'overview' | 'products' | 'orders' | 'settings';
 })
 export class VendorDashboardComponent implements OnInit {
   readonly #vendorSvc = inject(VendorService);
+  readonly #ai        = inject(AiService);
 
   readonly loading       = signal(true);
   readonly statsLoading  = signal(false);
@@ -306,6 +375,10 @@ export class VendorDashboardComponent implements OnInit {
   readonly products      = signal<any[]>([]);
   readonly orderItems    = signal<any[]>([]);
   readonly activeTab     = signal<ActiveTab>('overview');
+
+  aiForm = { productName: '', category: '', features: '', tone: 'professional' };
+  aiGenerating = signal(false);
+  aiResult     = signal<GenerateDescResult | null>(null);
 
   readonly tabs = [
     { key: 'overview'  as ActiveTab, label: 'Overview',  icon: 'dashboard' },
@@ -373,6 +446,21 @@ export class VendorDashboardComponent implements OnInit {
   getQty(o: any):         number { return o?.qty ?? 1; }
   getStatus(o: any):      string { return (o?.status ?? '').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()); }
   getOrderDate(o: any):   string { return o?.order?.createdAt ?? o?.createdAt ?? new Date().toISOString(); }
+  generateDescription(): void {
+    const { productName, category, features, tone } = this.aiForm;
+    if (!productName || !category || !features) return;
+    this.aiGenerating.set(true);
+    this.aiResult.set(null);
+    this.#ai.generateDescription({ productName, category, features, tone }).subscribe({
+      next:  r => { this.aiResult.set(r.data); this.aiGenerating.set(false); },
+      error: () => this.aiGenerating.set(false),
+    });
+  }
+
+  copyText(text: string): void {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+
   getStatusVariant(o: any): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' {
     const s = o?.status ?? '';
     if (s === 'delivered') return 'success';

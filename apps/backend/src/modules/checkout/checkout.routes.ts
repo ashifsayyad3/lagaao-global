@@ -10,13 +10,11 @@ function getIdentity(req: Request): { userId: number | null; sessionId: string |
   return { userId, sessionId };
 }
 
-// GET /api/v1/checkout/summary?coupon=CODE
 router.get('/summary', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, sessionId } = getIdentity(req);
     const couponCode = req.query['coupon'] as string | undefined;
-    const summary = await checkoutService.priceSummary(userId, sessionId, couponCode);
-    res.json(ok(summary));
+    ok(res, await checkoutService.priceSummary(userId, sessionId, couponCode));
   } catch (err) { next(err); }
 });
 

@@ -48,10 +48,10 @@ export class CartService {
   readonly itemCount = computed(() => this.cart()?.itemCount ?? 0);
   readonly subtotal  = computed(() => this.cart()?.subtotal ?? 0);
 
-  readonly #sessionId = this.#getOrCreateSession();
+  readonly sessionId = this.#getOrCreateSession();
 
   private get headers() {
-    return { 'x-session-id': this.#sessionId };
+    return { 'x-session-id': this.sessionId };
   }
 
   load(): Observable<{ success: boolean; data: CartSummary }> {

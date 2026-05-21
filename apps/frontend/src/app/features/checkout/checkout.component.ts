@@ -6,10 +6,10 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatStepperModule } from '@angular/material/stepper';
 import { CartService, PriceSummary } from '../../core/services/cart.service';
+import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
-import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
@@ -32,7 +32,7 @@ interface AddressForm {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink, FormsModule, MatIconModule,
-    CurrencyInrPipe, SkeletonComponent, ButtonComponent, BadgeComponent,
+    CurrencyInrPipe, ButtonComponent, BadgeComponent,
   ],
   template: `
     <div class="max-w-screen-lg mx-auto px-4 md:px-6 py-8">
@@ -218,7 +218,7 @@ interface AddressForm {
 
               <lg-button variant="primary" size="lg" [fullWidth]="true"
                          prefixIcon="lock" [loading]="placing()" (click)="placeOrder()">
-                Place Order · {{ pricing()?.total | currencyInr }}
+                Place Order · {{ (pricing()?.total ?? 0) | currencyInr }}
               </lg-button>
 
               <p class="text-xs text-text-muted text-center">
@@ -280,10 +280,11 @@ interface AddressForm {
   `],
 })
 export class CheckoutComponent implements OnInit {
-  readonly cartSvc = inject(CartService);
-  readonly #auth   = inject(AuthService);
-  readonly #toast  = inject(ToastService);
-  readonly #router = inject(Router);
+  readonly cartSvc    = inject(CartService);
+  readonly #orderSvc  = inject(OrderService);
+  readonly #auth      = inject(AuthService);
+  readonly #toast     = inject(ToastService);
+  readonly #router    = inject(Router);
 
   readonly currentStep   = signal<Step>('address');
   readonly paymentMethod = signal<PaymentMethod>('upi');
@@ -372,12 +373,32 @@ export class CheckoutComponent implements OnInit {
 
   placeOrder(): void {
     this.placing.set(true);
-    // Phase 6: real order creation via orders API
-    setTimeout(() => {
-      this.placing.set(false);
-      this.#toast.success('Order placed!', 'You will receive a confirmation shortly.');
-      this.cartSvc.clearCart().subscribe();
-      this.#router.navigate(['/orders']);
-    }, 1500);
+    const a = this.address;
+    this.#orderSvc.placeOrder({
+      shippingAddress: {
+        fullName: a.fullName,
+        phone:    a.phone,
+        line1:    a.line1,
+        line2:    a.line2 || undefined,
+        city:     a.city,
+        state:    a.state,
+        pincode:  a.pincode,
+        country:  'India',
+      },
+      paymentMethod: this.paymentMethod(),
+      couponCode:    this.pricing()?.couponCode ?? undefined,
+      sessionId:     this.cartSvc.sessionId,
+    }).subscribe({
+      next: r => {
+        this.placing.set(false);
+        this.cartSvc.cart.set(null);
+        this.#toast.success('Order placed!', r.data.orderNumber);
+        this.#router.navigate(['/orders', r.data.id]);
+      },
+      error: err => {
+        this.placing.set(false);
+        this.#toast.error('Order failed', err?.error?.message ?? 'Please try again');
+      },
+    });
   }
 }

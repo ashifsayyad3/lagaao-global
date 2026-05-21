@@ -7,4 +7,10 @@ export const ORDER_ROUTES: Routes = [
       import('./order-list/order-list.component').then(m => m.OrderListComponent),
     title: 'My Orders — Lagaao',
   },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('./order-detail/order-detail.component').then(m => m.OrderDetailComponent),
+    title: 'Order Details — Lagaao',
+  },
 ];

@@ -2,8 +2,10 @@ import {
   ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode, ErrorHandler,
 } from '@angular/core';
 import {
-  provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions
+  provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions,
+  withPreloading,
 } from '@angular/router';
+import { SelectivePreloadStrategy } from './core/strategies/selective-preload.strategy';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors, withFetch } from '@angular/common/http';
@@ -24,6 +26,7 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withViewTransitions(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+      withPreloading(SelectivePreloadStrategy),
     ),
     provideClientHydration(withEventReplay()),
     provideAnimationsAsync(),

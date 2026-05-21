@@ -16,17 +16,20 @@ export const routes: Routes = [
       },
       {
         path: 'products',
+        data: { preload: true },
         loadChildren: () =>
           import('./features/products/products.routes').then(m => m.PRODUCT_ROUTES),
       },
       {
         path: 'search',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/search/search.component').then(m => m.SearchComponent),
         title: 'Search — Lagaao',
       },
       {
         path: 'cart',
+        data: { preload: true },
         loadComponent: () =>
           import('./features/cart/cart.component').then(m => m.CartComponent),
         title: 'Cart — Lagaao',

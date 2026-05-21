@@ -62,5 +62,22 @@ npm run test         # Jest
 ### Key conventions
 - Component selector prefix: `lg-` (e.g., `lg-button`, `lg-product-card`).
 - API versioning: all routes under `/api/v1/`.
-- JWT: 15-minute access tokens + 7-day refresh tokens stored in httpOnly cookies (Phase 2).
+- JWT: 15-minute access tokens + 7-day refresh tokens in httpOnly cookies. Logout blocks token in Redis.
 - Shared TypeScript interfaces live in `libs/shared-types/src/index.ts`.
+- Redis caching: use `cached(key, fetcher, ttl)` from `shared/utils/cache.util.ts`. Invalidate on writes.
+- XSS sanitizer runs on every request body/query before route handlers.
+
+### Deployment
+```bash
+# Production compose (needs .env.production)
+docker compose -f docker-compose.prod.yml up -d
+
+# PM2 (non-Docker)
+cd apps/backend && npm run build && npx pm2 start ecosystem.config.cjs --env production
+
+# Run DB migrations in prod
+npx sequelize-cli db:migrate --env production
+```
+
+Nginx config: `nginx/nginx.conf` — reverse proxy on 80/443, SSL termination, gzip, Nginx cache for static assets (7d) and API GETs (30s).
+CI/CD: `.github/workflows/ci.yml` (lint+build on every PR) + `.github/workflows/deploy.yml` (SSH deploy on main push).

@@ -1,0 +1,53 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key:      ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/lagaao
+
+            # Pull latest images
+            docker pull ${{ secrets.DOCKER_USERNAME }}/lagaao-backend:${{ github.sha }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/lagaao-frontend:${{ github.sha }}
+
+            # Update image tags in compose override
+            export BACKEND_IMAGE=${{ secrets.DOCKER_USERNAME }}/lagaao-backend:${{ github.sha }}
+            export FRONTEND_IMAGE=${{ secrets.DOCKER_USERNAME }}/lagaao-frontend:${{ github.sha }}
+
+            # Rolling restart (zero-downtime with 2 backend replicas)
+            docker compose -f docker-compose.prod.yml up -d --no-deps \
+              --scale backend=2 backend frontend nginx
+
+            # Run migrations after new container is up
+            docker compose -f docker-compose.prod.yml exec -T backend \
+              npx sequelize-cli db:migrate --env production
+
+            # Health check
+            sleep 10
+            curl -sf https://lagaao.com/health || exit 1
+
+            echo "Deployment successful: ${{ github.sha }}"

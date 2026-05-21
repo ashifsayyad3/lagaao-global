@@ -154,7 +154,7 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
             </div>
 
             <!-- Status timeline -->
-            @if (order()!.statusHistory?.length > 0) {
+            @if ((order()!.statusHistory?.length ?? 0) > 0) {
               <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
                 <div class="px-5 py-3 bg-surface-50 border-b border-border-default">
                   <h2 class="font-semibold text-text-primary text-sm">Order Timeline</h2>
@@ -165,7 +165,7 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
                       <li class="ml-6">
                         <span class="absolute -left-1.5 w-3 h-3 rounded-full bg-primary-600 border-2 border-bg-base"></span>
                         <div class="flex items-center justify-between">
-                          <p class="text-sm font-medium text-text-primary">{{ statusLabel(h.toStatus as OrderStatus) }}</p>
+                          <p class="text-sm font-medium text-text-primary">{{ statusLabel($any(h.toStatus)) }}</p>
                           <time class="text-xs text-text-muted">{{ h.createdAt | timeAgo }}</time>
                         </div>
                         @if (h.note) {

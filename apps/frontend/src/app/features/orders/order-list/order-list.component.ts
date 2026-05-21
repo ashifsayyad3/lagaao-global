@@ -130,7 +130,7 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
                         · Est. delivery {{ $any(order.estimatedDelivery) | date: 'd MMM' }}
                       }
                       @if (order.status === 'delivered') {
-                        · Delivered {{ order.deliveredAt | timeAgo }}
+                        · Delivered {{ $any(order.deliveredAt) | timeAgo }}
                       }
                     </span>
                   </div>

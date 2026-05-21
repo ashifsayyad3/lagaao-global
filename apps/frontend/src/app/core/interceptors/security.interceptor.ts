@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 // Enforce API-only requests and add security request headers.
 export const securityInterceptor: HttpInterceptorFn = (req, next) => {

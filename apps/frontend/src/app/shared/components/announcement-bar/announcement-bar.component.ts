@@ -9,7 +9,7 @@ import { CmsService, Announcement } from '../../../core/services/cms.service';
   selector: 'lg-announcement-bar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule],
+  imports: [MatIconModule],
   template: `
     @if (ann() && !dismissed()) {
       <div

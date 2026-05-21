@@ -1,6 +1,7 @@
 import {
   Component, Input, ChangeDetectionStrategy,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { CurrencyInrPipe } from '../../pipes/currency-inr.pipe';
@@ -10,7 +11,7 @@ import { AiProduct } from '../../../core/services/ai.service';
   selector: 'lg-product-carousel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, CurrencyInrPipe],
+  imports: [RouterLink, MatIconModule, CurrencyInrPipe, DecimalPipe],
   template: `
     <section class="py-8">
       <div class="flex justify-between items-center mb-4">

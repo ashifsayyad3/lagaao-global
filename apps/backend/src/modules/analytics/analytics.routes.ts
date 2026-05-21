@@ -1,6 +1,6 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
-import { requireRole } from '../../middleware/rbac.middleware';
+import { authorize as requireRole } from '../../middleware/rbac.middleware';
 import { ok } from '../../shared/utils/response.util';
 import * as analytics from './analytics.service';
 
@@ -46,3 +46,4 @@ router.get('/recent-orders', async (req: Request, res: Response, next: NextFunct
 });
 
 export default router;
+

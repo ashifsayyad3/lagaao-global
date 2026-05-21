@@ -145,7 +145,9 @@ app.use(errorHandler);
 // ─── Start ────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
   await connectDB();
-  await connectRedis();
+  await connectRedis().catch((err) =>
+    logger.warn('Redis unavailable — caching and sessions degraded', { err }),
+  );
   await connectES();
 
   http.listen(env.PORT, () => {

@@ -1,13 +1,13 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
-import { requireRole } from '../../middleware/rbac.middleware';
+import { authorize as requireRole } from '../../middleware/rbac.middleware';
 import { ok, created } from '../../shared/utils/response.util';
 import { apiRateLimit } from '../../middleware/rateLimit.middleware';
 import * as ai from './ai.service';
 
 const router = Router();
 
-// ─── Recently viewed (track + fetch) ─────────────────────────
+// â”€â”€â”€ Recently viewed (track + fetch) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.post('/recently-viewed/:productId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const productId = Number(req.params['productId']);
@@ -27,7 +27,7 @@ router.get('/recently-viewed', async (req: Request, res: Response, next: NextFun
   } catch (e) { next(e); }
 });
 
-// ─── Recommendations ──────────────────────────────────────────
+// â”€â”€â”€ Recommendations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.get('/recommendations/also-bought/:productId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const products = await ai.getAlsoBought(Number(req.params['productId']));
@@ -43,7 +43,7 @@ router.get('/recommendations/for-you', authenticate, async (req: Request, res: R
   } catch (e) { next(e); }
 });
 
-// ─── AI Chat ──────────────────────────────────────────────────
+// â”€â”€â”€ AI Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.post('/chat', apiRateLimit, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { messages } = req.body as { messages: ai.ChatMessage[] };
@@ -57,7 +57,7 @@ router.post('/chat', apiRateLimit, async (req: Request, res: Response, next: Nex
   } catch (e) { next(e); }
 });
 
-// ─── AI Description Generator (vendor / admin) ────────────────
+// â”€â”€â”€ AI Description Generator (vendor / admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.post(
   '/generate-description',
   authenticate,
@@ -82,3 +82,4 @@ router.post(
 );
 
 export default router;
+

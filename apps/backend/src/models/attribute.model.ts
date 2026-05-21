@@ -1,5 +1,5 @@
 import {
-  Table, Column, Model, DataType, HasMany
+  Table, Column, Model, DataType, HasMany, ForeignKey, BelongsTo,
 } from 'sequelize-typescript';
 
 @Table({ tableName: 'attributes', paranoid: false })
@@ -22,8 +22,12 @@ export class Attribute extends Model {
 
 @Table({ tableName: 'attribute_values', paranoid: false })
 export class AttributeValue extends Model {
+  @ForeignKey(() => Attribute)
   @Column({ type: DataType.INTEGER, allowNull: false })
   attributeId!: number;
+
+  @BelongsTo(() => Attribute)
+  attribute!: Attribute;
 
   @Column({ type: DataType.STRING(200), allowNull: false })
   value!: string;

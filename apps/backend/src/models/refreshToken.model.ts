@@ -1,5 +1,5 @@
 import {
-  Table, Column, Model, DataType, ForeignKey, BelongsTo, Index
+  Table, Column, Model, DataType, ForeignKey, BelongsTo,
 } from 'sequelize-typescript';
 import { User } from './user.model';
 
@@ -12,7 +12,6 @@ export class RefreshToken extends Model {
   @BelongsTo(() => User)
   user!: User;
 
-  @Index
   @Column({ type: DataType.STRING(255), allowNull: false, unique: true })
   tokenHash!: string;
 

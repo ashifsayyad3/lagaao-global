@@ -1,10 +1,10 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
-import { requireRole } from '../../middleware/rbac.middleware';
+import { authorize as requireRole } from '../../middleware/rbac.middleware';
 import { ok, created } from '../../shared/utils/response.util';
 import * as cms from './cms.service';
 
-// ─── Public router ────────────────────────────────────────────
+// â”€â”€â”€ Public router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const router = Router();
 
 // Banners
@@ -70,7 +70,7 @@ router.get('/pages/:slug', async (req: Request, res: Response, next: NextFunctio
 
 export default router;
 
-// ─── Admin router ─────────────────────────────────────────────
+// â”€â”€â”€ Admin router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const adminCmsRouter = Router();
 adminCmsRouter.use(authenticate, requireRole('admin'));
 
@@ -132,3 +132,4 @@ adminCmsRouter.patch('/pages/:id', async (req: Request, res: Response, next: Nex
 adminCmsRouter.delete('/pages/:id', async (req: Request, res: Response, next: NextFunction) => {
   try { await cms.adminDeletePage(Number(req.params['id'])); ok(res, null); } catch (e) { next(e); }
 });
+

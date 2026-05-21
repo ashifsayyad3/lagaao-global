@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(@\\(\"e:\\\\store\", \"e:\\\\JP-C\", \"e:\\\\jp\", \"e:\\\\plants\"\\) | ForEach-Object { Write-Output \"Checking: $_\"; \\(Get-ChildItem -Path $_ -Force -Recurse -ErrorAction SilentlyContinue\\).Count })",
+      "PowerShell(Get-ChildItem -Path \"e:\\\\store\\\\lagaao-platform\" -Depth 1 | Where-Object { $_.PSIsContainer } | Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"e:\\\\store\\\\lagaao-platform\\\\backend\" -Depth 1 | Where-Object { $_.PSIsContainer } | Select-Object Name)"
+    ]
+  }
+}

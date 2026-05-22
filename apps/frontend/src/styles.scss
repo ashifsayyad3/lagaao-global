@@ -49,12 +49,16 @@ $dark-theme: mat.m2-define-dark-theme((
 
 body {
   margin: 0;
-  background-color: var(--bg-base);
+  background-color: #F1F3F6;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.875rem;
+  line-height: 1.5;
   transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+.dark body {
+  background-color: var(--bg-subtle);
 }
 
 ::-webkit-scrollbar       { width: 6px; height: 6px; }

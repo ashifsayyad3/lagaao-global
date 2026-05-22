@@ -27,7 +27,7 @@ export interface GenerateDescResult {
 export class AiService {
   readonly #http = inject(HttpClient);
   readonly #cart = inject(CartService);
-  readonly #base = `${environment.apiUrl}/ai`;
+  readonly #base = `${environment.apiUrl}/api/v1/ai`;
 
   get #headers() {
     return { 'x-session-id': this.#cart.sessionId };

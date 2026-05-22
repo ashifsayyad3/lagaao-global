@@ -17,106 +17,106 @@ import { ToastService } from '../../../core/services/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, MatIconModule, CurrencyInrPipe, LazyImgDirective],
   template: `
-    <div class="group relative rounded-2xl border border-border-default bg-bg-base
-                overflow-hidden transition-all duration-300 hover:shadow-elevation-3
-                hover:-translate-y-1 hover:border-primary-200">
+    <div class="group bg-white dark:bg-[#1e2a3a] border border-[#F0F0F0] dark:border-[#2a3a4a]
+                transition-shadow duration-200 hover:shadow-fk-card-hover cursor-pointer flex flex-col">
 
-      <!-- Image container -->
-      <a [routerLink]="['/products', product.slug]" class="block relative overflow-hidden bg-surface-100 aspect-square">
+      <!-- Image -->
+      <a [routerLink]="['/products', product.slug]"
+         class="block relative overflow-hidden bg-white dark:bg-[#16213e] aspect-square p-4">
         <img
           [lgLazy]="productSvc.getPrimaryImage(product)"
           [alt]="product.name"
-          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
 
         <!-- Discount badge -->
         @if (discountPct > 0) {
-          <span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            -{{ discountPct }}%
+          <span class="absolute top-2 left-2 bg-[#FF6161] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-sm">
+            {{ discountPct }}% off
           </span>
         }
 
         <!-- Out of stock overlay -->
         @if (isOutOfStock) {
-          <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span class="bg-white text-gray-900 text-xs font-semibold px-3 py-1 rounded-full">
+          <div class="absolute inset-0 bg-white/70 flex items-center justify-center">
+            <span class="text-gray-600 text-xs font-semibold border border-gray-400 px-3 py-1 rounded-sm">
               Out of Stock
             </span>
           </div>
         }
 
-        <!-- Wishlist button -->
+        <!-- Wishlist -->
         <button
-          class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm
-                 flex items-center justify-center opacity-0 group-hover:opacity-100
-                 transition-all duration-200 hover:bg-white hover:scale-110"
+          class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white shadow flex items-center justify-center
+                 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
           (click)="toggleWishlist($event)"
-          [attr.aria-label]="wishlisted() ? 'Remove from wishlist' : 'Add to wishlist'"
         >
-          <mat-icon class="!text-lg" [class.text-red-500]="wishlisted()">
+          <mat-icon class="!text-base" [class.text-red-500]="wishlisted()">
             {{ wishlisted() ? 'favorite' : 'favorite_border' }}
           </mat-icon>
         </button>
       </a>
 
-      <!-- Info -->
-      <div class="p-3">
-        @if (product.brand) {
-          <p class="text-xs text-text-muted uppercase tracking-wide mb-1 font-medium">
-            {{ product.brand.name }}
-          </p>
-        }
-
+      <!-- Info section -->
+      <div class="px-3 pb-3 pt-2 flex flex-col gap-1 flex-1">
         <a [routerLink]="['/products', product.slug]"
-           class="block font-medium text-sm text-text-primary leading-snug mb-2 line-clamp-2
+           class="text-sm text-[#212121] dark:text-gray-200 font-medium leading-snug line-clamp-2
                   hover:text-primary-600 transition-colors">
           {{ product.name }}
         </a>
 
-        <!-- Rating -->
+        <!-- Rating badge + count -->
         @if (product.reviewCount > 0) {
-          <div class="flex items-center gap-1 mb-2">
-            <div class="flex">
-              @for (i of stars; track i) {
-                <mat-icon class="!text-xs text-amber-400">{{ i <= product.rating ? 'star' : 'star_border' }}</mat-icon>
-              }
-            </div>
-            <span class="text-xs text-text-muted">({{ product.reviewCount }})</span>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="inline-flex items-center gap-0.5 bg-[#388E3C] text-white text-xs font-bold px-1.5 py-0.5 rounded-sm">
+              {{ product.rating }}
+              <mat-icon class="!text-[10px]">star</mat-icon>
+            </span>
+            <span class="text-xs text-[#878787]">{{ formatCount(product.reviewCount) }}</span>
           </div>
         }
 
         <!-- Price row -->
-        <div class="flex items-center justify-between gap-2 mt-auto">
-          <div class="flex items-baseline gap-1.5 flex-wrap">
-            <span class="font-bold text-text-primary">
-              {{ effectivePrice | currencyInr }}
+        <div class="flex items-baseline gap-1.5 flex-wrap mt-1">
+          <span class="text-base font-bold text-[#212121] dark:text-white">
+            {{ effectivePrice | currencyInr }}
+          </span>
+          @if (product.salePrice) {
+            <span class="text-xs text-[#878787] line-through">
+              {{ product.basePrice | currencyInr }}
             </span>
-            @if (product.salePrice) {
-              <span class="text-xs text-text-muted line-through">
-                {{ product.basePrice | currencyInr }}
-              </span>
-            }
-          </div>
-
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                   bg-primary-600 hover:bg-primary-700 text-white transition-colors
-                   disabled:opacity-50 disabled:cursor-not-allowed"
-            [disabled]="isOutOfStock"
-            (click)="addToCart($event)"
-            aria-label="Add to cart"
-          >
-            <mat-icon class="!text-base">add_shopping_cart</mat-icon>
-          </button>
+            <span class="text-xs text-[#388E3C] font-medium">{{ discountPct }}% off</span>
+          }
         </div>
+
+        <!-- Free delivery tag -->
+        <p class="text-[11px] text-[#388E3C] font-medium flex items-center gap-0.5 mt-0.5">
+          <mat-icon class="!text-xs">local_shipping</mat-icon>
+          Free delivery
+        </p>
 
         <!-- Low stock -->
         @if (isLowStock) {
-          <p class="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
-            <mat-icon class="!text-xs">warning</mat-icon>
+          <p class="text-[11px] text-[#FF9F00] font-medium flex items-center gap-0.5">
+            <mat-icon class="!text-xs">timer</mat-icon>
             Only a few left
           </p>
         }
+
+        <!-- Add to cart button -->
+        <button
+          class="mt-2 w-full py-2 rounded-sm text-xs font-bold uppercase tracking-wide
+                 transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                 flex items-center justify-center gap-1.5"
+          [class]="isOutOfStock
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-[#FF9F00] hover:bg-[#F7931E] text-white'"
+          [disabled]="isOutOfStock"
+          (click)="addToCart($event)"
+        >
+          <mat-icon class="!text-sm">add_shopping_cart</mat-icon>
+          {{ isOutOfStock ? 'Out of Stock' : 'Add to Cart' }}
+        </button>
       </div>
     </div>
   `,
@@ -129,7 +129,6 @@ export class ProductCardComponent {
   readonly #toast     = inject(ToastService);
 
   readonly wishlisted = signal(false);
-
   readonly stars = [1, 2, 3, 4, 5];
 
   get effectivePrice(): number {
@@ -150,12 +149,15 @@ export class ProductCardComponent {
     return this.product.variants?.some(v => v.inventory?.isLowStock) ?? false;
   }
 
+  formatCount(n: number): string {
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}k ratings`;
+    return `${n} ratings`;
+  }
+
   toggleWishlist(e: Event): void {
     e.preventDefault();
     this.wishlisted.update(v => !v);
-    this.#toast.success(
-      this.wishlisted() ? 'Added to wishlist' : 'Removed from wishlist',
-    );
+    this.#toast.success(this.wishlisted() ? 'Added to wishlist' : 'Removed from wishlist');
   }
 
   addToCart(e: Event): void {

@@ -7,35 +7,43 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand palette
+        // Flipkart-style brand palette
         primary: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50:  '#e8f0fe',
+          100: '#c5d8fd',
+          200: '#9fbcfb',
+          300: '#6f9bf7',
+          400: '#4a7ef4',
+          500: '#2874F0',  // Flipkart blue
+          600: '#1a66e0',
+          700: '#1254c4',
+          800: '#0d42a0',
+          900: '#082e7a',
+          950: '#041b52',
         },
         accent: {
-          DEFAULT: '#f97316',
-          light:   '#fed7aa',
-          dark:    '#c2410c',
+          DEFAULT: '#FB641B',  // Flipkart orange
+          light:   '#fde8d8',
+          dark:    '#e0530d',
         },
-        success:  '#22c55e',
-        warning:  '#f59e0b',
-        error:    '#ef4444',
-        info:     '#06b6d4',
+        fk: {
+          yellow:  '#FFE500',
+          green:   '#388E3C',
+          red:     '#FF6161',
+          grey:    '#F1F3F6',
+          text:    '#212121',
+          muted:   '#878787',
+          border:  '#F0F0F0',
+        },
+        success:  '#388E3C',
+        warning:  '#FF9F00',
+        error:    '#FF6161',
+        info:     '#2874F0',
 
-        // Surface (dark mode)
         surface: {
-          50:  '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
+          50:  '#F1F3F6',
+          100: '#e8eaf0',
+          200: '#dde0e8',
           800: '#1e293b',
           900: '#0f172a',
           950: '#020617',
@@ -57,11 +65,12 @@ module.exports = {
       },
 
       boxShadow: {
-        'glass':      '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        'fk-card':    '0 2px 4px 0 rgba(0,0,0,.08)',
+        'fk-card-hover': '0 4px 16px 0 rgba(40,116,240,.18)',
         'elevation-1': '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
         'elevation-2': '0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12)',
         'elevation-3': '0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10)',
+        'glass':      '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
       },
 
       backdropBlur: {

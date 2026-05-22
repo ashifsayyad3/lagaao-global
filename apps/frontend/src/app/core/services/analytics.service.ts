@@ -27,7 +27,7 @@ export interface RecentOrder { id: number; orderNumber: string; total: number; s
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
   readonly #http = inject(HttpClient);
-  readonly #base = `${environment.apiUrl}/admin/analytics`;
+  readonly #base = `${environment.apiUrl}/api/v1/admin/analytics`;
 
   getSummary() {
     return this.#http.get<{ success: boolean; data: AnalyticsSummary }>(`${this.#base}/summary`);

@@ -60,8 +60,5 @@ export {
 
 export async function connectDB(): Promise<void> {
   await sequelize.authenticate();
-  if (env.NODE_ENV !== 'production') {
-    await sequelize.sync({ alter: true });
-  }
   logger.info(`MySQL connected — ${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`);
 }

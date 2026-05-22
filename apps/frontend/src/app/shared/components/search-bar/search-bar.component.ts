@@ -16,10 +16,7 @@ import { SearchService } from '../../../core/services/search.service';
   imports: [FormsModule, MatIconModule],
   template: `
     <div class="relative w-full" #container>
-      <div class="flex items-center gap-2 h-10 px-3 rounded-xl border border-border-default
-                  bg-surface-50 focus-within:border-primary-400 focus-within:ring-2
-                  focus-within:ring-primary-100 transition-all">
-        <mat-icon class="!text-lg text-text-muted flex-shrink-0">search</mat-icon>
+      <div class="flex items-center h-10 bg-white overflow-hidden shadow-sm">
         <input
           [(ngModel)]="query"
           (ngModelChange)="onQueryChange($event)"
@@ -28,22 +25,26 @@ import { SearchService } from '../../../core/services/search.service';
           (keydown.arrowUp)="moveFocus(-1)"
           (keydown.escape)="closeDropdown()"
           (focus)="onFocus()"
-          placeholder="Search products, brands, categories…"
-          class="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-muted"
+          placeholder="Search for products, brands and more"
+          class="flex-1 outline-none text-sm text-[#212121] placeholder:text-[#878787] px-4 h-full bg-white"
           autocomplete="off"
           spellcheck="false"
         />
         @if (query.length > 0) {
-          <button (click)="clear()" class="flex-shrink-0 text-text-muted hover:text-text-primary transition-colors">
+          <button (click)="clear()" class="px-2 text-[#878787] hover:text-[#212121] transition-colors">
             <mat-icon class="!text-base">close</mat-icon>
           </button>
         }
+        <button (click)="submitSearch()"
+                class="h-full px-4 bg-[#2874F0] hover:bg-[#1a66e0] transition-colors flex items-center justify-center">
+          <mat-icon class="!text-xl text-white">search</mat-icon>
+        </button>
       </div>
 
       <!-- Dropdown -->
       @if (showDropdown()) {
-        <div class="absolute top-full left-0 right-0 mt-1 bg-bg-base border border-border-default
-                    rounded-xl shadow-elevation-3 overflow-hidden z-50 max-h-80 overflow-y-auto">
+        <div class="absolute top-full left-0 right-0 mt-0.5 bg-white border border-[#F0F0F0]
+                    shadow-elevation-3 overflow-hidden z-50 max-h-80 overflow-y-auto">
 
           <!-- Suggestions -->
           @if (suggestions().length > 0) {

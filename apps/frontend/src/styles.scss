@@ -7,8 +7,9 @@
 
 @include mat.core();
 
-$lagaao-primary: mat.m2-define-palette(mat.$m2-blue-palette, 600, 400, 800);
-$lagaao-accent:  mat.m2-define-palette(mat.$m2-orange-palette, 500, 300, 700);
+// Forest green Material theme
+$lagaao-primary: mat.m2-define-palette(mat.$m2-green-palette, 800, 600, 900);
+$lagaao-accent:  mat.m2-define-palette(mat.$m2-deep-orange-palette, 600, 400, 800);
 $lagaao-warn:    mat.m2-define-palette(mat.$m2-red-palette);
 
 $light-theme: mat.m2-define-light-theme((
@@ -18,7 +19,7 @@ $light-theme: mat.m2-define-light-theme((
     warn:    $lagaao-warn,
   ),
   typography: mat.m2-define-typography-config(
-    $font-family: 'Inter, system-ui, sans-serif',
+    $font-family: '"DM Sans", system-ui, sans-serif',
   ),
   density: 0,
 ));
@@ -32,10 +33,7 @@ $dark-theme: mat.m2-define-dark-theme((
 ));
 
 @include mat.all-component-themes($light-theme);
-
-.dark {
-  @include mat.all-component-colors($dark-theme);
-}
+.dark { @include mat.all-component-colors($dark-theme); }
 
 // ─── Tailwind ─────────────────────────────────────────────────
 @tailwind base;
@@ -43,83 +41,178 @@ $dark-theme: mat.m2-define-dark-theme((
 @tailwind utilities;
 
 // ─── Base resets ──────────────────────────────────────────────
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background-color: #F1F3F6;
+  background-color: var(--bg-subtle);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  transition: background-color var(--transition-normal), color var(--transition-normal);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark body {
-  background-color: var(--bg-subtle);
-}
-
+// ─── Scrollbar ────────────────────────────────────────────────
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-sage); }
 
+// ─── Focus ────────────────────────────────────────────────────
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-muted) 25%,
-    var(--bg-subtle) 50%,
-    var(--bg-muted) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.6s linear infinite;
-  border-radius: var(--radius-md);
-}
-
+// ─── Utilities ────────────────────────────────────────────────
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+// ─── Typography helpers ───────────────────────────────────────
+.font-display { font-family: var(--font-display) !important; }
+
+.heading-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.heading-lg {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.heading-md {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+// ─── Gradient text ────────────────────────────────────────────
+.gradient-text-green {
+  background: linear-gradient(135deg, #3d6b45, #7a9e7e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-// ─── Reusable card ────────────────────────────────────────────
-.card {
+// ─── Skeleton shimmer ─────────────────────────────────────────
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--linen) 25%,
+    var(--cream) 50%,
+    var(--linen) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// ─── Card patterns ────────────────────────────────────────────
+.plant-card {
   background: var(--bg-base);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-}
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 300ms var(--ease-out), transform 300ms var(--ease-out);
 
-.card-hover {
-  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
   &:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
   }
 }
 
-// ─── Shadow elevation aliases ─────────────────────────────────
-.shadow-elevation-1 { box-shadow: var(--shadow-sm); }
-.shadow-elevation-2 { box-shadow: var(--shadow-md); }
-.shadow-elevation-3 { box-shadow: var(--shadow-lg); }
-.shadow-elevation-4 { box-shadow: var(--shadow-xl); }
-.shadow-card-hover  { box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+// ─── Section wrappers ─────────────────────────────────────────
+.section-cream { background-color: var(--cream); }
+.section-linen { background-color: var(--linen); }
+.section-white { background-color: var(--bg-base); }
 
-// ─── Material Icons display fix ───────────────────────────────
+// ─── Btn overrides ────────────────────────────────────────────
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .625rem 1.5rem;
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: .875rem;
+  letter-spacing: .02em;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: background var(--duration-fast) ease, transform var(--duration-fast) ease,
+              box-shadow var(--duration-fast) ease;
+
+  &:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(61,107,69,.3);
+  }
+  &:active { transform: translateY(0); }
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .5625rem 1.5rem;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  font-weight: 600;
+  font-size: .875rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+
+  &:hover {
+    background: var(--color-primary-50);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-terracotta {
+  @extend .btn-primary;
+  background: var(--color-accent);
+  &:hover { background: var(--color-accent-dark); box-shadow: 0 4px 14px rgba(200,96,58,.3); }
+}
+
+// ─── Material Icons ───────────────────────────────────────────
 .mat-icon {
   font-family: 'Material Icons', 'Material Icons Outlined' !important;
   font-feature-settings: 'liga';
@@ -128,7 +221,54 @@ body {
   align-items: center;
   justify-content: center;
   vertical-align: middle;
+  user-select: none;
 }
 
-// ─── Announcement bar offset for fixed navbar ─────────────────
-.announcement-offset { scroll-margin-top: 4rem; }
+// ─── Shadow aliases ───────────────────────────────────────────
+.shadow-elevation-1 { box-shadow: var(--shadow-xs); }
+.shadow-elevation-2 { box-shadow: var(--shadow-sm); }
+.shadow-elevation-3 { box-shadow: var(--shadow-md); }
+.shadow-elevation-4 { box-shadow: var(--shadow-lg); }
+
+// ─── Divider with text ────────────────────────────────────────
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-size: .8125rem;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+  }
+}
+
+// ─── Badge ────────────────────────────────────────────────────
+.badge-green {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .2rem .6rem;
+  background: var(--color-primary-100);
+  color: var(--color-primary-dark);
+  font-size: .75rem;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+}
+
+.badge-terracotta {
+  @extend .badge-green;
+  background: rgba(200, 96, 58, .12);
+  color: var(--color-accent-dark);
+}
+
+// ─── Prose overrides for blog ─────────────────────────────────
+.prose {
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-body: var(--text-secondary);
+  font-family: var(--font-sans);
+  h1, h2, h3 { font-family: var(--font-display); }
+}

@@ -41,7 +41,7 @@ export class AnnouncementBarComponent implements OnInit {
       info:    'bg-blue-600 text-white',
       warning: 'bg-amber-500 text-black',
       success: 'bg-green-600 text-white',
-      promo:   'bg-gradient-to-r from-primary-600 to-accent text-white',
+      promo:   'bg-gradient-to-r from-primary-700 to-primary-500 text-white',
     };
     return map[this.ann()?.type ?? 'info'];
   };

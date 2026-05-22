@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { SkeletonCardComponent } from '../../shared/components/skeleton/skeleton.component';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
-import { NewsletterComponent } from '../../shared/components/newsletter/newsletter.component';
 import { ProductCarouselComponent } from '../../shared/components/product-carousel/product-carousel.component';
 import { CmsService, Banner } from '../../core/services/cms.service';
 import { AiService, AiProduct } from '../../core/services/ai.service';
@@ -13,132 +12,195 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'lg-home',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink, MatIconModule,
-    SkeletonCardComponent, CurrencyInrPipe,
-    NewsletterComponent, ProductCarouselComponent,
-  ],
+  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent],
   template: `
 
-    <!-- ─── Hero / Banner Slider ──────────────────────────────── -->
-    @if (heroBanners().length > 0) {
-      <section class="relative overflow-hidden bg-[#F1F3F6]">
-        <div class="flex transition-transform duration-500"
-             [style.transform]="'translateX(-' + activeBanner() * 100 + '%)'">
-          @for (banner of heroBanners(); track banner.id) {
-            <div class="relative min-w-full h-[280px] md:h-[380px] flex-shrink-0 overflow-hidden"
-                 [style.background-color]="banner.bgColor ?? '#2874F0'">
-              @if (banner.image) {
-                <img [src]="banner.image" [alt]="banner.title"
-                     class="absolute inset-0 w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent"></div>
+    <!-- ═══════════════════════════════════════════════════════
+         HERO SLIDER
+    ═══════════════════════════════════════════════════════ -->
+    <section class="relative overflow-hidden bg-[#f0f7f1]">
+      @if (heroBanners().length > 0) {
+        <!-- API banner -->
+        <div class="relative min-h-[480px] md:min-h-[560px] flex items-center"
+             [style.background-color]="heroBanners()[activeBanner()].bgColor ?? '#e8f4ea'">
+          @if (heroBanners()[activeBanner()].image) {
+            <img [src]="heroBanners()[activeBanner()].image"
+                 [alt]="heroBanners()[activeBanner()].title"
+                 class="absolute inset-0 w-full h-full object-cover" />
+            <div class="absolute inset-0 bg-gradient-to-r from-primary-900/70 via-primary-900/30 to-transparent"></div>
+          }
+          <div class="relative z-10 max-w-screen-xl mx-auto px-6 py-16">
+            <div class="max-w-lg">
+              <p class="text-primary-200 text-sm font-medium tracking-widest uppercase mb-3">
+                {{ heroBanners()[activeBanner()].subtitle ?? 'New Collection' }}
+              </p>
+              <h1 class="font-display text-4xl md:text-6xl font-semibold text-white leading-tight mb-5">
+                {{ heroBanners()[activeBanner()].title }}
+              </h1>
+              @if (heroBanners()[activeBanner()].link) {
+                <a [href]="heroBanners()[activeBanner()].link"
+                   class="btn-primary inline-flex text-base px-8 py-3.5">
+                  {{ heroBanners()[activeBanner()].ctaLabel ?? 'Shop Now' }}
+                  <mat-icon class="!text-base">arrow_forward</mat-icon>
+                </a>
               }
-              <div class="absolute inset-0 flex items-center px-8 md:px-16">
-                <div class="max-w-md text-white">
-                  <h2 class="font-display text-3xl md:text-4xl font-bold leading-tight mb-2">{{ banner.title }}</h2>
-                  @if (banner.subtitle) {
-                    <p class="text-white/80 text-base mb-4">{{ banner.subtitle }}</p>
-                  }
-                  @if (banner.link) {
-                    <a [href]="banner.link"
-                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FB641B] hover:bg-[#e0530d]
-                              text-white font-bold text-sm rounded-sm transition-colors">
-                      {{ banner.ctaLabel ?? 'Shop Now' }}
-                      <mat-icon class="!text-sm">arrow_forward</mat-icon>
-                    </a>
-                  }
+            </div>
+          </div>
+          <!-- Slide nav dots -->
+          @if (heroBanners().length > 1) {
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              @for (b of heroBanners(); track b.id; let i = $index) {
+                <button (click)="activeBanner.set(i)"
+                        class="rounded-full transition-all duration-300"
+                        [class]="i === activeBanner()
+                          ? 'w-8 h-2 bg-white'
+                          : 'w-2 h-2 bg-white/40 hover:bg-white/70'">
+                </button>
+              }
+            </div>
+            <button (click)="prevBanner()"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+                           bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white
+                           flex items-center justify-center transition-all">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button (click)="nextBanner()"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+                           bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white
+                           flex items-center justify-center transition-all">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- Default editorial hero -->
+        <div class="relative min-h-[520px] md:min-h-[620px] flex items-center overflow-hidden"
+             style="background: linear-gradient(135deg, #1e3a23 0%, #2d5535 40%, #3d6b45 100%)">
+
+          <!-- Decorative leaf circles -->
+          <div class="absolute -right-24 -top-24 w-96 h-96 rounded-full opacity-10"
+               style="background: radial-gradient(circle, #7a9e7e, transparent)"></div>
+          <div class="absolute right-32 bottom-0 w-64 h-64 rounded-full opacity-10"
+               style="background: radial-gradient(circle, #a8c4ab, transparent)"></div>
+          <div class="absolute -left-16 top-1/2 w-48 h-48 rounded-full opacity-10"
+               style="background: radial-gradient(circle, #5a8f64, transparent)"></div>
+
+          <div class="relative z-10 max-w-screen-xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Left text -->
+            <div class="animate-fade-up">
+              <span class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm
+                           text-primary-100 text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-white/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse"></span>
+                10,000+ Happy Plant Parents
+              </span>
+
+              <h1 class="font-display text-white leading-[1.1] mb-5"
+                  style="font-size: clamp(2.4rem, 5.5vw, 4rem); font-weight: 600;">
+                Bring Nature<br>
+                <em class="not-italic text-green-300">Home.</em>
+              </h1>
+
+              <p class="text-primary-200 text-lg leading-relaxed mb-8 max-w-md">
+                Handpicked indoor plants, rare varieties, gardening essentials — delivered fresh to your door
+                with our expert care guarantee.
+              </p>
+
+              <div class="flex flex-wrap gap-3 mb-10">
+                <a routerLink="/products" [queryParams]="{ category: 'plants' }"
+                   class="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-primary-700
+                          font-semibold rounded-full hover:bg-primary-50 transition-all
+                          shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm">
+                  <mat-icon class="!text-base">local_florist</mat-icon>
+                  Shop Plants
+                </a>
+                <a routerLink="/products" [queryParams]="{ category: 'plant-care' }"
+                   class="inline-flex items-center gap-2 px-7 py-3.5 border border-white/40
+                          text-white font-medium rounded-full hover:bg-white/10 transition-all text-sm">
+                  Plant Care
+                  <mat-icon class="!text-base">arrow_forward</mat-icon>
+                </a>
+              </div>
+
+              <!-- Trust pills -->
+              <div class="flex flex-wrap gap-3">
+                @for (trust of trustPills; track trust.label) {
+                  <div class="flex items-center gap-1.5 text-xs text-primary-200">
+                    <mat-icon class="!text-sm text-green-300">{{ trust.icon }}</mat-icon>
+                    {{ trust.label }}
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Right — featured plant card -->
+            <div class="hidden lg:flex justify-center items-center animate-fade-up"
+                 style="animation-delay: 150ms">
+              <div class="relative">
+                <!-- Card glow -->
+                <div class="absolute inset-0 rounded-3xl blur-2xl opacity-30 scale-95"
+                     style="background: linear-gradient(135deg, #7a9e7e, #3d6b45)"></div>
+
+                <div class="relative bg-white rounded-3xl overflow-hidden w-80 shadow-2xl">
+                  <div class="h-64 bg-primary-50 relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1545241047-6083a3684587?w=600&h=600&fit=crop&crop=center"
+                         alt="Money Plant"
+                         class="w-full h-full object-cover" />
+                    <span class="absolute top-3 left-3 bg-terracotta-500 text-white text-xs
+                                 font-bold px-3 py-1 rounded-full">Bestseller</span>
+                    <span class="absolute top-3 right-3 bg-white text-primary-600 text-xs
+                                 font-bold px-2 py-1 rounded-full shadow">🌿 Easy Care</span>
+                  </div>
+                  <div class="p-5">
+                    <p class="text-xs text-sage-500 font-semibold uppercase tracking-widest mb-1">
+                      Epipremnum aureum
+                    </p>
+                    <h3 class="font-display text-lg font-semibold text-primary-900 mb-1">
+                      Golden Money Plant
+                    </h3>
+                    <div class="flex items-center gap-1 mb-3">
+                      @for (i of [1,2,3,4,5]; track i) {
+                        <mat-icon class="!text-xs text-amber-400">star</mat-icon>
+                      }
+                      <span class="text-xs text-stone ml-1">(2.4k reviews)</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <span class="font-bold text-xl text-primary-800">{{ 299 | currencyInr }}</span>
+                        <span class="text-sm text-stone line-through ml-2">{{ 499 | currencyInr }}</span>
+                      </div>
+                      <button class="btn-primary text-xs px-4 py-2">Add to Cart</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          }
-        </div>
-        <!-- Chevrons -->
-        @if (heroBanners().length > 1) {
-          <button class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-16 bg-white/90 flex items-center
-                         justify-center shadow hover:bg-white transition-colors"
-                  (click)="prevBanner()">
-            <mat-icon class="text-gray-700">chevron_left</mat-icon>
-          </button>
-          <button class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-16 bg-white/90 flex items-center
-                         justify-center shadow hover:bg-white transition-colors"
-                  (click)="nextBanner()">
-            <mat-icon class="text-gray-700">chevron_right</mat-icon>
-          </button>
-          <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            @for (b of heroBanners(); track b.id; let i = $index) {
-              <button class="h-1.5 rounded-full transition-all"
-                      [class]="i === activeBanner() ? 'w-6 bg-white' : 'w-1.5 bg-white/50'"
-                      (click)="activeBanner.set(i)"></button>
-            }
-          </div>
-        }
-      </section>
-    } @else {
-      <!-- Default hero -->
-      <section class="bg-gradient-to-r from-[#2874F0] to-[#1254c4] py-8 md:py-14">
-        <div class="max-w-screen-2xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-8 items-center">
-          <div class="text-white">
-            <div class="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold
-                        px-3 py-1 rounded-full mb-4">
-              <mat-icon class="!text-sm">auto_awesome</mat-icon>
-              AI-Powered Shopping
-            </div>
-            <h1 class="font-display text-3xl md:text-5xl font-bold leading-tight mb-4">
-              Shop Smarter.<br><span class="text-yellow-300">Save Bigger.</span>
-            </h1>
-            <p class="text-white/80 text-base mb-6 max-w-md">
-              Millions of products. Genuine sellers. AI that finds exactly what you need.
-            </p>
-            <a routerLink="/products"
-               class="inline-flex items-center gap-2 px-6 py-3 bg-[#FB641B] hover:bg-[#e0530d]
-                      text-white font-bold text-sm rounded-sm transition-colors">
-              Shop Now <mat-icon class="!text-sm">arrow_forward</mat-icon>
-            </a>
-            <div class="mt-8 flex flex-wrap gap-5 text-sm text-white/70">
-              <span class="flex items-center gap-1"><mat-icon class="!text-base text-green-300">verified</mat-icon> 100% Genuine</span>
-              <span class="flex items-center gap-1"><mat-icon class="!text-base text-green-300">local_shipping</mat-icon> Free Delivery</span>
-              <span class="flex items-center gap-1"><mat-icon class="!text-base text-green-300">replay</mat-icon> Easy Returns</span>
-              <span class="flex items-center gap-1"><mat-icon class="!text-base text-green-300">lock</mat-icon> Secure Pay</span>
-            </div>
-          </div>
-          <div class="hidden md:flex justify-end">
-            <div class="bg-white rounded-lg shadow-xl p-5 w-72">
-              <img src="https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&h=280&fit=crop"
-                   alt="Featured product" class="w-full h-44 object-cover rounded mb-3" />
-              <p class="text-xs text-[#2874F0] font-semibold mb-1">SONY</p>
-              <p class="text-sm font-bold text-[#212121] leading-snug">Sony WH-1000XM5 Headphones</p>
-              <div class="flex items-center gap-1.5 mt-1.5">
-                <span class="bg-[#388E3C] text-white text-xs font-bold px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-                  4.5 <mat-icon class="!text-[10px]">star</mat-icon>
-                </span>
-                <span class="text-xs text-[#878787]">2.3k ratings</span>
-              </div>
-              <div class="flex items-baseline gap-2 mt-2">
-                <span class="font-bold text-[#212121]">{{ 24990 | currencyInr }}</span>
-                <span class="text-xs text-[#878787] line-through">{{ 29990 | currencyInr }}</span>
-                <span class="text-xs text-[#388E3C] font-semibold">17% off</span>
-              </div>
-            </div>
           </div>
         </div>
-      </section>
-    }
+      }
+    </section>
 
-    <!-- ─── Category Tiles (Flipkart grid) ────────────────────── -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-      <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card">
-        <div class="flex overflow-x-auto hide-scrollbar">
-          @for (cat of categories; track cat.label) {
+    <!-- ═══════════════════════════════════════════════════════
+         SHOP BY CATEGORY — icon grid
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-white">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="text-center mb-10">
+          <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-2">Browse</p>
+          <h2 class="section-title">Shop by Category</h2>
+        </div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+          @for (cat of shopCategories; track cat.label) {
             <a [routerLink]="['/products']" [queryParams]="{ category: cat.slug }"
-               class="flex flex-col items-center gap-2 px-4 py-4 flex-shrink-0 group
-                      hover:text-primary-600 transition-colors min-w-[80px] md:min-w-[100px]
-                      border-b-2 border-transparent hover:border-primary-500">
-              <div class="w-14 h-14 rounded-full overflow-hidden bg-[#F1F3F6] flex items-center justify-center text-2xl
-                          group-hover:shadow-md transition-shadow">
+               class="flex flex-col items-center gap-2.5 p-3 rounded-2xl group cursor-pointer
+                      hover:bg-primary-50 transition-all duration-200 hover:-translate-y-1">
+              <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl
+                          shadow-warm-sm group-hover:shadow-warm-md transition-all duration-200"
+                   [style.background]="cat.bg">
                 {{ cat.emoji }}
               </div>
-              <span class="text-xs font-medium text-[#212121] dark:text-gray-300 group-hover:text-primary-600
-                           text-center leading-tight whitespace-nowrap">
+              <span class="text-xs font-medium text-text-secondary group-hover:text-primary-600
+                           text-center leading-tight transition-colors">
                 {{ cat.label }}
               </span>
             </a>
@@ -147,159 +209,329 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
     </section>
 
-    <!-- ─── Flash Sale / Deal Strip ───────────────────────────── -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-      <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card">
-        <!-- Header -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#F0F0F0]">
-          <div class="flex items-center gap-3">
-            <h2 class="font-display text-xl font-bold text-[#212121] dark:text-white">Deal of the Day</h2>
-            <div class="flex items-center gap-1 text-[#FB641B] text-sm font-semibold">
-              <mat-icon class="!text-base">timer</mat-icon>
-              <span>Ends in </span>
-              <span class="bg-[#212121] text-white text-xs font-mono px-1.5 py-0.5 rounded">{{ dealTimer() }}</span>
-            </div>
+    <!-- ═══════════════════════════════════════════════════════
+         HERO BANNER STRIP — two promo cards
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-6 bg-[var(--bg-subtle)]">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-4">
+        <!-- Promo 1 -->
+        <div class="relative overflow-hidden rounded-2xl min-h-[180px] flex items-center px-8
+                    bg-gradient-to-br from-[#1e3a23] to-[#3d6b45]">
+          <div class="relative z-10">
+            <p class="text-green-300 text-xs font-semibold uppercase tracking-widest mb-1">
+              Low Maintenance
+            </p>
+            <h3 class="font-display text-white text-2xl font-semibold mb-3">
+              Plants for<br>Busy People
+            </h3>
+            <a routerLink="/products" [queryParams]="{ category: 'low-maintenance' }"
+               class="inline-flex items-center gap-1.5 text-sm font-semibold text-white
+                      bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all">
+              Explore <mat-icon class="!text-sm">arrow_forward</mat-icon>
+            </a>
           </div>
-          <a routerLink="/products" class="text-primary-500 text-sm font-bold hover:text-primary-700 uppercase
-                                           tracking-wide flex items-center gap-0.5">
-            View All <mat-icon class="!text-base">chevron_right</mat-icon>
-          </a>
+          <div class="absolute -right-4 -bottom-4 text-[120px] opacity-20 leading-none select-none">
+            🪴
+          </div>
         </div>
 
-        <!-- Deal product grid (skeletons until loaded) -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 divide-x divide-y divide-[#F0F0F0]">
-          @for (i of [1,2,3,4,5,6]; track i) {
+        <!-- Promo 2 -->
+        <div class="relative overflow-hidden rounded-2xl min-h-[180px] flex items-center px-8"
+             style="background: linear-gradient(135deg, #5c2817, #a04828)">
+          <div class="relative z-10">
+            <p class="text-orange-200 text-xs font-semibold uppercase tracking-widest mb-1">
+              Gift a Garden
+            </p>
+            <h3 class="font-display text-white text-2xl font-semibold mb-3">
+              Plant Gift<br>Hampers
+            </h3>
+            <a routerLink="/products" [queryParams]="{ category: 'gifts-combos' }"
+               class="inline-flex items-center gap-1.5 text-sm font-semibold text-white
+                      bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all">
+              Shop Gifts <mat-icon class="!text-sm">arrow_forward</mat-icon>
+            </a>
+          </div>
+          <div class="absolute -right-4 -bottom-4 text-[120px] opacity-20 leading-none select-none">
+            🎁
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         BESTSELLERS
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-white">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Top Picks</p>
+            <h2 class="section-title">Bestselling Plants</h2>
+          </div>
+          <a routerLink="/products" [queryParams]="{ sort: 'popular' }"
+             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
+                    hover:text-primary-700 transition-colors">
+            View all <mat-icon class="!text-base">east</mat-icon>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          @for (i of [1,2,3,4,5]; track i) {
             <lg-skeleton-card></lg-skeleton-card>
           }
         </div>
       </div>
     </section>
 
-    <!-- ─── Mid Banners (2-col) ───────────────────────────────── -->
-    @if (midBanners().length > 0) {
-      <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-        <div class="grid sm:grid-cols-2 gap-3">
-          @for (banner of midBanners().slice(0, 2); track banner.id) {
-            <a [href]="banner.link ?? '#'"
-               class="relative overflow-hidden h-36 md:h-44 flex items-end p-5 shadow-fk-card"
-               [style.background-color]="banner.bgColor ?? '#2874F0'">
-              @if (banner.image) {
-                <img [src]="banner.image" [alt]="banner.title"
-                     class="absolute inset-0 w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-black/30"></div>
-              }
-              <div class="relative z-10">
-                <p class="font-bold text-white text-lg leading-tight">{{ banner.title }}</p>
-                @if (banner.ctaLabel) {
-                  <span class="text-xs text-white/80 mt-1 inline-block">{{ banner.ctaLabel }} →</span>
-                }
+    <!-- ═══════════════════════════════════════════════════════
+         NEW ARRIVALS — horizontal scroll carousel
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-[var(--bg-subtle)]">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Fresh Stock</p>
+            <h2 class="section-title">New Arrivals</h2>
+          </div>
+          <a routerLink="/products" [queryParams]="{ sort: 'newest' }"
+             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
+                    hover:text-primary-700 transition-colors">
+            View all <mat-icon class="!text-base">east</mat-icon>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          @for (i of [1,2,3,4]; track i) {
+            <lg-skeleton-card></lg-skeleton-card>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         WHY LAGAAO — trust section
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-16 bg-primary-800">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="text-center mb-12">
+          <h2 class="font-display text-3xl font-semibold text-white mb-3">
+            Why Plant Parents Love Lagaao
+          </h2>
+          <p class="text-primary-300 max-w-lg mx-auto">
+            We grow happy, healthy plants and ship them with care — straight to your home.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          @for (feat of whyUs; track feat.title) {
+            <div class="flex flex-col items-center text-center p-6 rounded-2xl
+                        bg-white/5 hover:bg-white/10 border border-white/10
+                        transition-all duration-300 group hover:-translate-y-1">
+              <div class="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center
+                          mb-4 group-hover:bg-terracotta-500 transition-colors text-2xl">
+                {{ feat.emoji }}
+              </div>
+              <h4 class="font-semibold text-white text-sm mb-2">{{ feat.title }}</h4>
+              <p class="text-primary-300 text-xs leading-relaxed">{{ feat.desc }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PLANT CARE PRODUCTS
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-white">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">
+              Keep Them Thriving
+            </p>
+            <h2 class="section-title">Plant Care Essentials</h2>
+          </div>
+          <a routerLink="/products" [queryParams]="{ category: 'plant-care' }"
+             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
+                    hover:text-primary-700 transition-colors">
+            View all <mat-icon class="!text-base">east</mat-icon>
+          </a>
+        </div>
+
+        <!-- Care category pills -->
+        <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 mb-6">
+          @for (tag of careTags; track tag.label) {
+            <a [routerLink]="['/products']" [queryParams]="{ category: tag.slug }"
+               class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-sand
+                      bg-white hover:bg-primary-50 hover:border-primary-300
+                      text-sm font-medium text-text-secondary hover:text-primary-600
+                      transition-all whitespace-nowrap flex-shrink-0">
+              {{ tag.emoji }} {{ tag.label }}
+            </a>
+          }
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          @for (i of [1,2,3,4,5]; track i) {
+            <lg-skeleton-card></lg-skeleton-card>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         AI RECOMMENDATIONS (if logged in / recently viewed)
+    ═══════════════════════════════════════════════════════ -->
+    @if (forYou().length > 0) {
+      <section class="py-6 max-w-screen-xl mx-auto px-4 md:px-6">
+        <lg-product-carousel title="Picked For You" [products]="forYou()" viewAllLink="/search"></lg-product-carousel>
+      </section>
+    }
+    @if (recentlyViewed().length > 0) {
+      <section class="py-6 max-w-screen-xl mx-auto px-4 md:px-6">
+        <lg-product-carousel title="Recently Viewed" [products]="recentlyViewed()"></lg-product-carousel>
+      </section>
+    }
+
+    <!-- ═══════════════════════════════════════════════════════
+         AI CHAT PROMO STRIP
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-6 bg-[var(--bg-subtle)]">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="rounded-2xl overflow-hidden bg-gradient-to-r from-primary-700 to-primary-500
+                    flex flex-col md:flex-row items-center gap-6 px-8 py-7">
+          <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+            <mat-icon class="!text-2xl text-white">psychology</mat-icon>
+          </div>
+          <div class="flex-1 text-center md:text-left">
+            <h3 class="font-display text-xl font-semibold text-white mb-1">
+              "Which plant suits my balcony?" — Just ask our AI
+            </h3>
+            <p class="text-primary-200 text-sm">
+              Describe your space, light conditions or mood — get personalised plant picks instantly.
+            </p>
+          </div>
+          <a routerLink="/search" [queryParams]="{ ai: '1' }"
+             class="flex-shrink-0 px-6 py-2.5 bg-white text-primary-700 font-semibold
+                    text-sm rounded-full hover:bg-primary-50 transition-colors whitespace-nowrap">
+            Try AI Search 🌿
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         COMBO PACKS
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-white">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Bundle & Save</p>
+            <h2 class="section-title">Combo Packs</h2>
+          </div>
+          <a routerLink="/products" [queryParams]="{ category: 'combo-packs' }"
+             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
+                    hover:text-primary-700 transition-colors">
+            View all <mat-icon class="!text-base">east</mat-icon>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          @for (i of [1,2,3,4]; track i) {
+            <lg-skeleton-card></lg-skeleton-card>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CUSTOMER GALLERY STRIP
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-[var(--bg-subtle)]">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="text-center mb-10">
+          <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-2">#LagaaoHomes</p>
+          <h2 class="section-title">From Our Plant Community</h2>
+          <p class="text-text-muted text-sm mt-2">Real homes, real plants, real joy</p>
+        </div>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+          @for (photo of galleryPhotos; track photo.id) {
+            <div class="aspect-square rounded-xl overflow-hidden bg-primary-50 group cursor-pointer">
+              <img [src]="photo.src" [alt]="photo.alt"
+                   class="w-full h-full object-cover transition-transform duration-500
+                          group-hover:scale-110" />
+            </div>
+          }
+        </div>
+        <div class="text-center mt-8">
+          <a href="#" class="btn-outline inline-flex">
+            <mat-icon class="!text-base">photo_camera</mat-icon>
+            Tag us @lagaao to be featured
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         BLOG SECTION
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-14 bg-white">
+      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Learn & Grow</p>
+            <h2 class="section-title">Plant Care Blog</h2>
+          </div>
+          <a routerLink="/blog" class="hidden sm:flex items-center gap-1 text-sm font-semibold
+                                        text-primary-600 hover:text-primary-700 transition-colors">
+            All articles <mat-icon class="!text-base">east</mat-icon>
+          </a>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          @for (post of blogPreviews; track post.title) {
+            <a [routerLink]="['/blog', post.slug]"
+               class="group rounded-2xl overflow-hidden bg-[var(--bg-subtle)] border border-sand
+                      hover:border-primary-200 transition-all duration-300 hover:-translate-y-1
+                      hover:shadow-warm-md block">
+              <div class="h-48 overflow-hidden">
+                <img [src]="post.image" [alt]="post.title"
+                     class="w-full h-full object-cover transition-transform duration-500
+                            group-hover:scale-105" />
+              </div>
+              <div class="p-5">
+                <span class="badge-green text-[11px] mb-3 inline-flex">{{ post.tag }}</span>
+                <h4 class="font-semibold text-text-primary text-sm leading-snug mb-2
+                           group-hover:text-primary-600 transition-colors line-clamp-2">
+                  {{ post.title }}
+                </h4>
+                <p class="text-xs text-text-muted">{{ post.readTime }}</p>
               </div>
             </a>
           }
         </div>
-      </section>
-    } @else {
-      <!-- Fallback promo strips -->
-      <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-        <div class="grid sm:grid-cols-2 gap-3">
-          <a routerLink="/products" [queryParams]="{ category: 'electronics' }"
-             class="relative overflow-hidden h-36 rounded-none shadow-fk-card bg-gradient-to-r from-[#1254c4] to-[#2874F0]
-                    flex items-center px-8 gap-6">
-            <div class="text-white">
-              <p class="text-xs font-semibold text-yellow-300 uppercase tracking-wider mb-1">Up to 60% off</p>
-              <p class="font-display font-bold text-2xl leading-tight">Electronics<br>Superstore</p>
-              <p class="text-white/70 text-xs mt-1">Shop from top brands</p>
-            </div>
-            <span class="text-6xl ml-auto">📱</span>
-          </a>
-          <a routerLink="/products" [queryParams]="{ category: 'fashion' }"
-             class="relative overflow-hidden h-36 rounded-none shadow-fk-card bg-gradient-to-r from-[#F03A5F] to-[#FF6B6B]
-                    flex items-center px-8 gap-6">
-            <div class="text-white">
-              <p class="text-xs font-semibold text-yellow-200 uppercase tracking-wider mb-1">Min 50% off</p>
-              <p class="font-display font-bold text-2xl leading-tight">Fashion<br>Clearance</p>
-              <p class="text-white/70 text-xs mt-1">Top brands, great deals</p>
-            </div>
-            <span class="text-6xl ml-auto">👗</span>
-          </a>
-        </div>
-      </section>
-    }
-
-    <!-- ─── Best Sellers Section ──────────────────────────────── -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-      <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[#F0F0F0]">
-          <h2 class="font-display text-xl font-bold text-[#212121] dark:text-white">Best Sellers</h2>
-          <a routerLink="/products" class="text-primary-500 text-sm font-bold hover:text-primary-700 uppercase
-                                           tracking-wide flex items-center gap-0.5">
-            View All <mat-icon class="!text-base">chevron_right</mat-icon>
-          </a>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 divide-x divide-y divide-[#F0F0F0]">
-          @for (i of [1,2,3,4,5,6]; track i) {
-            <lg-skeleton-card></lg-skeleton-card>
-          }
-        </div>
       </div>
     </section>
 
-    <!-- ─── AI Recommendations ────────────────────────────────── -->
-    @if (forYou().length > 0) {
-      <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-        <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card p-1">
-          <lg-product-carousel title="Picked For You" [products]="forYou()" viewAllLink="/search"></lg-product-carousel>
+    <!-- ═══════════════════════════════════════════════════════
+         NEWSLETTER
+    ═══════════════════════════════════════════════════════ -->
+    <section class="py-16 bg-[var(--linen)]">
+      <div class="max-w-lg mx-auto px-6 text-center">
+        <div class="text-5xl mb-4">🌱</div>
+        <h2 class="font-display text-3xl font-semibold text-primary-800 mb-3">
+          Get Growing Tips Weekly
+        </h2>
+        <p class="text-text-secondary text-sm mb-8">
+          Join 50,000+ plant lovers. Get care guides, seasonal tips and exclusive deals — no spam.
+        </p>
+        <div class="flex gap-2 max-w-sm mx-auto">
+          <input type="email" placeholder="your@email.com"
+                 class="flex-1 px-4 py-3 rounded-full border border-sand bg-white text-sm
+                        outline-none focus:border-primary-400 transition-colors" />
+          <button class="btn-primary px-6 py-3 whitespace-nowrap">Subscribe</button>
         </div>
-      </section>
-    }
-    @if (recentlyViewed().length > 0) {
-      <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-        <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card p-1">
-          <lg-product-carousel title="Recently Viewed" [products]="recentlyViewed()"></lg-product-carousel>
-        </div>
-      </section>
-    }
-
-    <!-- ─── AI Chat promo strip ───────────────────────────────── -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3">
-      <div class="bg-gradient-to-r from-[#2874F0] to-[#6c63ff] text-white px-6 py-5 flex flex-col md:flex-row
-                  items-center gap-5 shadow-fk-card">
-        <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <mat-icon class="!text-2xl text-white">psychology</mat-icon>
-        </div>
-        <div class="flex-1 text-center md:text-left">
-          <p class="font-display font-bold text-lg">Meet Your AI Shopping Assistant</p>
-          <p class="text-white/75 text-sm mt-0.5">
-            Describe what you want in plain words — our AI finds the perfect product instantly.
-          </p>
-        </div>
-        <a routerLink="/search" [queryParams]="{ ai: '1' }"
-           class="px-5 py-2.5 bg-white text-[#2874F0] font-bold text-sm rounded-sm hover:bg-gray-50 transition-colors whitespace-nowrap">
-          Try AI Search
-        </a>
+        <p class="text-xs text-text-muted mt-3">Unsubscribe anytime. We respect your inbox.</p>
       </div>
     </section>
 
-    <!-- ─── Trust badges ──────────────────────────────────────── -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mt-3 mb-6">
-      <div class="bg-white dark:bg-[#1e2a3a] shadow-fk-card px-6 py-4
-                  grid grid-cols-2 md:grid-cols-4 gap-4 divide-x divide-[#F0F0F0]">
-        @for (badge of trustBadges; track badge.title) {
-          <div class="flex items-center gap-3 px-4 first:pl-0">
-            <mat-icon class="!text-2xl text-[#2874F0]">{{ badge.icon }}</mat-icon>
-            <div>
-              <p class="text-xs font-bold text-[#212121] dark:text-white">{{ badge.title }}</p>
-              <p class="text-[11px] text-[#878787]">{{ badge.desc }}</p>
-            </div>
-          </div>
-        }
-      </div>
-    </section>
-
-    <!-- Newsletter -->
-    <section class="max-w-screen-2xl mx-auto px-2 md:px-6 mb-6">
-      <lg-newsletter></lg-newsletter>
-    </section>
   `,
 })
 export class HomeComponent implements OnInit {
@@ -312,28 +544,80 @@ export class HomeComponent implements OnInit {
   activeBanner   = signal(0);
   forYou         = signal<AiProduct[]>([]);
   recentlyViewed = signal<AiProduct[]>([]);
-  dealTimer      = signal('04:23:17');
 
-  readonly categories = [
-    { label: 'Grocery',      emoji: '🛒',  slug: 'grocery' },
-    { label: 'Mobiles',      emoji: '📱',  slug: 'smartphones' },
-    { label: 'Fashion',      emoji: '👗',  slug: 'fashion' },
-    { label: 'Electronics',  emoji: '💻',  slug: 'electronics' },
-    { label: 'Home',         emoji: '🏠',  slug: 'home' },
-    { label: 'Appliances',   emoji: '🧺',  slug: 'appliances' },
-    { label: 'Travel',       emoji: '✈️',  slug: 'travel' },
-    { label: 'Beauty',       emoji: '💄',  slug: 'beauty' },
-    { label: 'Jewellery',    emoji: '💍',  slug: 'jewellery' },
-    { label: 'Sports',       emoji: '⚽',  slug: 'sports' },
-    { label: 'Books',        emoji: '📚',  slug: 'books' },
-    { label: 'Toys',         emoji: '🧸',  slug: 'toys' },
+  readonly trustPills = [
+    { icon: 'eco',           label: '100% Healthy Plants' },
+    { icon: 'local_shipping',label: 'Free Delivery ₹499+' },
+    { icon: 'replay',        label: '7-Day Replacement' },
+    { icon: 'support_agent', label: 'Expert Plant Care' },
   ];
 
-  readonly trustBadges = [
-    { icon: 'verified_user',  title: '100% Genuine',   desc: 'All products verified' },
-    { icon: 'local_shipping', title: 'Free Delivery',  desc: 'On orders above ₹499' },
-    { icon: 'replay',         title: '10-Day Returns', desc: 'Hassle-free returns' },
-    { icon: 'support_agent',  title: '24/7 Support',   desc: 'Always here to help' },
+  readonly whyUs = [
+    { emoji: '🌿', title: 'Farm Fresh Plants',      desc: 'Sourced directly from trusted nurseries across India' },
+    { emoji: '📦', title: 'Safe Packaging',         desc: 'Every plant secured with our special transit packaging' },
+    { emoji: '🔄', title: '7-Day Replacement',      desc: 'Not happy with your plant? We replace it, no questions' },
+    { emoji: '🧑‍🌾', title: 'Expert Care Guidance',  desc: 'Each plant ships with a care card + our 24/7 support' },
+  ];
+
+  readonly shopCategories = [
+    { label: 'Indoor Plants',    emoji: '🪴', slug: 'indoor-plants',   bg: '#d8ecdb' },
+    { label: 'Outdoor Plants',   emoji: '🌳', slug: 'outdoor-plants',  bg: '#e8f4ea' },
+    { label: 'Flowering',        emoji: '🌸', slug: 'flowering-plants',bg: '#fde8d8' },
+    { label: 'Succulents',       emoji: '🌵', slug: 'succulents',      bg: '#f0f7f1' },
+    { label: 'Seeds',            emoji: '🌱', slug: 'seeds',           bg: '#fafae8' },
+    { label: 'Pots & Planters',  emoji: '🏺', slug: 'pots-planters',   bg: '#fdf3ef' },
+    { label: 'Plant Care',       emoji: '🧪', slug: 'plant-care',      bg: '#f4f8f4' },
+    { label: 'Gifts',            emoji: '🎁', slug: 'gifts-combos',    bg: '#fdf3ef' },
+    { label: 'Air Purifying',    emoji: '💨', slug: 'air-purifying',   bg: '#e8f0fe' },
+    { label: 'Pet Friendly',     emoji: '🐾', slug: 'pet-friendly',    bg: '#fef9e8' },
+    { label: 'Low Maintenance',  emoji: '⏱️', slug: 'low-maintenance',  bg: '#f4f8f4' },
+    { label: 'Medicinal',        emoji: '🌿', slug: 'medicinal',       bg: '#d8ecdb' },
+    { label: 'Fruit Plants',     emoji: '🍋', slug: 'fruit-plants',    bg: '#fef9e8' },
+    { label: 'XL Plants',        emoji: '🌴', slug: 'xl-plants',       bg: '#e8f4ea' },
+    { label: 'Combos',           emoji: '📦', slug: 'combo-packs',     bg: '#fde8d8' },
+    { label: 'New Arrivals',     emoji: '✨', slug: 'new-arrivals',    bg: '#f0f7f1' },
+  ];
+
+  readonly careTags = [
+    { label: 'Potting Mix',   emoji: '🌍', slug: 'potting-mix' },
+    { label: 'Fertilizers',   emoji: '🧪', slug: 'fertilizers' },
+    { label: 'Garden Tools',  emoji: '🔧', slug: 'garden-tools' },
+    { label: 'Watering',      emoji: '💧', slug: 'watering-tools' },
+    { label: 'Pest Control',  emoji: '🐛', slug: 'pest-control' },
+    { label: 'Pebbles',       emoji: '🪨', slug: 'pebbles' },
+  ];
+
+  readonly galleryPhotos = [
+    { id: 1, src: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=300&h=300&fit=crop', alt: 'Indoor plant' },
+    { id: 2, src: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=300&h=300&fit=crop', alt: 'Shelf plants' },
+    { id: 3, src: 'https://images.unsplash.com/photo-1520412099551-62b6bafeb5bb?w=300&h=300&fit=crop', alt: 'Succulent' },
+    { id: 4, src: 'https://images.unsplash.com/photo-1508022713622-df2d8fb7b4cd?w=300&h=300&fit=crop', alt: 'Potted plant' },
+    { id: 5, src: 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=300&h=300&fit=crop', alt: 'Balcony garden' },
+    { id: 6, src: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&h=300&fit=crop', alt: 'Hanging plant' },
+  ];
+
+  readonly blogPreviews = [
+    {
+      slug:      'how-to-care-for-indoor-plants',
+      title:     "The Complete Beginner's Guide to Indoor Plant Care",
+      tag:       'Plant Care',
+      image:     'https://images.unsplash.com/photo-1545241047-6083a3684587?w=600&h=400&fit=crop',
+      readTime:  '5 min read',
+    },
+    {
+      slug:      'best-air-purifying-plants',
+      title:     '10 Best Air Purifying Plants for Your Home in 2024',
+      tag:       'Indoor Plants',
+      image:     'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop',
+      readTime:  '4 min read',
+    },
+    {
+      slug:      'how-to-water-plants',
+      title:     'Stop Overwatering: The Right Way to Water Every Plant',
+      tag:       'Tips & Tricks',
+      image:     'https://images.unsplash.com/photo-1627424171666-8f35dc3c6a18?w=600&h=400&fit=crop',
+      readTime:  '3 min read',
+    },
   ];
 
   ngOnInit() {
@@ -343,28 +627,8 @@ export class HomeComponent implements OnInit {
     if (this.#auth.isLoggedIn()) {
       this.#ai.getForYou().subscribe({ next: r => this.forYou.set(r.data), error: () => {} });
     }
-    this.#startDealTimer();
   }
 
-  prevBanner(): void {
-    this.activeBanner.update(i => i > 0 ? i - 1 : this.heroBanners().length - 1);
-  }
-
-  nextBanner(): void {
-    this.activeBanner.update(i => i < this.heroBanners().length - 1 ? i + 1 : 0);
-  }
-
-  #startDealTimer(): void {
-    let seconds = 4 * 3600 + 23 * 60 + 17;
-    const tick = () => {
-      if (seconds <= 0) return;
-      seconds--;
-      const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-      const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-      const s = String(seconds % 60).padStart(2, '0');
-      this.dealTimer.set(`${h}:${m}:${s}`);
-      setTimeout(tick, 1000);
-    };
-    setTimeout(tick, 1000);
-  }
+  prevBanner(): void { this.activeBanner.update(i => i > 0 ? i - 1 : this.heroBanners().length - 1); }
+  nextBanner(): void { this.activeBanner.update(i => i < this.heroBanners().length - 1 ? i + 1 : 0); }
 }

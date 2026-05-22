@@ -14,10 +14,133 @@ import { SearchService } from '../../../core/services/search.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, MatIconModule],
+  styles: [`
+    :host { display: block; width: 100%; }
+
+    .search-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-field {
+      display: flex;
+      align-items: center;
+      height: 42px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,.95);
+      border: 1.5px solid transparent;
+      box-shadow: 0 2px 8px rgba(61,107,69,.12);
+      overflow: hidden;
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+    .search-field:focus-within {
+      border-color: var(--color-primary);
+      box-shadow: 0 2px 16px rgba(61,107,69,.2);
+      background: #fff;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0 14px 0 18px;
+      font-family: var(--font-sans);
+      font-size: .875rem;
+      color: var(--text-primary);
+      height: 100%;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 6px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      transition: color 150ms ease;
+    }
+    .clear-btn:hover { color: var(--text-primary); }
+
+    .search-btn {
+      height: 100%;
+      padding: 0 16px;
+      background: var(--color-primary);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0 9999px 9999px 0;
+      transition: background 150ms ease;
+    }
+    .search-btn:hover { background: var(--color-primary-dark); }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: #fff;
+      border: 1px solid var(--border-default);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      z-index: 300;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .dd-section-label {
+      padding: 10px 16px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .dd-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: .875rem;
+      color: var(--text-secondary);
+      text-align: left;
+      transition: background 120ms ease;
+    }
+    .dd-item:hover, .dd-item.focused { background: var(--bg-subtle); }
+
+    .dd-icon {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+    .dd-icon-trend { color: var(--color-accent); }
+
+    .dd-divider { height: 1px; background: var(--border-default); margin: 4px 0; }
+
+    .dd-footer {
+      padding: 8px 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  `],
   template: `
-    <div class="relative w-full" #container>
-      <div class="flex items-center h-10 bg-white overflow-hidden shadow-sm">
+    <div class="search-wrap" #container>
+      <div class="search-field">
         <input
+          class="search-input"
           [(ngModel)]="query"
           (ngModelChange)="onQueryChange($event)"
           (keydown.enter)="submitSearch()"
@@ -25,84 +148,71 @@ import { SearchService } from '../../../core/services/search.service';
           (keydown.arrowUp)="moveFocus(-1)"
           (keydown.escape)="closeDropdown()"
           (focus)="onFocus()"
-          placeholder="Search for products, brands and more"
-          class="flex-1 outline-none text-sm text-[#212121] placeholder:text-[#878787] px-4 h-full bg-white"
+          placeholder="Search plants, seeds, pots…"
           autocomplete="off"
           spellcheck="false"
         />
+
         @if (query.length > 0) {
-          <button (click)="clear()" class="px-2 text-[#878787] hover:text-[#212121] transition-colors">
-            <mat-icon class="!text-base">close</mat-icon>
+          <button class="clear-btn" (click)="clear()">
+            <mat-icon class="dd-icon">close</mat-icon>
           </button>
         }
-        <button (click)="submitSearch()"
-                class="h-full px-4 bg-[#2874F0] hover:bg-[#1a66e0] transition-colors flex items-center justify-center">
-          <mat-icon class="!text-xl text-white">search</mat-icon>
+
+        <button class="search-btn" (click)="submitSearch()">
+          <mat-icon style="font-size:20px;width:20px;height:20px;color:#fff">search</mat-icon>
         </button>
       </div>
 
-      <!-- Dropdown -->
       @if (showDropdown()) {
-        <div class="absolute top-full left-0 right-0 mt-0.5 bg-white border border-[#F0F0F0]
-                    shadow-elevation-3 overflow-hidden z-50 max-h-80 overflow-y-auto">
+        <div class="dropdown">
 
-          <!-- Suggestions -->
           @if (suggestions().length > 0) {
-            <div class="py-1">
-              @for (s of suggestions(); track s; let i = $index) {
-                <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-primary
-                         hover:bg-surface-100 transition-colors text-left"
-                  [class.bg-surface-100]="focusIndex() === i"
-                  (click)="selectSuggestion(s)"
-                >
-                  <mat-icon class="!text-base text-text-muted flex-shrink-0">search</mat-icon>
-                  <span [innerHTML]="highlight(s)"></span>
-                </button>
-              }
-            </div>
+            <div class="dd-section-label">Suggestions</div>
+            @for (s of suggestions(); track s; let i = $index) {
+              <button
+                class="dd-item"
+                [class.focused]="focusIndex() === i"
+                (click)="selectSuggestion(s)"
+              >
+                <mat-icon class="dd-icon">search</mat-icon>
+                <span [innerHTML]="highlight(s)"></span>
+              </button>
+            }
           }
 
-          <!-- Recent searches (shown when no query) -->
           @if (query.length === 0 && searchSvc.recentSearches().length > 0) {
             <div>
-              <div class="flex items-center justify-between px-4 pt-3 pb-1">
-                <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Recent</span>
-                <button class="text-xs text-primary-600 hover:underline" (click)="searchSvc.clearRecent()">
-                  Clear
-                </button>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px">
+                <span class="dd-section-label" style="padding:0">Recent Searches</span>
+                <button
+                  style="font-size:11px;color:var(--color-primary);background:none;border:none;cursor:pointer"
+                  (click)="searchSvc.clearRecent()"
+                >Clear</button>
               </div>
               @for (r of searchSvc.recentSearches(); track r) {
-                <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary
-                         hover:bg-surface-100 transition-colors text-left"
-                  (click)="selectSuggestion(r)"
-                >
-                  <mat-icon class="!text-base text-text-muted flex-shrink-0">history</mat-icon>
+                <button class="dd-item" (click)="selectSuggestion(r)">
+                  <mat-icon class="dd-icon">history</mat-icon>
                   {{ r }}
                 </button>
               }
             </div>
           }
 
-          <!-- Trending (shown when no query and no recent) -->
           @if (query.length === 0 && searchSvc.recentSearches().length === 0 && trending().length > 0) {
             <div>
-              <div class="px-4 pt-3 pb-1">
-                <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Trending</span>
-              </div>
+              <div class="dd-section-label">Trending</div>
               @for (t of trending(); track t) {
-                <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary
-                         hover:bg-surface-100 transition-colors text-left"
-                  (click)="selectSuggestion(t)"
-                >
-                  <mat-icon class="!text-base text-amber-500 flex-shrink-0">trending_up</mat-icon>
+                <button class="dd-item" (click)="selectSuggestion(t)">
+                  <mat-icon class="dd-icon dd-icon-trend">trending_up</mat-icon>
                   {{ t }}
                 </button>
               }
             </div>
           }
+
+          <div class="dd-divider"></div>
+          <p class="dd-footer">Press Enter to search all results</p>
         </div>
       }
     </div>
@@ -199,7 +309,10 @@ export class SearchBarComponent implements OnInit, OnDestroy {
   highlight(text: string): string {
     if (!this.query) return text;
     const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark class="bg-primary-100 text-primary-700 rounded">$1</mark>');
+    return text.replace(
+      new RegExp(`(${escaped})`, 'gi'),
+      '<mark style="background:var(--color-primary-100);color:var(--color-primary-dark);border-radius:3px;padding:0 1px">$1</mark>'
+    );
   }
 
   private navigate(q: string): void {

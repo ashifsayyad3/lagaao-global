@@ -49,7 +49,7 @@ import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 flex-shrink-0">
           <!-- Admin link -->
           @if (auth.user()?.role === 'admin' || auth.user()?.role === 'super_admin') {
             <a routerLink="/admin/dashboard"

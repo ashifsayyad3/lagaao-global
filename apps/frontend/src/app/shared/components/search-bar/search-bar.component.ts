@@ -28,7 +28,7 @@ import { SearchService } from '../../../core/services/search.service';
           (keydown.arrowUp)="moveFocus(-1)"
           (keydown.escape)="closeDropdown()"
           (focus)="onFocus()"
-          placeholder="Search plants, pots, seeds…"
+          placeholder="Search products, brands, categories…"
           class="flex-1 bg-transparent outline-none text-sm text-text-primary placeholder:text-text-muted"
           autocomplete="off"
           spellcheck="false"

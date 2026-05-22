@@ -56,7 +56,7 @@ export class OrdersService {
           {
             model: ProductVariant,
             attributes: ['id', 'sku', 'price', 'salePrice', 'attributes', 'image'],
-            include: [{ model: Inventory, attributes: ['qtyAvailable', 'isOutOfStock'] }],
+            include: [{ model: Inventory, attributes: ['qtyOnHand', 'qtyReserved', 'lowStockThreshold'] }],
             required: false,
           },
           { model: ProductImage, separate: true, limit: 1, where: { isPrimary: true }, required: false },

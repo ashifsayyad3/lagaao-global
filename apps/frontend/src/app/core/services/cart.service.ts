@@ -1,4 +1,5 @@
-import { Injectable, inject, signal, computed, effect } from '@angular/core';
+import { Injectable, inject, signal, computed, effect, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -41,8 +42,9 @@ export interface PriceSummary {
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  readonly #http    = inject(HttpClient);
-  readonly #base    = `${environment.apiUrl}/api/v1`;
+  readonly #http      = inject(HttpClient);
+  readonly #base      = `${environment.apiUrl}/api/v1`;
+  readonly #isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly cart      = signal<CartSummary | null>(null);
   readonly itemCount = computed(() => this.cart()?.itemCount ?? 0);
@@ -103,6 +105,7 @@ export class CartService {
   }
 
   #getOrCreateSession(): string {
+    if (!this.#isBrowser) return 'ssr-session';
     let id = localStorage.getItem('lg_session');
     if (!id) {
       id = crypto.randomUUID();

@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -54,8 +55,9 @@ export interface SearchParams {
 
 @Injectable({ providedIn: 'root' })
 export class SearchService {
-  readonly #http    = inject(HttpClient);
-  readonly #base    = `${environment.apiUrl}/api/v1/search`;
+  readonly #http      = inject(HttpClient);
+  readonly #base      = `${environment.apiUrl}/api/v1/search`;
+  readonly #isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly recentSearches = signal<string[]>(this.#loadRecent());
 
@@ -88,6 +90,7 @@ export class SearchService {
   }
 
   saveRecent(q: string): void {
+    if (!this.#isBrowser) return;
     const trimmed = q.trim();
     if (!trimmed) return;
     const existing = this.#loadRecent().filter(s => s !== trimmed);
@@ -97,11 +100,13 @@ export class SearchService {
   }
 
   clearRecent(): void {
+    if (!this.#isBrowser) return;
     localStorage.removeItem('lg_recent_searches');
     this.recentSearches.set([]);
   }
 
   #loadRecent(): string[] {
+    if (!this.#isBrowser) return [];
     try {
       return JSON.parse(localStorage.getItem('lg_recent_searches') ?? '[]');
     } catch { return []; }

@@ -1,4 +1,5 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
@@ -17,9 +18,10 @@ export interface AuthState {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly #api    = inject(ApiService);
-  readonly #router = inject(Router);
-  readonly #toast  = inject(ToastService);
+  readonly #api       = inject(ApiService);
+  readonly #router    = inject(Router);
+  readonly #toast     = inject(ToastService);
+  readonly #isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly #state = signal<AuthState>({
     user:        null,
@@ -81,15 +83,16 @@ export class AuthService {
 
   #setAuth(token: string, user: UserDTO): void {
     this.#state.set({ user, accessToken: token, loading: false });
-    localStorage.setItem('lg_user', JSON.stringify(user));
+    if (this.#isBrowser) localStorage.setItem('lg_user', JSON.stringify(user));
   }
 
   #clearAuth(): void {
     this.#state.set({ user: null, accessToken: null, loading: false });
-    localStorage.removeItem('lg_user');
+    if (this.#isBrowser) localStorage.removeItem('lg_user');
   }
 
   hydrate(): void {
+    if (!this.#isBrowser) return;
     const saved = localStorage.getItem('lg_user');
     if (saved) {
       const user = JSON.parse(saved) as UserDTO;

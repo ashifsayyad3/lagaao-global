@@ -54,7 +54,7 @@ export interface CmsPage {
 @Injectable({ providedIn: 'root' })
 export class CmsService {
   readonly #http = inject(HttpClient);
-  readonly #base = `${environment.apiUrl}/cms`;
+  readonly #base = `${environment.apiUrl}/api/v1/cms`;
 
   getBanners(position?: string) {
     let params = new HttpParams();

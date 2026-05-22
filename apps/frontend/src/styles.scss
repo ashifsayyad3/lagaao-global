@@ -91,3 +91,40 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+// ─── Reusable card ────────────────────────────────────────────
+.card {
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-hover {
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+  &:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+}
+
+// ─── Shadow elevation aliases ─────────────────────────────────
+.shadow-elevation-1 { box-shadow: var(--shadow-sm); }
+.shadow-elevation-2 { box-shadow: var(--shadow-md); }
+.shadow-elevation-3 { box-shadow: var(--shadow-lg); }
+.shadow-elevation-4 { box-shadow: var(--shadow-xl); }
+.shadow-card-hover  { box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+
+// ─── Material Icons display fix ───────────────────────────────
+.mat-icon {
+  font-family: 'Material Icons', 'Material Icons Outlined' !important;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+// ─── Announcement bar offset for fixed navbar ─────────────────
+.announcement-offset { scroll-margin-top: 4rem; }

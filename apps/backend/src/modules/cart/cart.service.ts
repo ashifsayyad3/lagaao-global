@@ -9,13 +9,13 @@ const CART_INCLUDE = [
         model: Product,
         attributes: ['id', 'name', 'slug', 'basePrice', 'salePrice', 'status'],
         include: [
-          { model: ProductImage, separate: true, limit: 1, where: { isPrimary: true }, required: false },
+          { model: ProductImage, attributes: ['url', 'isPrimary'], separate: true, limit: 3, required: false },
         ],
       },
       {
         model: ProductVariant,
         attributes: ['id', 'name', 'sku', 'price', 'salePrice', 'attributes', 'image'],
-        include: [{ model: Inventory, attributes: ['qtyAvailable', 'isOutOfStock'] }],
+        include: [{ model: Inventory, attributes: ['qtyOnHand', 'qtyReserved', 'lowStockThreshold'] }],
         required: false,
       },
     ],
@@ -180,7 +180,8 @@ export class CartService {
     const items: CartItemDTO[] = (cart.items ?? []).map(item => {
       const product  = item.product;
       const variant  = item.variant ?? null;
-      const image    = variant?.image ?? product?.images?.[0]?.url ?? '';
+      const primaryImg = product?.images?.find(i => i.isPrimary) ?? product?.images?.[0];
+      const image    = variant?.image ?? primaryImg?.url ?? '';
       const ep       = variant
         ? (variant.salePrice ? Number(variant.salePrice) : Number(variant.price))
         : (product?.salePrice ? Number(product.salePrice) : Number(product?.basePrice ?? item.price));
@@ -199,7 +200,7 @@ export class CartService {
         effectivePrice: ep,
         qty:           item.qty,
         lineTotal:     ep * item.qty,
-        isOutOfStock:  variant?.inventory?.isOutOfStock ?? false,
+        isOutOfStock:  variant?.inventory ? variant.inventory.isOutOfStock : false,
       };
     });
 

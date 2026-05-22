@@ -108,20 +108,32 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
           </div>
-          <div class="hidden lg:flex justify-center animation-delay-200 animate-fade-in">
-            <div class="glass-strong rounded-3xl p-6 shadow-2xl w-72">
-              <div class="rounded-2xl overflow-hidden mb-4 bg-white/20 h-48 flex items-center justify-center">
-                <mat-icon class="!text-7xl text-white/40">shopping_bag</mat-icon>
+          <div class="hidden lg:flex justify-center animate-fade-in animation-delay-200">
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 shadow-2xl w-72">
+              <div class="rounded-2xl overflow-hidden mb-4 h-52 bg-white/5">
+                <img
+                  src="https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&h=300&fit=crop"
+                  alt="Sony WH-1000XM5"
+                  class="w-full h-full object-cover"
+                />
               </div>
-              <lg-badge variant="success" class="mb-2">Best Seller</lg-badge>
-              <h3 class="font-semibold text-white text-lg">Premium Wireless Headphones</h3>
-              <p class="text-primary-300 text-sm mt-1">Active Noise Cancellation • 30h battery</p>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-semibold bg-green-500 text-white px-2 py-0.5 rounded-full">Best Seller</span>
+                <span class="text-xs text-amber-300 flex items-center gap-0.5">
+                  ★★★★★ <span class="text-white/60 ml-1">(203)</span>
+                </span>
+              </div>
+              <h3 class="font-semibold text-white text-base leading-snug">Sony WH-1000XM5 Headphones</h3>
+              <p class="text-primary-300 text-xs mt-1">Active Noise Cancellation · 30h battery</p>
               <div class="flex justify-between items-center mt-4">
                 <div>
-                  <span class="text-white font-bold text-xl">{{ 8999 | currencyInr }}</span>
-                  <span class="text-primary-400 text-sm line-through ml-2">{{ 14999 | currencyInr }}</span>
+                  <span class="text-white font-bold text-xl">{{ 24990 | currencyInr }}</span>
+                  <span class="text-white/40 text-sm line-through ml-2">{{ 29990 | currencyInr }}</span>
                 </div>
-                <lg-button variant="accent" size="sm">Add to Cart</lg-button>
+                <a routerLink="/products/sony-wh-1000xm5"
+                   class="text-xs font-semibold bg-accent hover:bg-accent/90 text-white px-3 py-1.5 rounded-lg transition-colors">
+                  View Deal
+                </a>
               </div>
             </div>
           </div>

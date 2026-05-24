@@ -171,5 +171,11 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    path: 'auth/google-callback',
+    loadComponent: () =>
+      import('./features/auth/google-callback/google-callback.component').then(m => m.GoogleCallbackComponent),
+    title: 'Signing in — Lagaao',
+  },
   { path: '**', redirectTo: '' },
 ];

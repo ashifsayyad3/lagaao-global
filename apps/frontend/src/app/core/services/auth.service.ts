@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { ToastService } from './toast.service';
+import { environment } from '../../../environments/environment';
 export interface UserDTO {
   id: number; name: string; email: string; phone?: string;
   role: 'customer' | 'vendor' | 'admin' | 'super_admin';
@@ -67,6 +68,17 @@ export class AuthService {
         this.#router.navigate(['/']);
       },
     });
+  }
+
+  loginWithGoogle(): void {
+    if (this.#isBrowser) {
+      window.location.href = `${environment.apiUrl}/api/v1/auth/google`;
+    }
+  }
+
+  handleGoogleCallback(token: string, user: UserDTO): void {
+    this.#state.set({ user, accessToken: token, loading: false });
+    if (this.#isBrowser) localStorage.setItem('lg_user', JSON.stringify(user));
   }
 
   forgotPassword(email: string): Observable<unknown> {

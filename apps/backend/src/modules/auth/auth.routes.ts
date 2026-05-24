@@ -152,6 +152,10 @@ router.post('/logout',                                                          
 router.post('/forgot-password', authRateLimit, validate(forgotPasswordSchema),  (r, s, n) => authController.forgotPassword(r, s, n));
 router.post('/reset-password',  authRateLimit, validate(resetPasswordSchema),   (r, s, n) => authController.resetPassword(r, s, n));
 
+// Google OAuth
+router.get('/google',          (r, s, n) => authController.googleRedirect(r, s, n));
+router.get('/google/callback', (r, s, n) => authController.googleCallback(r, s, n));
+
 // Protected
 router.get('/me', authenticate, (r, s, n) => authController.me(r, s, n));
 

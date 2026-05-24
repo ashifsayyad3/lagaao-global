@@ -93,12 +93,12 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
       align-items: center;
       justify-content: center;
       padding: 48px 24px;
-      background: linear-gradient(160deg, #f0f5f0 0%, #f5ede2 60%, #eef4ec 100%);
+      background: #f2f7f2;
       min-height: 100vh;
       position: relative;
     }
     :host-context(.dark) .right-panel {
-      background: linear-gradient(160deg, #141f16 0%, #1a1e14 100%);
+      background: #111a13;
     }
 
     .mobile-logo { display: flex; margin-bottom: 32px; }
@@ -118,13 +118,17 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
 
     .form-card {
       width: 100%; max-width: 440px;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.6);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,.07);
       border-radius: 24px;
       padding: 36px 36px 32px;
-      box-shadow: 0 8px 40px rgba(30,58,35,.12), 0 2px 12px rgba(30,58,35,.06);
+      box-shadow: 0 8px 40px rgba(30,58,35,.10), 0 2px 12px rgba(30,58,35,.05);
       animation: fadeUp .4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    :host-context(.dark) .form-card {
+      background: #1a2a1e;
+      border-color: rgba(255,255,255,.08);
+      box-shadow: 0 8px 40px rgba(0,0,0,.4), 0 2px 12px rgba(0,0,0,.25);
     }
 
     .back-home {

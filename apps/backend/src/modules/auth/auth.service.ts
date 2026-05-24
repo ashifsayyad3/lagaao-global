@@ -1,5 +1,7 @@
+import https from 'https';
 import { redis } from '../../config/redis';
 import { logger } from '../../config/logger';
+import { env } from '../../config/env';
 import { User, RefreshToken } from '../../models';
 import {
   signAccessToken, signRefreshToken, hashToken, generateOtp
@@ -153,6 +155,96 @@ export class AuthService {
     const user = await User.findOne({ where: { email } });
     if (!user) return;
     await this.#sendOtp(email);
+  }
+
+  // ─── Google OAuth ──────────────────────────────────────────
+  getGoogleAuthUrl(redirectUri: string): string {
+    if (!env.GOOGLE_CLIENT_ID) throw new AppError('Google login not configured', 501);
+    const params = new URLSearchParams({
+      client_id:     env.GOOGLE_CLIENT_ID,
+      redirect_uri:  redirectUri,
+      response_type: 'code',
+      scope:         'openid email profile',
+      access_type:   'offline',
+      prompt:        'select_account',
+    });
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  }
+
+  async loginWithGoogle(code: string, redirectUri: string, ip?: string, ua?: string): Promise<AuthTokens> {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw new AppError('Google login not configured', 501);
+    }
+
+    // Exchange code for tokens
+    const tokenRes = await this.#fetchJson<{
+      access_token: string; id_token: string; error?: string;
+    }>('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id:     env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri:  redirectUri,
+        grant_type:    'authorization_code',
+      }).toString(),
+    });
+
+    if (tokenRes.error) throw new AppError('Google token exchange failed', 400);
+
+    // Fetch Google profile
+    const profile = await this.#fetchJson<{
+      sub: string; email: string; name: string; picture: string; email_verified: boolean;
+    }>(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+      headers: { Authorization: `Bearer ${tokenRes.access_token}` },
+    });
+
+    if (!profile.email_verified) throw new AppError('Google email not verified', 400);
+
+    let user = await User.findOne({ where: { email: profile.email } });
+    if (!user) {
+      user = await User.create({
+        name:         profile.name,
+        email:        profile.email,
+        phone:        null,
+        passwordHash: Math.random().toString(36) + Date.now(),
+        role:         Role.CUSTOMER,
+        isVerified:   true,
+        isActive:     true,
+        avatar:       profile.picture,
+      });
+    } else if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
+
+    if (!user.isActive) throw new AppError('Account deactivated', 403);
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    logger.info('google_login', { userId: user.id, email: user.email, ip });
+    return this.#issueTokens(user, ip, ua);
+  }
+
+  async #fetchJson<T>(url: string, options: { method?: string; headers?: Record<string,string>; body?: string } = {}): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const u = new URL(url);
+      const reqOptions = {
+        hostname: u.hostname,
+        path:     u.pathname + u.search,
+        method:   options.method ?? 'GET',
+        headers:  options.headers ?? {},
+      };
+      const req = https.request(reqOptions, res => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => { try { resolve(JSON.parse(data)); } catch { reject(new Error('Invalid JSON')); } });
+      });
+      req.on('error', reject);
+      if (options.body) req.write(options.body);
+      req.end();
+    });
   }
 
   // ─── Private helpers ───────────────────────────────────────

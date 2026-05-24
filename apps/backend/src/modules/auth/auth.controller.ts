@@ -102,6 +102,31 @@ export class AuthController {
     } catch (e) { next(e); }
   }
 
+  async googleRedirect(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const redirectUri = `${env.FRONTEND_URL.replace(':4200', ':3000')}/api/v1/auth/google/callback`;
+      const url = authService.getGoogleAuthUrl(redirectUri);
+      res.redirect(url);
+    } catch (e) { next(e); }
+  }
+
+  async googleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const code = req.query['code'] as string;
+      if (!code) { res.redirect(`${env.FRONTEND_URL}/auth/login?error=google_failed`); return; }
+
+      const redirectUri = `${env.FRONTEND_URL.replace(':4200', ':3000')}/api/v1/auth/google/callback`;
+      const tokens = await authService.loginWithGoogle(code, redirectUri, req.ip, req.headers['user-agent']);
+
+      const expiry = tokens.refreshTokenExpiry;
+      res.cookie(REFRESH_COOKIE, tokens.refreshToken, cookieOptions(expiry));
+
+      // Redirect back to frontend with access token in query (frontend picks it up once)
+      const params = new URLSearchParams({ token: tokens.accessToken });
+      res.redirect(`${env.FRONTEND_URL}/auth/google-callback?${params}`);
+    } catch (e) { next(e); }
+  }
+
   async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await (await import('../../models')).User.findByPk(req.user!.id);

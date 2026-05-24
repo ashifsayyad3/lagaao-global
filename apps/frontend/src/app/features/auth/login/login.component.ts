@@ -20,7 +20,7 @@ import { ToastService } from '../../../core/services/toast.service';
       font-size: 1.625rem; font-weight: 600;
       color: var(--text-primary); margin: 0 0 4px;
     }
-    .form-sub { font-size: .9375rem; color: var(--text-muted); margin: 0 0 28px; }
+    .form-sub { font-size: .9375rem; color: var(--text-secondary); margin: 0 0 28px; }
 
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
     .field-row { display: flex; align-items: center; justify-content: space-between; }
@@ -36,7 +36,7 @@ import { ToastService } from '../../../core/services/toast.service';
     }
     .inp:focus { border-color: var(--color-primary); background: var(--bg-base); }
     .inp.error { border-color: var(--color-error); }
-    .inp::placeholder { color: var(--text-muted); }
+    .inp::placeholder { color: var(--text-secondary); opacity: .55; }
 
     .inp-icon {
       position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
@@ -87,10 +87,10 @@ import { ToastService } from '../../../core/services/toast.service';
       border: 1.5px solid var(--border-default); border-radius: 12px;
       background: var(--bg-base); font-family: var(--font-sans);
       font-size: .9375rem; font-weight: 500; color: var(--text-primary);
-      cursor: pointer; transition: border-color 150ms, box-shadow 150ms;
+      cursor: pointer; transition: border-color 150ms, box-shadow 150ms, background 150ms;
       margin-bottom: 24px;
     }
-    .google-btn:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .google-btn:hover { border-color: var(--color-primary); background: var(--bg-subtle); box-shadow: 0 2px 8px rgba(61,107,69,.12); }
 
     .bottom-link { text-align: center; font-size: .875rem; color: var(--text-muted); }
     .bottom-link a { color: var(--color-primary); font-weight: 700; text-decoration: none; margin-left: 4px; }
@@ -152,7 +152,7 @@ import { ToastService } from '../../../core/services/toast.service';
 
     <div class="divider">or continue with</div>
 
-    <button type="button" class="google-btn">
+    <button type="button" class="google-btn" (click)="loginWithGoogle()">
       <svg width="18" height="18" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -170,6 +170,8 @@ import { ToastService } from '../../../core/services/toast.service';
 })
 export class LoginComponent {
   readonly #auth   = inject(AuthService);
+
+  loginWithGoogle(): void { this.#auth.loginWithGoogle(); }
   readonly #router = inject(Router);
   readonly #toast  = inject(ToastService);
   readonly #fb     = inject(FormBuilder);

@@ -26,15 +26,35 @@ export class SkeletonComponent {
   standalone: true,
   imports: [SkeletonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host { display: block; }
+    .card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+      background: #fff;
+      padding: 0 0 14px;
+    }
+    .img-ph {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--bg-subtle);
+      margin-bottom: 14px;
+    }
+    .body { padding: 0 14px; display: flex; flex-direction: column; gap: 8px; }
+    .row  { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  `],
   template: `
-    <div class="rounded-xl overflow-hidden border border-border-default p-4 space-y-3">
-      <lg-skeleton height="200px" borderRadius="0.5rem"></lg-skeleton>
-      <lg-skeleton height="1rem" width="60%"></lg-skeleton>
-      <lg-skeleton height="0.875rem" width="80%"></lg-skeleton>
-      <lg-skeleton height="0.875rem" width="40%"></lg-skeleton>
-      <div class="flex justify-between items-center pt-1">
-        <lg-skeleton height="1.5rem" width="30%"></lg-skeleton>
-        <lg-skeleton height="2rem"   width="5rem" borderRadius="0.5rem"></lg-skeleton>
+    <div class="card">
+      <div class="img-ph skeleton"></div>
+      <div class="body">
+        <lg-skeleton height="14px" width="75%"></lg-skeleton>
+        <lg-skeleton height="12px" width="50%"></lg-skeleton>
+        <lg-skeleton height="12px" width="35%"></lg-skeleton>
+        <div class="row">
+          <lg-skeleton height="20px" width="30%"></lg-skeleton>
+          <lg-skeleton height="34px" width="90px" borderRadius="9999px"></lg-skeleton>
+        </div>
       </div>
     </div>
   `,

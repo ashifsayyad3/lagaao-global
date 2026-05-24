@@ -2,14 +2,13 @@ import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit, computed
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TitleCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ProductService, Product, ProductVariant } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CartService } from '../../../core/services/cart.service';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
-import { BadgeComponent } from '../../../shared/components/badge/badge.component';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive';
 import { AiService, AiProduct } from '../../../core/services/ai.service';
@@ -20,211 +19,569 @@ import { ProductCarouselComponent } from '../../../shared/components/product-car
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink, MatIconModule,
-    ProductCardComponent, SkeletonComponent, BadgeComponent, ButtonComponent,
+    RouterLink, MatIconModule, TitleCasePipe,
+    ProductCardComponent, SkeletonComponent,
     CurrencyInrPipe, LazyImgDirective, ProductCarouselComponent,
   ],
+  styles: [`
+    :host { display: block; }
+
+    /* ── Page layout ──────────────────────────────── */
+    .page { max-width: 1280px; margin: 0 auto; padding: 24px 24px 80px; }
+
+    /* ── Breadcrumb ───────────────────────────────── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 4px;
+      font-size: .8125rem; color: var(--text-muted); margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 150ms; }
+    .breadcrumb a:hover { color: var(--color-primary); }
+    .breadcrumb .cur { color: var(--text-primary); font-weight: 500; }
+
+    /* ── Main grid ────────────────────────────────── */
+    .pdp-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    @media (min-width: 1024px) {
+      .pdp-grid { grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    }
+
+    /* ── Image gallery ────────────────────────────── */
+    .gallery { display: flex; flex-direction: column; gap: 12px; }
+
+    .main-img {
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--bg-subtle);
+      aspect-ratio: 1;
+      position: relative;
+    }
+    .main-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 400ms ease;
+    }
+    .main-img:hover img { transform: scale(1.04); }
+
+    .zoom-hint {
+      position: absolute; bottom: 12px; right: 12px;
+      background: rgba(255,255,255,.85);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      pointer-events: none;
+    }
+
+    .thumb-strip {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    }
+    .thumb-strip::-webkit-scrollbar { height: 4px; }
+    .thumb-strip::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+
+    .thumb-btn {
+      flex-shrink: 0;
+      width: 68px; height: 68px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 150ms;
+      background: var(--bg-subtle);
+      padding: 0;
+    }
+    .thumb-btn.active { border-color: var(--color-primary); }
+    .thumb-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Sticky panel ─────────────────────────────── */
+    .info-panel { display: flex; flex-direction: column; gap: 20px; }
+    @media (min-width: 1024px) {
+      .info-panel { position: sticky; top: 88px; }
+    }
+
+    /* ── Brand tag ────────────────────────────────── */
+    .brand-tag {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--color-sage);
+    }
+
+    /* ── Product name ─────────────────────────────── */
+    .product-name {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    /* ── Rating row ───────────────────────────────── */
+    .rating-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .stars { display: flex; gap: 1px; }
+    .star { font-size: 16px; width: 16px; height: 16px; color: #f59e0b; }
+    .star-empty { color: var(--border-strong); }
+    .review-text { font-size: .8125rem; color: var(--text-muted); }
+
+    /* ── Plant info pills ─────────────────────────── */
+    .info-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .info-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .info-pill mat-icon { font-size: 14px; width: 14px; height: 14px; color: var(--color-primary); }
+
+    /* ── Price block ──────────────────────────────── */
+    .price-block { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .price-main  { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--text-primary); }
+    .price-mrp   { font-size: 1.125rem; color: var(--text-muted); text-decoration: line-through; }
+    .price-badge {
+      display: inline-flex; align-items: center;
+      background: var(--color-accent); color: #fff;
+      font-size: .75rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 9999px;
+    }
+    .tax-note { font-size: .75rem; color: var(--text-muted); }
+
+    /* ── Stock badge ──────────────────────────────── */
+    .stock-in  { color: var(--color-primary); }
+    .stock-low { color: var(--color-warning); }
+    .stock-out { color: var(--color-error); }
+    .stock-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .8125rem; font-weight: 600;
+    }
+
+    /* ── Variant selector ─────────────────────────── */
+    .variant-label {
+      font-size: .8125rem; font-weight: 600;
+      color: var(--text-primary); margin-bottom: 8px;
+    }
+    .variant-label span { font-weight: 400; color: var(--text-secondary); margin-left: 4px; }
+    .variant-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .variant-btn {
+      padding: 7px 16px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-default);
+      background: #fff;
+      font-family: var(--font-sans);
+      font-size: .8125rem; font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 150ms, color 150ms, background 150ms;
+    }
+    .variant-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .variant-btn.active {
+      border-color: var(--color-primary);
+      background: var(--color-primary-50);
+      color: var(--color-primary-dark);
+      font-weight: 600;
+    }
+
+    /* ── Qty stepper ──────────────────────────────── */
+    .qty-wrap { display: flex; align-items: center; gap: 14px; }
+    .qty-label { font-size: .8125rem; font-weight: 600; color: var(--text-primary); }
+    .qty-stepper {
+      display: flex; align-items: center;
+      border: 1.5px solid var(--border-default);
+      border-radius: 12px; overflow: hidden;
+      background: #fff;
+    }
+    .qty-btn {
+      width: 38px; height: 40px;
+      border: none; background: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      transition: background 150ms;
+    }
+    .qty-btn:hover { background: var(--bg-subtle); }
+    .qty-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .qty-val {
+      min-width: 40px; text-align: center;
+      font-weight: 700; font-size: .9375rem;
+      color: var(--text-primary);
+      border-left: 1.5px solid var(--border-default);
+      border-right: 1.5px solid var(--border-default);
+      line-height: 40px;
+    }
+
+    /* ── CTA buttons ──────────────────────────────── */
+    .cta-row { display: flex; gap: 10px; }
+    .btn-cart {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      height: 50px;
+      border: 1.5px solid var(--color-primary);
+      border-radius: 14px;
+      background: #fff;
+      font-family: var(--font-sans);
+      font-size: .9375rem; font-weight: 700;
+      color: var(--color-primary);
+      cursor: pointer;
+      transition: background 150ms, color 150ms;
+    }
+    .btn-cart:hover { background: var(--color-primary-50); }
+    .btn-cart:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-buy {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      height: 50px;
+      border: none;
+      border-radius: 14px;
+      background: var(--color-primary);
+      font-family: var(--font-sans);
+      font-size: .9375rem; font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: background 150ms, transform 150ms, box-shadow 150ms;
+    }
+    .btn-buy:hover { background: var(--color-primary-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,107,69,.3); }
+    .btn-buy:active { transform: none; }
+    .btn-buy:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Trust strip ──────────────────────────────── */
+    .trust-strip {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .trust-item { display: flex; align-items: center; gap: 8px; }
+    .trust-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-primary); }
+    .trust-text { font-size: .8125rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* ── Section divider ──────────────────────────── */
+    .section { margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--border-default); }
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 1.5rem; font-weight: 600;
+      color: var(--text-primary); margin: 0 0 24px;
+    }
+
+    /* ── Care guide grid ──────────────────────────── */
+    .care-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 640px) { .care-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .care-grid { grid-template-columns: repeat(6, 1fr); } }
+
+    .care-card {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 20px 12px;
+      background: #fff;
+      border: 1px solid var(--border-default);
+      border-radius: 16px;
+      text-align: center;
+    }
+    .care-emoji { font-size: 1.75rem; line-height: 1; }
+    .care-label { font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+    .care-value { font-size: .875rem; font-weight: 600; color: var(--text-primary); }
+
+    /* ── Description prose ────────────────────────── */
+    .description {
+      font-size: .9375rem; line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .description p { margin: 0 0 14px; }
+    .description strong { color: var(--text-primary); }
+    .description ul { padding-left: 20px; margin: 0 0 14px; }
+    .description li { margin-bottom: 6px; }
+
+    /* ── FAQ accordion ────────────────────────────── */
+    .faq-item {
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .faq-btn {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px;
+      background: none; border: none; cursor: pointer;
+      font-family: var(--font-sans); font-size: .9375rem; font-weight: 600;
+      color: var(--text-primary); text-align: left;
+      transition: background 150ms;
+    }
+    .faq-btn:hover { background: var(--bg-subtle); }
+    .faq-body {
+      padding: 0 18px 16px;
+      font-size: .875rem; line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    /* ── Not found ────────────────────────────────── */
+    .not-found {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 80px 0; text-align: center;
+    }
+    .not-found h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem; font-weight: 600;
+      color: var(--text-primary); margin: 16px 0 8px;
+    }
+
+    /* ── Related grid ─────────────────────────────── */
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    @media (min-width: 640px) { .related-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .related-grid { grid-template-columns: repeat(4, 1fr); } }
+  `],
   template: `
-    <div class="max-w-screen-xl mx-auto px-4 md:px-6 py-8">
+    <div class="page">
 
       @if (loading()) {
         <!-- Skeleton -->
-        <div class="grid lg:grid-cols-2 gap-10">
-          <lg-skeleton height="480px" borderRadius="1rem"></lg-skeleton>
-          <div class="space-y-4">
-            <lg-skeleton height="2rem" width="70%"></lg-skeleton>
-            <lg-skeleton height="1rem" width="40%"></lg-skeleton>
-            <lg-skeleton height="2rem" width="30%"></lg-skeleton>
-            <lg-skeleton height="4rem"></lg-skeleton>
-            <lg-skeleton height="3rem" borderRadius="0.75rem"></lg-skeleton>
+        <div class="pdp-grid">
+          <lg-skeleton height="480px" borderRadius="20px"></lg-skeleton>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <lg-skeleton height="1.5rem" width="40%"></lg-skeleton>
+            <lg-skeleton height="2.5rem" width="80%"></lg-skeleton>
+            <lg-skeleton height="1rem" width="60%"></lg-skeleton>
+            <lg-skeleton height="2.5rem" width="35%"></lg-skeleton>
+            <lg-skeleton height="50px" borderRadius="14px"></lg-skeleton>
           </div>
         </div>
 
       } @else if (!product()) {
-        <div class="flex flex-col items-center py-20 text-center">
-          <mat-icon class="!text-6xl text-text-muted mb-4">inventory_2</mat-icon>
-          <h2 class="font-display text-2xl font-bold text-text-primary mb-2">Product not found</h2>
-          <a routerLink="/products" class="text-primary-600 hover:underline mt-4">Browse all products</a>
+        <div class="not-found">
+          <mat-icon style="font-size:56px;width:56px;height:56px;color:var(--color-sage)">eco</mat-icon>
+          <h2>Plant not found</h2>
+          <p style="color:var(--text-muted);margin:0 0 20px">This product may no longer be available.</p>
+          <a routerLink="/products" style="color:var(--color-primary);font-weight:600;text-decoration:none">
+            Browse all plants →
+          </a>
         </div>
 
       } @else {
         <!-- Breadcrumb -->
-        <nav class="flex items-center gap-2 text-sm text-text-muted mb-6">
-          <a routerLink="/" class="hover:text-text-primary">Home</a>
-          <mat-icon class="!text-base">chevron_right</mat-icon>
-          <a routerLink="/products" class="hover:text-text-primary">Products</a>
+        <nav class="breadcrumb">
+          <a routerLink="/">Home</a>
+          <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+          <a routerLink="/products">Plants & Seeds</a>
           @if (product()!.category) {
-            <mat-icon class="!text-base">chevron_right</mat-icon>
-            <a [routerLink]="['/products']" [queryParams]="{ category: product()!.category.slug }"
-               class="hover:text-text-primary">{{ product()!.category.name }}</a>
+            <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+            <a [routerLink]="['/products']" [queryParams]="{ category: product()!.category.slug }">
+              {{ product()!.category.name }}
+            </a>
           }
-          <mat-icon class="!text-base">chevron_right</mat-icon>
-          <span class="text-text-primary truncate max-w-[200px]">{{ product()!.name }}</span>
+          <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+          <span class="cur" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            {{ product()!.name }}
+          </span>
         </nav>
 
-        <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
+        <div class="pdp-grid">
 
-          <!-- Image gallery -->
-          <div class="space-y-3">
-            <div class="rounded-2xl overflow-hidden bg-surface-50 aspect-square">
-              <img
-                [lgLazy]="activeImage()"
-                [alt]="product()!.name"
-                class="w-full h-full object-contain p-4"
-              />
+          <!-- ── Left: Image gallery ───────────────── -->
+          <div class="gallery">
+            <div class="main-img">
+              <img [lgLazy]="activeImage()" [alt]="product()!.name" />
+              <div class="zoom-hint">
+                <mat-icon style="font-size:12px;width:12px;height:12px">zoom_in</mat-icon>
+                Hover to zoom
+              </div>
             </div>
+
             @if ((product()!.images?.length ?? 0) > 1) {
-              <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+              <div class="thumb-strip">
                 @for (img of product()!.images; track img.id) {
-                  <button
-                    class="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors"
-                    [class.border-primary-500]="activeImageUrl() === img.url"
-                    [class.border-transparent]="activeImageUrl() !== img.url"
-                    (click)="activeImageUrl.set(img.url)"
-                  >
-                    <img [src]="img.url" [alt]="img.alt ?? product()!.name" class="w-full h-full object-cover" />
+                  <button class="thumb-btn" [class.active]="activeImageUrl() === img.url"
+                          (click)="activeImageUrl.set(img.url)">
+                    <img [src]="img.url" [alt]="img.alt ?? product()!.name" />
                   </button>
                 }
               </div>
             }
           </div>
 
-          <!-- Product info -->
-          <div class="space-y-5">
+          <!-- ── Right: Product info ───────────────── -->
+          <div class="info-panel">
+
             @if (product()!.brand) {
-              <p class="text-sm text-text-muted uppercase tracking-widest font-semibold">
-                {{ product()!.brand!.name }}
-              </p>
+              <p class="brand-tag">{{ product()!.brand!.name }}</p>
             }
 
-            <h1 class="font-display text-2xl md:text-3xl font-bold text-text-primary leading-tight">
-              {{ product()!.name }}
-            </h1>
+            <h1 class="product-name">{{ product()!.name }}</h1>
 
             <!-- Rating -->
             @if (product()!.reviewCount > 0) {
-              <div class="flex items-center gap-2">
-                <div class="flex">
+              <div class="rating-row">
+                <div class="stars">
                   @for (i of [1,2,3,4,5]; track i) {
-                    <mat-icon class="!text-base text-amber-400">
+                    <mat-icon class="star" [class.star-empty]="i > product()!.rating"
+                              style="font-size:16px;width:16px;height:16px">
                       {{ i <= product()!.rating ? 'star' : 'star_border' }}
                     </mat-icon>
                   }
                 </div>
-                <span class="text-sm text-text-secondary">{{ product()!.rating }} ({{ product()!.reviewCount }} reviews)</span>
+                <span class="review-text">{{ product()!.rating }} · {{ product()!.reviewCount }} reviews</span>
               </div>
             }
 
-            <!-- Price -->
-            <div class="flex items-baseline gap-3">
-              <span class="font-display text-3xl font-bold text-text-primary">
-                {{ effectivePrice() | currencyInr }}
+            <!-- Plant info pills -->
+            <div class="info-pills">
+              <span class="info-pill">
+                <mat-icon>wb_sunny</mat-icon> Bright Indirect
               </span>
-              @if (product()!.salePrice) {
-                <span class="text-lg text-text-muted line-through">
-                  {{ product()!.basePrice | currencyInr }}
-                </span>
-                <lg-badge variant="error">{{ discountPct() }}% OFF</lg-badge>
-              }
+              <span class="info-pill">
+                <mat-icon>water_drop</mat-icon> Weekly Watering
+              </span>
+              <span class="info-pill">
+                <mat-icon>eco</mat-icon> Air Purifying
+              </span>
+              <span class="info-pill">
+                <mat-icon>local_shipping</mat-icon> Ships with Pot
+              </span>
             </div>
-            <p class="text-xs text-text-muted">Inclusive of all taxes</p>
+
+            <!-- Price -->
+            <div>
+              <div class="price-block">
+                <span class="price-main">{{ effectivePrice() | currencyInr }}</span>
+                @if (product()!.salePrice) {
+                  <span class="price-mrp">{{ product()!.basePrice | currencyInr }}</span>
+                  <span class="price-badge">{{ discountPct() }}% OFF</span>
+                }
+              </div>
+              <p class="tax-note" style="margin-top:4px">Inclusive of all taxes · Free delivery above ₹499</p>
+            </div>
+
+            <!-- Stock status -->
+            <div class="stock-chip" [class]="'stock-chip ' + stockStatusClass()">
+              <mat-icon style="font-size:15px;width:15px;height:15px">
+                {{ stockStatus() === 'out_of_stock' ? 'cancel' : stockStatus() === 'low' ? 'warning' : 'check_circle' }}
+              </mat-icon>
+              {{ stockStatus() === 'out_of_stock' ? 'Out of Stock' : stockStatus() === 'low' ? 'Only a few left — order soon!' : 'In Stock · Ready to ship' }}
+            </div>
 
             <!-- Variant selector -->
             @if (product()!.hasVariants && (product()!.variants?.length ?? 0) > 0) {
               @for (attrKey of variantAttributes(); track attrKey) {
                 <div>
-                  <p class="text-sm font-semibold text-text-primary mb-2 capitalize">
-                    {{ attrKey }}:
-                    <span class="font-normal text-text-secondary">{{ selectedVariant()?.attributes?.[attrKey] }}</span>
+                  <p class="variant-label">
+                    {{ attrKey | titlecase }}:
+                    <span>{{ selectedVariant()?.attributes?.[attrKey] }}</span>
                   </p>
-                  <div class="flex flex-wrap gap-2">
+                  <div class="variant-btns">
                     @for (val of variantValues(attrKey); track val) {
-                      <button
-                        class="px-3 py-1.5 rounded-lg border text-sm font-medium transition-all"
-                        [class.border-primary-500]="selectedVariant()?.attributes?.[attrKey] === val"
-                        [class.bg-primary-50]="selectedVariant()?.attributes?.[attrKey] === val"
-                        [class.text-primary-700]="selectedVariant()?.attributes?.[attrKey] === val"
-                        [class.border-border-default]="selectedVariant()?.attributes?.[attrKey] !== val"
-                        [class.text-text-secondary]="selectedVariant()?.attributes?.[attrKey] !== val"
-                        (click)="selectVariantByAttr(attrKey, val)"
-                      >{{ val }}</button>
+                      <button class="variant-btn"
+                              [class.active]="selectedVariant()?.attributes?.[attrKey] === val"
+                              (click)="selectVariantByAttr(attrKey, val)">
+                        {{ val }}
+                      </button>
                     }
                   </div>
                 </div>
               }
             }
 
-            <!-- Qty -->
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-medium text-text-primary">Quantity:</span>
-              <div class="flex items-center border border-border-default rounded-xl overflow-hidden">
-                <button class="px-3 py-2 hover:bg-surface-100 transition-colors"
-                        (click)="decrementQty()">
-                  <mat-icon class="!text-base">remove</mat-icon>
+            <!-- Qty stepper -->
+            <div class="qty-wrap">
+              <span class="qty-label">Qty</span>
+              <div class="qty-stepper">
+                <button class="qty-btn" [disabled]="qty() <= 1" (click)="decrementQty()">
+                  <mat-icon style="font-size:18px;width:18px;height:18px">remove</mat-icon>
                 </button>
-                <span class="px-4 py-2 text-sm font-semibold min-w-[2.5rem] text-center">{{ qty() }}</span>
-                <button class="px-3 py-2 hover:bg-surface-100 transition-colors"
-                        (click)="qty.update(q => q + 1)">
-                  <mat-icon class="!text-base">add</mat-icon>
+                <span class="qty-val">{{ qty() }}</span>
+                <button class="qty-btn" (click)="qty.update(q => q + 1)">
+                  <mat-icon style="font-size:18px;width:18px;height:18px">add</mat-icon>
                 </button>
               </div>
-
-              @if (stockStatus() === 'in_stock') {
-                <lg-badge variant="success">In Stock</lg-badge>
-              } @else if (stockStatus() === 'low') {
-                <lg-badge variant="warning">Low Stock</lg-badge>
-              } @else {
-                <lg-badge variant="error">Out of Stock</lg-badge>
-              }
             </div>
 
-            <!-- CTA Buttons -->
-            <div class="flex gap-3 pt-2">
-              <lg-button
-                variant="primary" size="lg" [fullWidth]="true"
-                prefixIcon="add_shopping_cart"
-                [disabled]="stockStatus() === 'out_of_stock'"
-                (click)="addToCart()"
-              >
+            <!-- CTA buttons -->
+            <div class="cta-row">
+              <button class="btn-cart" [disabled]="stockStatus() === 'out_of_stock'" (click)="addToCart()">
+                <mat-icon style="font-size:20px;width:20px;height:20px">add_shopping_cart</mat-icon>
                 Add to Cart
-              </lg-button>
-              <lg-button
-                variant="accent" size="lg" [fullWidth]="true"
-                prefixIcon="bolt"
-                [disabled]="stockStatus() === 'out_of_stock'"
-                (click)="buyNow()"
-              >
+              </button>
+              <button class="btn-buy" [disabled]="stockStatus() === 'out_of_stock'" (click)="buyNow()">
+                <mat-icon style="font-size:20px;width:20px;height:20px">bolt</mat-icon>
                 Buy Now
-              </lg-button>
+              </button>
             </div>
 
-            <!-- Trust badges -->
-            <div class="grid grid-cols-2 gap-3 pt-2">
+            <!-- Trust strip -->
+            <div class="trust-strip">
               @for (badge of trustBadges; track badge.icon) {
-                <div class="flex items-center gap-2 text-sm text-text-secondary">
-                  <mat-icon class="!text-base text-green-500">{{ badge.icon }}</mat-icon>
-                  {{ badge.label }}
+                <div class="trust-item">
+                  <mat-icon class="trust-icon">{{ badge.icon }}</mat-icon>
+                  <span class="trust-text">{{ badge.label }}</span>
                 </div>
               }
             </div>
+
+          </div><!-- /info-panel -->
+        </div><!-- /pdp-grid -->
+
+        <!-- ── Care Guide ──────────────────────────── -->
+        <div class="section">
+          <h2 class="section-heading">🌱 Plant Care Guide</h2>
+          <div class="care-grid">
+            @for (care of careGuide; track care.label) {
+              <div class="care-card">
+                <span class="care-emoji">{{ care.emoji }}</span>
+                <span class="care-label">{{ care.label }}</span>
+                <span class="care-value">{{ care.value }}</span>
+              </div>
+            }
           </div>
         </div>
 
-        <!-- Description -->
+        <!-- ── Description ─────────────────────────── -->
         @if (product()!.description) {
-          <div class="mt-12 pt-8 border-t border-border-default">
-            <h2 class="font-display text-xl font-bold text-text-primary mb-4">Product Description</h2>
-            <div class="prose dark:prose-invert max-w-none text-text-secondary leading-relaxed"
-                 [innerHTML]="product()!.description">
-            </div>
+          <div class="section">
+            <h2 class="section-heading">About This Plant</h2>
+            <div class="description" [innerHTML]="product()!.description"></div>
           </div>
         }
 
-        <!-- Related Products -->
+        <!-- ── FAQ ────────────────────────────────────── -->
+        <div class="section">
+          <h2 class="section-heading">Frequently Asked Questions</h2>
+          @for (faq of faqs; track faq.q; let i = $index) {
+            <div class="faq-item">
+              <button class="faq-btn" (click)="toggleFaq(i)">
+                {{ faq.q }}
+                <mat-icon style="font-size:18px;width:18px;height:18px;flex-shrink:0;
+                                 transition:transform 200ms"
+                          [style.transform]="openFaq() === i ? 'rotate(180deg)' : 'none'">
+                  expand_more
+                </mat-icon>
+              </button>
+              @if (openFaq() === i) {
+                <div class="faq-body">{{ faq.a }}</div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Related products ─────────────────────── -->
         @if (related().length > 0) {
-          <div class="mt-12 pt-8 border-t border-border-default">
-            <h2 class="font-display text-xl font-bold text-text-primary mb-6">Related Products</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div class="section">
+            <h2 class="section-heading">You May Also Like</h2>
+            <div class="related-grid">
               @for (p of related(); track p.id) {
                 <lg-product-card [product]="p"></lg-product-card>
               }
@@ -232,12 +589,13 @@ import { ProductCarouselComponent } from '../../../shared/components/product-car
           </div>
         }
 
-        <!-- Also Bought -->
+        <!-- ── Also bought carousel ─────────────────── -->
         @if (alsoBought().length > 0) {
-          <div class="mt-4 border-t border-border-default">
+          <div class="section" style="padding-top:0;border-top:none">
             <lg-product-carousel title="Customers Also Bought" [products]="alsoBought()"></lg-product-carousel>
           </div>
         }
+
       }
     </div>
   `,
@@ -257,6 +615,7 @@ export class ProductDetailComponent implements OnInit {
   readonly activeImageUrl  = signal<string>('');
   readonly selectedVariant = signal<ProductVariant | null>(null);
   readonly qty             = signal(1);
+  readonly openFaq         = signal<number | null>(null);
 
   readonly activeImage = computed(() =>
     this.activeImageUrl() || this.productSvc.getPrimaryImage(this.product()!),
@@ -289,16 +648,57 @@ export class ProductDetailComponent implements OnInit {
     return 'in_stock';
   });
 
+  readonly stockStatusClass = computed(() => {
+    const s = this.stockStatus();
+    if (s === 'out_of_stock') return 'stock-out';
+    if (s === 'low') return 'stock-low';
+    return 'stock-in';
+  });
+
   readonly trustBadges = [
-    { icon: 'verified',        label: 'Genuine Product' },
-    { icon: 'local_shipping',  label: 'Free Delivery' },
-    { icon: 'replay',          label: '10-Day Returns' },
-    { icon: 'support_agent',   label: '24/7 Support' },
+    { icon: 'verified',       label: 'Genuine Plants' },
+    { icon: 'local_shipping', label: 'Free Delivery' },
+    { icon: 'replay',         label: '7-Day Returns' },
+    { icon: 'support_agent',  label: 'Expert Support' },
+  ];
+
+  readonly careGuide = [
+    { emoji: '☀️', label: 'Sunlight',     value: 'Bright Indirect' },
+    { emoji: '💧', label: 'Water',        value: 'Every 7 Days' },
+    { emoji: '🌡️', label: 'Temperature', value: '18–30°C' },
+    { emoji: '💨', label: 'Humidity',     value: 'Medium' },
+    { emoji: '🌱', label: 'Difficulty',   value: 'Easy' },
+    { emoji: '📏', label: 'Mature Size',  value: '1–2 ft' },
+  ];
+
+  readonly faqs = [
+    {
+      q: 'Will the plant look exactly like in the photo?',
+      a: 'Plants are natural products and may vary slightly in size, colour, and shape. The photo is representative of the variety you will receive. We take care to send healthy, thriving specimens.',
+    },
+    {
+      q: 'How is the plant packaged for delivery?',
+      a: 'Each plant is carefully packed in our specially designed eco-friendly packaging with breathable holes, moisture-retaining paper, and secure support to prevent movement during transit.',
+    },
+    {
+      q: 'What if my plant arrives damaged?',
+      a: 'We offer a 7-day plant guarantee. If your plant arrives damaged or in poor health, take a photo within 24 hours of delivery and contact us — we will replace it free of charge.',
+    },
+    {
+      q: 'Do you ship the plant with or without the pot?',
+      a: 'All plants are shipped with a nursery grow pot. The decorative pot shown in some images is for illustration purposes and is sold separately.',
+    },
+    {
+      q: 'How do I care for the plant after delivery?',
+      a: 'Let the plant rest for 2–3 days after arrival before repotting. Water lightly and place in bright indirect light. Avoid direct afternoon sun for the first week while the plant acclimatises.',
+    },
   ];
 
   ngOnInit(): void {
     this.#route.params.subscribe(params => {
       this.loading.set(true);
+      this.qty.set(1);
+      this.openFaq.set(null);
       this.productSvc.getProduct(params['slug']).subscribe({
         next: res => {
           this.product.set(res.data);
@@ -306,9 +706,9 @@ export class ProductDetailComponent implements OnInit {
           if (res.data.variants?.length) this.selectedVariant.set(res.data.variants[0]);
           this.loading.set(false);
 
-          // Load related + AI recommendations
           this.productSvc.getRelated(res.data.id).subscribe({
             next: r => this.related.set(r.data),
+            error: () => {},
           });
           this.#ai.getAlsoBought(res.data.id).subscribe({
             next: r => this.alsoBought.set(r.data),
@@ -332,14 +732,19 @@ export class ProductDetailComponent implements OnInit {
 
   selectVariantByAttr(key: string, value: string): void {
     const current = this.selectedVariant();
-    const match = this.product()?.variants?.find(v => {
-      const attrs = { ...current?.attributes, [key]: value };
-      return Object.entries(attrs).every(([k, v2]) => v.attributes?.[k] === v2);
-    }) ?? this.product()?.variants?.find(v => v.attributes?.[key] === value);
+    const match =
+      this.product()?.variants?.find(v => {
+        const attrs = { ...current?.attributes, [key]: value };
+        return Object.entries(attrs).every(([k, v2]) => v.attributes?.[k] === v2);
+      }) ?? this.product()?.variants?.find(v => v.attributes?.[key] === value);
     if (match) this.selectedVariant.set(match);
   }
 
-  decrementQty(): void { this.qty.update(q => q > 1 ? q - 1 : 1); }
+  decrementQty(): void { this.qty.update(q => Math.max(1, q - 1)); }
+
+  toggleFaq(i: number): void {
+    this.openFaq.update(cur => cur === i ? null : i);
+  }
 
   addToCart(): void {
     const p = this.product()!;

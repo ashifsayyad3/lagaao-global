@@ -27,11 +27,18 @@ const PRODUCT_INCLUDE: Includeable[] = [
 export class ProductsService {
   async list(req: Request) {
     const { limit, offset, page } = getPagination(req, 24);
-    const { categoryId, brandId, minPrice, maxPrice, featured, q } = req.query;
+    const { categoryId, category, brandId, minPrice, maxPrice, featured, sort, q } = req.query;
 
     const where: WhereOptions = { status: 'active' };
 
-    if (categoryId) where['categoryId'] = categoryId;
+    // support both categoryId (integer) and category (slug)
+    if (categoryId) {
+      where['categoryId'] = categoryId;
+    } else if (category) {
+      const cat = await Category.findOne({ where: { slug: category } });
+      if (cat) where['categoryId'] = cat.id;
+    }
+
     if (brandId)    where['brandId']    = brandId;
     if (featured)   where['isFeatured'] = true;
     if (q)          where['name']       = { [Op.like]: `%${q}%` };
@@ -42,10 +49,19 @@ export class ProductsService {
       };
     }
 
+    const orderMap: Record<string, Order> = {
+      rating:     [['rating',    'DESC']] as Order,
+      price_asc:  [['basePrice', 'ASC']]  as Order,
+      price_desc: [['basePrice', 'DESC']] as Order,
+      newest:     [['createdAt', 'DESC']] as Order,
+      popular:    [['reviewCount', 'DESC']] as Order,
+    };
+    const order: Order = orderMap[sort as string] ?? [['createdAt', 'DESC']] as Order;
+
     const { count, rows } = await Product.findAndCountAll({
       where, limit, offset,
       include: PRODUCT_INCLUDE,
-      order: [['createdAt', 'DESC']],
+      order,
       distinct: true,
     });
 

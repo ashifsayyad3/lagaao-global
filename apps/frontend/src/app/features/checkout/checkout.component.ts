@@ -4,116 +4,247 @@ import {
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { MatStepperModule } from '@angular/material/stepper';
 import { CartService, PriceSummary } from '../../core/services/cart.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
-import { ButtonComponent } from '../../shared/components/button/button.component';
-import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
 type Step = 'address' | 'payment' | 'review';
 type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod';
 
 interface AddressForm {
-  fullName: string;
-  phone: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  pincode: string;
+  fullName: string; phone: string;
+  line1: string; line2: string;
+  city: string; state: string; pincode: string;
 }
 
 @Component({
   selector: 'lg-checkout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink, FormsModule, MatIconModule,
-    CurrencyInrPipe, ButtonComponent, BadgeComponent,
-  ],
+  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe],
+  styles: [`
+    :host { display: block; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 24px 24px 80px; }
+
+    /* ── Breadcrumb ────────────────────────────── */
+    .breadcrumb { display:flex; align-items:center; gap:4px; font-size:.8125rem; color:var(--text-muted); margin-bottom:24px; }
+    .breadcrumb a { color:var(--text-muted); text-decoration:none; transition:color 150ms; }
+    .breadcrumb a:hover { color:var(--color-primary); }
+
+    /* ── Page heading ──────────────────────────── */
+    .page-heading { font-family:var(--font-display); font-size:1.75rem; font-weight:600; color:var(--text-primary); margin:0 0 28px; }
+
+    /* ── Stepper ───────────────────────────────── */
+    .stepper { display:flex; align-items:center; margin-bottom:32px; }
+    .step-item { display:flex; align-items:center; gap:10px; }
+    .step-connector { flex:1; height:1px; background:var(--border-default); margin:0 12px; min-width:32px; transition:background 300ms; }
+    .step-connector.done { background:var(--color-primary); }
+
+    .step-circle {
+      width:36px; height:36px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.875rem; font-weight:700;
+      border:2px solid var(--border-default);
+      background:#fff; color:var(--text-muted);
+      transition:all 200ms; flex-shrink:0;
+    }
+    .step-circle.active { border-color:var(--color-primary); background:var(--color-primary); color:#fff; }
+    .step-circle.done   { border-color:var(--color-primary); background:var(--color-primary-50); color:var(--color-primary); }
+
+    .step-label { font-size:.8125rem; font-weight:600; color:var(--text-muted); white-space:nowrap; }
+    .step-label.active { color:var(--color-primary); }
+    .step-label.done   { color:var(--text-secondary); }
+
+    /* ── Main grid ─────────────────────────────── */
+    .checkout-grid { display:grid; grid-template-columns:1fr; gap:24px; align-items:start; }
+    @media(min-width:1024px){ .checkout-grid { grid-template-columns:1fr 340px; } }
+
+    /* ── Step card ─────────────────────────────── */
+    .step-card {
+      background:#fff; border:1px solid var(--border-default); border-radius:20px;
+      padding:28px;
+    }
+    .step-card-heading { font-family:var(--font-display); font-size:1.25rem; font-weight:600; color:var(--text-primary); margin:0 0 24px; }
+
+    /* ── Form fields ───────────────────────────── */
+    .form-grid { display:grid; grid-template-columns:1fr; gap:16px; }
+    @media(min-width:560px){ .form-grid { grid-template-columns:1fr 1fr; } }
+    .col-span-2 { grid-column:1/-1; }
+
+    .field { display:flex; flex-direction:column; gap:5px; }
+    .field label { font-size:.8125rem; font-weight:600; color:var(--text-secondary); }
+    .field input, .field select {
+      height:44px; padding:0 14px;
+      border:1.5px solid var(--border-default); border-radius:11px;
+      font-family:var(--font-sans); font-size:.875rem; color:var(--text-primary);
+      background:var(--bg-subtle); outline:none; width:100%;
+      transition:border-color 150ms, background 150ms;
+    }
+    .field input:focus, .field select:focus {
+      border-color:var(--color-primary); background:#fff;
+    }
+    .field input::placeholder { color:var(--text-muted); }
+
+    /* ── Payment methods ───────────────────────── */
+    .payment-list { display:flex; flex-direction:column; gap:10px; }
+    .pay-option {
+      display:flex; align-items:center; gap:14px; padding:16px;
+      border:1.5px solid var(--border-default); border-radius:14px;
+      cursor:pointer; transition:border-color 150ms, background 150ms;
+    }
+    .pay-option:hover { border-color:var(--color-primary-200); }
+    .pay-option.active { border-color:var(--color-primary); background:var(--color-primary-50); }
+    .pay-icon { width:40px; height:40px; border-radius:10px; background:var(--bg-subtle); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .pay-label { font-size:.9375rem; font-weight:600; color:var(--text-primary); }
+    .pay-desc  { font-size:.75rem; color:var(--text-muted); }
+    .pay-badge {
+      margin-left:auto; padding:2px 10px; border-radius:9999px;
+      font-size:.75rem; font-weight:700;
+      background:rgba(212,136,10,.12); color:var(--color-warning);
+    }
+
+    /* ── Review summaries ──────────────────────── */
+    .review-box {
+      background:var(--bg-subtle); border:1px solid var(--border-default); border-radius:12px; padding:14px 16px;
+    }
+    .review-box-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .review-box-label { font-size:.6875rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+    .edit-link { font-size:.75rem; color:var(--color-primary); font-weight:600; background:none; border:none; cursor:pointer; }
+
+    .review-items { display:flex; flex-direction:column; gap:10px; }
+    .review-item  { display:flex; align-items:center; gap:10px; }
+    .review-item-img { width:48px; height:48px; border-radius:9px; object-fit:cover; background:var(--bg-subtle); flex-shrink:0; }
+    .review-item-name { flex:1; font-size:.875rem; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .review-item-qty  { font-size:.75rem; color:var(--text-muted); }
+    .review-item-price{ font-size:.875rem; font-weight:700; color:var(--text-primary); }
+
+    /* ── Step nav buttons ──────────────────────── */
+    .step-actions { display:flex; justify-content:space-between; align-items:center; margin-top:24px; }
+
+    .btn-back {
+      display:flex; align-items:center; gap:6px; height:44px; padding:0 18px;
+      border:1.5px solid var(--border-default); border-radius:11px;
+      background:#fff; font-family:var(--font-sans); font-size:.875rem; font-weight:600;
+      color:var(--text-secondary); cursor:pointer; transition:border-color 150ms;
+    }
+    .btn-back:hover { border-color:var(--color-primary); color:var(--color-primary); }
+
+    .btn-next {
+      display:flex; align-items:center; gap:8px; height:44px; padding:0 24px;
+      border:none; border-radius:11px;
+      background:var(--color-primary); color:#fff;
+      font-family:var(--font-sans); font-size:.9375rem; font-weight:700;
+      cursor:pointer; transition:background 150ms, transform 150ms;
+    }
+    .btn-next:hover:not(:disabled) { background:var(--color-primary-dark); transform:translateY(-1px); }
+    .btn-next:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .btn-place {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:100%; height:52px; border:none; border-radius:14px;
+      background:var(--color-primary); color:#fff;
+      font-family:var(--font-sans); font-size:1rem; font-weight:700;
+      cursor:pointer; transition:background 150ms, transform 150ms, box-shadow 150ms;
+      margin-top:4px;
+    }
+    .btn-place:hover:not(:disabled) { background:var(--color-primary-dark); transform:translateY(-1px); box-shadow:0 6px 20px rgba(61,107,69,.3); }
+    .btn-place:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    /* ── Price panel ───────────────────────────── */
+    .price-panel {
+      background:#fff; border:1px solid var(--border-default); border-radius:20px;
+      padding:22px; display:flex; flex-direction:column; gap:14px;
+    }
+    @media(min-width:1024px){ .price-panel { position:sticky; top:88px; } }
+
+    .price-panel-heading { font-family:var(--font-display); font-size:1rem; font-weight:600; color:var(--text-primary); margin:0; }
+    .price-rows { display:flex; flex-direction:column; gap:9px; font-size:.875rem; }
+    .price-row  { display:flex; justify-content:space-between; color:var(--text-secondary); }
+    .price-row.saving { color:var(--color-primary); }
+    .price-row.cod    { color:var(--color-warning); }
+    .price-divider { height:1px; background:var(--border-default); }
+    .price-total { display:flex; justify-content:space-between; font-size:1.0625rem; font-weight:700; color:var(--text-primary); }
+
+    .secure-note { display:flex; align-items:center; gap:6px; font-size:.75rem; color:var(--text-muted); justify-content:center; }
+  `],
   template: `
-    <div class="max-w-screen-lg mx-auto px-4 md:px-6 py-8">
+    <div class="page">
 
       <!-- Breadcrumb -->
-      <nav class="flex items-center gap-2 text-sm text-text-muted mb-6">
-        <a routerLink="/" class="hover:text-text-primary">Home</a>
-        <mat-icon class="!text-base">chevron_right</mat-icon>
-        <a routerLink="/cart" class="hover:text-text-primary">Cart</a>
-        <mat-icon class="!text-base">chevron_right</mat-icon>
-        <span class="text-text-primary">Checkout</span>
+      <nav class="breadcrumb">
+        <a routerLink="/">Home</a>
+        <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+        <a routerLink="/cart">Cart</a>
+        <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+        <span style="color:var(--text-primary);font-weight:500">Checkout</span>
       </nav>
 
+      <h1 class="page-heading">Checkout</h1>
+
       <!-- Stepper -->
-      <div class="flex items-center gap-0 mb-8">
+      <div class="stepper">
         @for (s of steps; track s.key; let i = $index; let last = $last) {
-          <div class="flex items-center gap-2"
-               [class.flex-1]="!last">
-            <div class="flex items-center gap-2 cursor-pointer" (click)="goToStep(s.key)">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-                   [class.bg-primary-600]="currentStep() === s.key || isCompleted(s.key)"
-                   [class.text-white]="currentStep() === s.key || isCompleted(s.key)"
-                   [class.bg-surface-100]="currentStep() !== s.key && !isCompleted(s.key)"
-                   [class.text-text-muted]="currentStep() !== s.key && !isCompleted(s.key)">
-                @if (isCompleted(s.key)) {
-                  <mat-icon class="!text-base">check</mat-icon>
-                } @else {
-                  {{ i + 1 }}
-                }
-              </div>
-              <span class="text-sm font-medium hidden sm:block"
-                    [class.text-primary-600]="currentStep() === s.key"
-                    [class.text-text-secondary]="currentStep() !== s.key">
-                {{ s.label }}
-              </span>
+          <div class="step-item" style="cursor:pointer" (click)="goToStep(s.key)">
+            <div class="step-circle"
+                 [class.active]="currentStep() === s.key"
+                 [class.done]="isCompleted(s.key) && currentStep() !== s.key">
+              @if (isCompleted(s.key) && currentStep() !== s.key) {
+                <mat-icon style="font-size:16px;width:16px;height:16px">check</mat-icon>
+              } @else {
+                {{ i + 1 }}
+              }
             </div>
-            @if (!last) {
-              <div class="flex-1 h-px bg-border-default mx-2"></div>
-            }
+            <span class="step-label"
+                  [class.active]="currentStep() === s.key"
+                  [class.done]="isCompleted(s.key) && currentStep() !== s.key">
+              {{ s.label }}
+            </span>
           </div>
+          @if (!last) {
+            <div class="step-connector" [class.done]="isCompleted(s.key)"></div>
+          }
         }
       </div>
 
-      <div class="grid lg:grid-cols-3 gap-8 items-start">
+      <div class="checkout-grid">
 
-        <!-- Step content -->
-        <div class="lg:col-span-2">
+        <!-- ── Step content ──────────────────────── -->
+        <div>
 
           <!-- Step 1: Address -->
           @if (currentStep() === 'address') {
-            <div class="rounded-2xl border border-border-default bg-bg-base p-6">
-              <h2 class="font-display font-bold text-lg text-text-primary mb-5">Delivery Address</h2>
-
-              <div class="grid sm:grid-cols-2 gap-4">
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-text-secondary mb-1">Full Name *</label>
-                  <input [(ngModel)]="address.fullName" class="form-input" placeholder="John Doe" />
+            <div class="step-card">
+              <h2 class="step-card-heading">📍 Delivery Address</h2>
+              <div class="form-grid">
+                <div class="field col-span-2">
+                  <label>Full Name *</label>
+                  <input [(ngModel)]="address.fullName" placeholder="Rahul Sharma" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-text-secondary mb-1">Phone *</label>
-                  <input [(ngModel)]="address.phone" class="form-input" placeholder="9876543210" type="tel" />
+                <div class="field">
+                  <label>Phone Number *</label>
+                  <input [(ngModel)]="address.phone" type="tel" placeholder="9876543210" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-text-secondary mb-1">Pincode *</label>
-                  <input [(ngModel)]="address.pincode" class="form-input" placeholder="400001" maxlength="6" />
+                <div class="field">
+                  <label>Pincode *</label>
+                  <input [(ngModel)]="address.pincode" placeholder="400001" maxlength="6" />
                 </div>
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-text-secondary mb-1">Address Line 1 *</label>
-                  <input [(ngModel)]="address.line1" class="form-input" placeholder="House / Flat / Building" />
+                <div class="field col-span-2">
+                  <label>Address Line 1 *</label>
+                  <input [(ngModel)]="address.line1" placeholder="House / Flat / Building / Wing" />
                 </div>
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-text-secondary mb-1">Address Line 2</label>
-                  <input [(ngModel)]="address.line2" class="form-input" placeholder="Street / Landmark (optional)" />
+                <div class="field col-span-2">
+                  <label>Address Line 2 <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+                  <input [(ngModel)]="address.line2" placeholder="Street / Landmark / Area" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-text-secondary mb-1">City *</label>
-                  <input [(ngModel)]="address.city" class="form-input" placeholder="Mumbai" />
+                <div class="field">
+                  <label>City *</label>
+                  <input [(ngModel)]="address.city" placeholder="Mumbai" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-text-secondary mb-1">State *</label>
-                  <select [(ngModel)]="address.state" class="form-input">
+                <div class="field">
+                  <label>State *</label>
+                  <select [(ngModel)]="address.state">
                     <option value="">Select state</option>
                     @for (s of indianStates; track s) {
                       <option [value]="s">{{ s }}</option>
@@ -121,170 +252,198 @@ interface AddressForm {
                   </select>
                 </div>
               </div>
-
-              <div class="flex justify-end mt-6">
-                <lg-button variant="primary" size="lg" suffixIcon="arrow_forward"
-                           [disabled]="!isAddressValid()" (click)="nextStep()">
+              <div class="step-actions">
+                <a routerLink="/cart" class="btn-back">
+                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_back</mat-icon>
+                  Back to Cart
+                </a>
+                <button class="btn-next" [disabled]="!isAddressValid()" (click)="nextStep()">
                   Continue to Payment
-                </lg-button>
+                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_forward</mat-icon>
+                </button>
               </div>
             </div>
           }
 
           <!-- Step 2: Payment -->
           @if (currentStep() === 'payment') {
-            <div class="rounded-2xl border border-border-default bg-bg-base p-6">
-              <h2 class="font-display font-bold text-lg text-text-primary mb-5">Payment Method</h2>
-
-              <div class="space-y-3">
+            <div class="step-card">
+              <h2 class="step-card-heading">💳 Payment Method</h2>
+              <div class="payment-list">
                 @for (method of paymentMethods; track method.key) {
-                  <label
-                    class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all"
-                    [class.border-primary-500]="paymentMethod() === method.key"
-                    [class.bg-primary-50]="paymentMethod() === method.key"
-                    [class.border-border-default]="paymentMethod() !== method.key"
-                    [class.hover:border-primary-200]="paymentMethod() !== method.key"
-                  >
-                    <input type="radio" name="payment" [value]="method.key"
-                           [checked]="paymentMethod() === method.key"
-                           (change)="paymentMethod.set(method.key)"
-                           class="accent-primary-600" />
-                    <mat-icon class="text-text-secondary">{{ method.icon }}</mat-icon>
-                    <div class="flex-1">
-                      <p class="font-medium text-text-primary text-sm">{{ method.label }}</p>
-                      <p class="text-xs text-text-muted">{{ method.desc }}</p>
+                  <div class="pay-option" [class.active]="paymentMethod() === method.key"
+                       (click)="paymentMethod.set(method.key)">
+                    <div class="pay-icon">
+                      <mat-icon style="color:var(--color-primary)">{{ method.icon }}</mat-icon>
+                    </div>
+                    <div style="flex:1">
+                      <div class="pay-label">{{ method.label }}</div>
+                      <div class="pay-desc">{{ method.desc }}</div>
                     </div>
                     @if (method.key === 'cod') {
-                      <lg-badge variant="warning">+₹20 fee</lg-badge>
+                      <span class="pay-badge">+₹20 fee</span>
                     }
-                  </label>
+                    <div style="width:20px;height:20px;border-radius:50%;border:2px solid;flex-shrink:0;
+                                display:flex;align-items:center;justify-content:center"
+                         [style.border-color]="paymentMethod() === method.key ? 'var(--color-primary)' : 'var(--border-strong)'">
+                      @if (paymentMethod() === method.key) {
+                        <div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary)"></div>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
-
-              <div class="flex justify-between mt-6">
-                <lg-button variant="outline" prefixIcon="arrow_back" (click)="goToStep('address')">
+              <div class="step-actions">
+                <button class="btn-back" (click)="goToStep('address')">
+                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_back</mat-icon>
                   Back
-                </lg-button>
-                <lg-button variant="primary" size="lg" suffixIcon="arrow_forward" (click)="nextStep()">
+                </button>
+                <button class="btn-next" (click)="nextStep()">
                   Review Order
-                </lg-button>
+                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_forward</mat-icon>
+                </button>
               </div>
             </div>
           }
 
           <!-- Step 3: Review -->
           @if (currentStep() === 'review') {
-            <div class="rounded-2xl border border-border-default bg-bg-base p-6 space-y-6">
-              <h2 class="font-display font-bold text-lg text-text-primary">Review Your Order</h2>
+            <div class="step-card">
+              <h2 class="step-card-heading">✅ Review Your Order</h2>
 
-              <!-- Delivery address summary -->
-              <div class="p-4 rounded-xl bg-surface-50 border border-border-default">
-                <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Delivery To</p>
-                  <button class="text-xs text-primary-600 hover:underline" (click)="goToStep('address')">Edit</button>
-                </div>
-                <p class="font-medium text-text-primary text-sm">{{ address.fullName }} · {{ address.phone }}</p>
-                <p class="text-sm text-text-secondary">{{ address.line1 }}{{ address.line2 ? ', ' + address.line2 : '' }}, {{ address.city }}, {{ address.state }} — {{ address.pincode }}</p>
-              </div>
+              <div style="display:flex;flex-direction:column;gap:14px">
 
-              <!-- Payment method summary -->
-              <div class="p-4 rounded-xl bg-surface-50 border border-border-default">
-                <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Payment</p>
-                  <button class="text-xs text-primary-600 hover:underline" (click)="goToStep('payment')">Edit</button>
+                <!-- Address summary -->
+                <div class="review-box">
+                  <div class="review-box-head">
+                    <span class="review-box-label">Delivery Address</span>
+                    <button class="edit-link" (click)="goToStep('address')">Edit</button>
+                  </div>
+                  <p style="font-size:.9375rem;font-weight:600;color:var(--text-primary);margin:0 0 2px">
+                    {{ address.fullName }} &nbsp;·&nbsp; {{ address.phone }}
+                  </p>
+                  <p style="font-size:.875rem;color:var(--text-secondary);margin:0">
+                    {{ address.line1 }}{{ address.line2 ? ', ' + address.line2 : '' }},
+                    {{ address.city }}, {{ address.state }} – {{ address.pincode }}
+                  </p>
                 </div>
-                <p class="font-medium text-text-primary text-sm capitalize">
-                  {{ selectedPaymentMethod()?.label }}
+
+                <!-- Payment summary -->
+                <div class="review-box">
+                  <div class="review-box-head">
+                    <span class="review-box-label">Payment</span>
+                    <button class="edit-link" (click)="goToStep('payment')">Edit</button>
+                  </div>
+                  <p style="font-size:.9375rem;font-weight:600;color:var(--text-primary);margin:0">
+                    {{ selectedPaymentMethod()?.label }}
+                  </p>
+                </div>
+
+                <!-- Items -->
+                @if ((cartSvc.cart()?.items?.length ?? 0) > 0) {
+                  <div class="review-box">
+                    <div class="review-box-head">
+                      <span class="review-box-label">Items ({{ cartSvc.cart()!.items.length }})</span>
+                    </div>
+                    <div class="review-items">
+                      @for (item of cartSvc.cart()!.items; track item.id) {
+                        <div class="review-item">
+                          <img class="review-item-img"
+                               [src]="item.image || '/assets/placeholder.png'"
+                               [alt]="item.productName" />
+                          <div style="flex:1;min-width:0">
+                            <div class="review-item-name">{{ item.productName }}</div>
+                            <div class="review-item-qty">Qty: {{ item.qty }}</div>
+                          </div>
+                          <div class="review-item-price">{{ item.lineTotal | currencyInr }}</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <button class="btn-place" [disabled]="placing()" (click)="placeOrder()">
+                  @if (placing()) {
+                    <mat-icon style="font-size:20px;width:20px;height:20px;animation:spin 1s linear infinite">refresh</mat-icon>
+                    Placing order…
+                  } @else {
+                    <mat-icon style="font-size:20px;width:20px;height:20px">lock</mat-icon>
+                    Place Order · {{ finalTotal() | currencyInr }}
+                  }
+                </button>
+
+                <p style="text-align:center;font-size:.75rem;color:var(--text-muted)">
+                  By placing this order you agree to our
+                  <a href="#" style="color:var(--color-primary)">Terms & Conditions</a>
                 </p>
               </div>
-
-              <!-- Items -->
-              <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Items</p>
-                <div class="space-y-3">
-                  @for (item of cartSvc.cart()!.items; track item.id) {
-                    <div class="flex items-center gap-3">
-                      <img [src]="item.image || '/assets/placeholder.png'" [alt]="item.productName"
-                           class="w-12 h-12 rounded-lg object-cover bg-surface-100" />
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-text-primary truncate">{{ item.productName }}</p>
-                        <p class="text-xs text-text-muted">Qty: {{ item.qty }}</p>
-                      </div>
-                      <p class="text-sm font-semibold text-text-primary">{{ item.lineTotal | currencyInr }}</p>
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <lg-button variant="primary" size="lg" [fullWidth]="true"
-                         prefixIcon="lock" [loading]="placing()" (click)="placeOrder()">
-                Place Order · {{ (pricing()?.total ?? 0) | currencyInr }}
-              </lg-button>
-
-              <p class="text-xs text-text-muted text-center">
-                By placing this order, you agree to our
-                <a href="#" class="text-primary-600 hover:underline">Terms & Conditions</a>
-              </p>
             </div>
           }
         </div>
 
-        <!-- Price summary -->
-        <div class="rounded-2xl border border-border-default bg-bg-base p-5 space-y-3 sticky top-20">
-          <h3 class="font-semibold text-text-primary">Price Details</h3>
+        <!-- ── Price summary panel ───────────────── -->
+        <div class="price-panel">
+          <h3 class="price-panel-heading">Price Details</h3>
+
           @if (pricing()) {
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between text-text-secondary">
-                <span>Subtotal</span><span>{{ pricing()!.subtotal | currencyInr }}</span>
+            <div class="price-rows">
+              <div class="price-row">
+                <span>Subtotal</span>
+                <span>{{ pricing()!.subtotal | currencyInr }}</span>
               </div>
               @if (pricing()!.discount > 0) {
-                <div class="flex justify-between text-green-600">
-                  <span>Discount</span><span>−{{ pricing()!.discount | currencyInr }}</span>
+                <div class="price-row saving">
+                  <span>Discount</span>
+                  <span>−{{ pricing()!.discount | currencyInr }}</span>
                 </div>
               }
-              <div class="flex justify-between text-text-secondary">
-                <span>Shipping</span>
-                @if (pricing()!.shipping === 0) {
-                  <span class="text-green-600">FREE</span>
-                } @else {
-                  <span>{{ pricing()!.shipping | currencyInr }}</span>
-                }
+              <div class="price-row" [class.saving]="pricing()!.shipping === 0">
+                <span>Delivery</span>
+                <span>{{ pricing()!.shipping === 0 ? 'FREE' : (pricing()!.shipping | currencyInr) }}</span>
               </div>
               @if (paymentMethod() === 'cod') {
-                <div class="flex justify-between text-amber-600">
-                  <span>COD fee</span><span>₹20</span>
+                <div class="price-row cod">
+                  <span>COD fee</span><span>+₹20</span>
                 </div>
               }
-              <div class="border-t border-border-default pt-2 flex justify-between font-bold text-text-primary">
+              <div class="price-divider"></div>
+              <div class="price-total">
                 <span>Total</span>
                 <span>{{ finalTotal() | currencyInr }}</span>
               </div>
               @if (pricing()!.savings > 0) {
-                <p class="text-xs text-green-600 font-medium text-center pt-1">
-                  You save {{ pricing()!.savings | currencyInr }}!
-                </p>
+                <div style="text-align:center;font-size:.8125rem;color:var(--color-primary);font-weight:600;
+                             background:var(--color-primary-50);border-radius:9px;padding:8px">
+                  🌿 You save {{ pricing()!.savings | currencyInr }}!
+                </div>
               }
             </div>
           }
+
+          <div class="secure-note">
+            <mat-icon style="font-size:14px;width:14px;height:14px;color:var(--color-primary)">lock</mat-icon>
+            100% Secure Checkout
+          </div>
+
+          <!-- Payment icons -->
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+            @for (icon of paymentIcons; track icon) {
+              <span style="font-size:11px;padding:3px 8px;background:var(--bg-subtle);border:1px solid var(--border-default);border-radius:6px;color:var(--text-muted);font-weight:600">
+                {{ icon }}
+              </span>
+            }
+          </div>
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .form-input {
-      width: 100%; height: 2.5rem; padding: 0 0.75rem; border-radius: 0.625rem;
-      border: 1px solid var(--border-default); background: var(--bg-base);
-      color: var(--text-primary); font-size: 0.875rem;
-    }
-    .form-input:focus { outline: none; box-shadow: 0 0 0 2px var(--color-primary); border-color: transparent; }
-  `],
 })
 export class CheckoutComponent implements OnInit {
-  readonly cartSvc    = inject(CartService);
-  readonly #orderSvc  = inject(OrderService);
-  readonly #auth      = inject(AuthService);
-  readonly #toast     = inject(ToastService);
-  readonly #router    = inject(Router);
+  readonly cartSvc   = inject(CartService);
+  readonly #orderSvc = inject(OrderService);
+  readonly #auth     = inject(AuthService);
+  readonly #toast    = inject(ToastService);
+  readonly #router   = inject(Router);
 
   readonly currentStep   = signal<Step>('address');
   readonly paymentMethod = signal<PaymentMethod>('upi');
@@ -297,17 +456,19 @@ export class CheckoutComponent implements OnInit {
   };
 
   readonly steps = [
-    { key: 'address' as Step, label: 'Address' },
-    { key: 'payment' as Step, label: 'Payment' },
-    { key: 'review'  as Step, label: 'Review'  },
+    { key: 'address' as Step, label: 'Address'  },
+    { key: 'payment' as Step, label: 'Payment'  },
+    { key: 'review'  as Step, label: 'Review'   },
   ];
 
   readonly paymentMethods = [
-    { key: 'upi'        as PaymentMethod, label: 'UPI',         icon: 'account_balance_wallet', desc: 'Pay via any UPI app' },
-    { key: 'card'       as PaymentMethod, label: 'Credit / Debit Card', icon: 'credit_card', desc: 'Visa, Mastercard, RuPay' },
-    { key: 'netbanking' as PaymentMethod, label: 'Net Banking',  icon: 'account_balance',        desc: 'All major banks supported' },
-    { key: 'cod'        as PaymentMethod, label: 'Cash on Delivery', icon: 'payments',           desc: 'Pay when you receive' },
+    { key: 'upi'        as PaymentMethod, label: 'UPI',                  icon: 'account_balance_wallet', desc: 'GPay, PhonePe, Paytm and more' },
+    { key: 'card'       as PaymentMethod, label: 'Credit / Debit Card',  icon: 'credit_card',            desc: 'Visa, Mastercard, RuPay' },
+    { key: 'netbanking' as PaymentMethod, label: 'Net Banking',          icon: 'account_balance',        desc: 'All major banks supported' },
+    { key: 'cod'        as PaymentMethod, label: 'Cash on Delivery',     icon: 'payments',               desc: 'Pay when your order arrives' },
   ];
+
+  readonly paymentIcons = ['UPI', 'Visa', 'MC', 'RuPay', 'NetBanking'];
 
   readonly indianStates = [
     'Andhra Pradesh','Assam','Bihar','Chhattisgarh','Delhi','Goa','Gujarat',
@@ -332,12 +493,10 @@ export class CheckoutComponent implements OnInit {
     } else {
       this.loadPricing();
     }
-
-    // Pre-fill name/phone from auth
     const user = this.#auth.user();
     if (user) {
       this.address.fullName = user.name ?? '';
-      this.address.phone    = user.phone ?? '';
+      this.address.phone    = (user as any).phone ?? '';
     }
   }
 
@@ -351,9 +510,7 @@ export class CheckoutComponent implements OnInit {
     return !!(a.fullName && a.phone && a.line1 && a.city && a.state && a.pincode);
   }
 
-  isCompleted(step: Step): boolean {
-    return this.completed().has(step);
-  }
+  isCompleted(step: Step): boolean { return this.completed().has(step); }
 
   nextStep(): void {
     const order: Step[] = ['address', 'payment', 'review'];
@@ -364,11 +521,9 @@ export class CheckoutComponent implements OnInit {
 
   goToStep(step: Step): void {
     const order: Step[] = ['address', 'payment', 'review'];
-    const target = order.indexOf(step);
+    const target  = order.indexOf(step);
     const current = order.indexOf(this.currentStep());
-    if (target <= current || this.isCompleted(step)) {
-      this.currentStep.set(step);
-    }
+    if (target <= current || this.isCompleted(step)) this.currentStep.set(step);
   }
 
   placeOrder(): void {
@@ -376,14 +531,9 @@ export class CheckoutComponent implements OnInit {
     const a = this.address;
     this.#orderSvc.placeOrder({
       shippingAddress: {
-        fullName: a.fullName,
-        phone:    a.phone,
-        line1:    a.line1,
-        line2:    a.line2 || undefined,
-        city:     a.city,
-        state:    a.state,
-        pincode:  a.pincode,
-        country:  'India',
+        fullName: a.fullName, phone: a.phone,
+        line1: a.line1, line2: a.line2 || undefined,
+        city: a.city, state: a.state, pincode: a.pincode, country: 'India',
       },
       paymentMethod: this.paymentMethod(),
       couponCode:    this.pricing()?.couponCode ?? undefined,

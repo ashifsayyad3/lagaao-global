@@ -8,212 +8,381 @@ import { CartService, CartItem, PriceSummary } from '../../core/services/cart.se
 import { ToastService } from '../../core/services/toast.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { BadgeComponent } from '../../shared/components/badge/badge.component';
-import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
   selector: 'lg-cart',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    RouterLink, FormsModule, MatIconModule,
-    CurrencyInrPipe, SkeletonComponent, BadgeComponent, ButtonComponent,
-  ],
+  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe, SkeletonComponent],
+  styles: [`
+    :host { display: block; }
+    .page { max-width: 1200px; margin: 0 auto; padding: 24px 24px 80px; }
+
+    /* ── Breadcrumb ─────────────────────────────── */
+    .breadcrumb { display:flex; align-items:center; gap:4px; font-size:.8125rem; color:var(--text-muted); margin-bottom:24px; }
+    .breadcrumb a { color:var(--text-muted); text-decoration:none; transition:color 150ms; }
+    .breadcrumb a:hover { color:var(--color-primary); }
+
+    /* ── Page heading ───────────────────────────── */
+    .page-heading { font-family:var(--font-display); font-size:1.75rem; font-weight:600; color:var(--text-primary); margin:0 0 28px; }
+    .item-count { font-family:var(--font-sans); font-size:.9375rem; font-weight:400; color:var(--text-muted); margin-left:8px; }
+
+    /* ── Main grid ──────────────────────────────── */
+    .cart-grid { display:grid; grid-template-columns:1fr; gap:24px; align-items:start; }
+    @media(min-width:1024px){ .cart-grid { grid-template-columns:1fr 380px; } }
+
+    /* ── Cart item card ─────────────────────────── */
+    .item-card {
+      display:flex; gap:16px; padding:16px;
+      background:#fff; border:1px solid var(--border-default); border-radius:16px;
+      transition:border-color 200ms, box-shadow 200ms;
+    }
+    .item-card:hover { border-color:var(--color-primary-200); box-shadow:var(--shadow-sm); }
+
+    .item-img {
+      flex-shrink:0; width:100px; height:100px;
+      border-radius:12px; overflow:hidden; background:var(--bg-subtle);
+      text-decoration:none;
+    }
+    .item-img img { width:100%; height:100%; object-fit:cover; transition:transform 300ms ease; }
+    .item-card:hover .item-img img { transform:scale(1.05); }
+
+    .item-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+
+    .item-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+
+    .item-name {
+      font-size:.9375rem; font-weight:500; color:var(--text-primary);
+      text-decoration:none; line-height:1.4;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      transition:color 150ms;
+    }
+    .item-name:hover { color:var(--color-primary); }
+
+    .item-meta { font-size:.75rem; color:var(--text-muted); }
+
+    .remove-btn {
+      flex-shrink:0; width:28px; height:28px; border-radius:50%;
+      background:none; border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--text-muted); transition:color 150ms, background 150ms;
+    }
+    .remove-btn:hover { color:#c0392b; background:rgba(192,57,43,.08); }
+
+    .item-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+
+    /* ── Qty stepper ────────────────────────────── */
+    .qty-stepper {
+      display:flex; align-items:center;
+      border:1.5px solid var(--border-default); border-radius:10px; overflow:hidden;
+      background:#fff;
+    }
+    .qty-btn {
+      width:34px; height:34px; border:none; background:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; color:var(--text-secondary);
+      transition:background 150ms;
+    }
+    .qty-btn:hover:not(:disabled) { background:var(--bg-subtle); }
+    .qty-btn:disabled { opacity:.35; cursor:not-allowed; }
+    .qty-val {
+      min-width:36px; text-align:center; font-weight:700; font-size:.875rem;
+      color:var(--text-primary);
+      border-left:1.5px solid var(--border-default); border-right:1.5px solid var(--border-default);
+      line-height:34px;
+    }
+
+    .item-price { text-align:right; }
+    .item-price .total { font-size:1rem; font-weight:700; color:var(--text-primary); }
+    .item-price .mrp { font-size:.75rem; color:var(--text-muted); text-decoration:line-through; }
+
+    .oos-chip {
+      display:inline-flex; align-items:center; gap:4px;
+      font-size:.75rem; font-weight:600; color:#c0392b;
+      background:rgba(192,57,43,.08); border-radius:9999px; padding:2px 10px;
+    }
+
+    .continue-link {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:.875rem; font-weight:600; color:var(--color-primary);
+      text-decoration:none; margin-top:4px; transition:opacity 150ms;
+    }
+    .continue-link:hover { opacity:.75; }
+
+    /* ── Order summary panel ────────────────────── */
+    .summary-panel {
+      background:#fff; border:1px solid var(--border-default); border-radius:20px;
+      padding:24px; display:flex; flex-direction:column; gap:18px;
+    }
+    @media(min-width:1024px){ .summary-panel { position:sticky; top:88px; } }
+
+    .summary-heading { font-family:var(--font-display); font-size:1.125rem; font-weight:600; color:var(--text-primary); margin:0; }
+
+    /* ── Coupon input ───────────────────────────── */
+    .coupon-row { display:flex; gap:8px; }
+    .coupon-inp {
+      flex:1; height:40px; padding:0 14px;
+      border:1.5px solid var(--border-default); border-radius:10px;
+      font-family:var(--font-sans); font-size:.875rem; color:var(--text-primary);
+      background:var(--bg-subtle); outline:none; text-transform:uppercase;
+      transition:border-color 150ms;
+    }
+    .coupon-inp:focus { border-color:var(--color-primary); background:#fff; }
+    .coupon-inp::placeholder { text-transform:none; color:var(--text-muted); }
+    .coupon-btn {
+      height:40px; padding:0 18px;
+      background:var(--color-primary); color:#fff;
+      border:none; border-radius:10px; cursor:pointer;
+      font-family:var(--font-sans); font-size:.875rem; font-weight:700;
+      transition:background 150ms;
+    }
+    .coupon-btn:hover { background:var(--color-primary-dark); }
+    .coupon-btn:disabled { opacity:.5; cursor:not-allowed; }
+    .coupon-err { font-size:.75rem; color:var(--color-error); margin-top:-6px; }
+    .coupon-ok  { font-size:.75rem; color:var(--color-primary); font-weight:600; margin-top:-6px; }
+
+    /* ── Price rows ─────────────────────────────── */
+    .price-rows { display:flex; flex-direction:column; gap:10px; font-size:.875rem; }
+    .price-row  { display:flex; justify-content:space-between; color:var(--text-secondary); }
+    .price-row.saving { color:var(--color-primary); }
+    .price-row.free   { color:var(--color-primary); font-weight:600; }
+    .price-row.cod    { color:var(--color-warning); }
+    .price-divider    { height:1px; background:var(--border-default); }
+    .price-total { display:flex; justify-content:space-between; font-size:1rem; font-weight:700; color:var(--text-primary); }
+
+    .free-shipping-nudge {
+      display:flex; align-items:center; gap:6px; padding:10px 14px;
+      background:var(--color-primary-50); border-radius:10px;
+      font-size:.8125rem; color:var(--color-primary-dark); font-weight:500;
+    }
+
+    /* ── Checkout button ────────────────────────── */
+    .checkout-btn {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:100%; height:52px; border:none; border-radius:14px;
+      background:var(--color-primary); color:#fff;
+      font-family:var(--font-sans); font-size:1rem; font-weight:700;
+      cursor:pointer; transition:background 150ms, transform 150ms, box-shadow 150ms;
+    }
+    .checkout-btn:hover:not(:disabled) {
+      background:var(--color-primary-dark);
+      transform:translateY(-1px);
+      box-shadow:0 6px 20px rgba(61,107,69,.3);
+    }
+    .checkout-btn:active { transform:none; }
+    .checkout-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ── Trust row ──────────────────────────────── */
+    .trust-row { display:flex; justify-content:space-around; padding-top:4px; }
+    .trust-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .trust-label { font-size:10px; color:var(--text-muted); }
+
+    /* ── Empty state ────────────────────────────── */
+    .empty {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:80px 0; text-align:center;
+    }
+    .empty-icon { width:88px; height:88px; border-radius:50%; background:var(--bg-subtle); display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+    .empty h3 { font-family:var(--font-display); font-size:1.375rem; font-weight:600; color:var(--text-primary); margin:0 0 8px; }
+    .empty p  { font-size:.9375rem; color:var(--text-muted); margin:0 0 24px; }
+    .empty-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:12px 28px; background:var(--color-primary); color:#fff;
+      border:none; border-radius:9999px; font-family:var(--font-sans); font-size:.9375rem; font-weight:700;
+      text-decoration:none; cursor:pointer; transition:background 150ms, box-shadow 150ms;
+    }
+    .empty-btn:hover { background:var(--color-primary-dark); box-shadow:0 6px 20px rgba(61,107,69,.3); }
+  `],
   template: `
-    <div class="max-w-screen-xl mx-auto px-4 md:px-6 py-8">
+    <div class="page">
 
       <!-- Breadcrumb -->
-      <nav class="flex items-center gap-2 text-sm text-text-muted mb-6">
-        <a routerLink="/" class="hover:text-text-primary transition-colors">Home</a>
-        <mat-icon class="!text-base">chevron_right</mat-icon>
-        <span class="text-text-primary">Shopping Cart</span>
+      <nav class="breadcrumb">
+        <a routerLink="/">Home</a>
+        <mat-icon style="font-size:14px;width:14px;height:14px">chevron_right</mat-icon>
+        <span style="color:var(--text-primary);font-weight:500">Shopping Cart</span>
       </nav>
 
-      <h1 class="font-display text-2xl font-bold text-text-primary mb-6">
+      <h1 class="page-heading">
         Shopping Cart
         @if (!loading() && cartSvc.itemCount() > 0) {
-          <span class="text-base font-normal text-text-muted ml-2">
-            ({{ cartSvc.itemCount() }} item{{ cartSvc.itemCount() !== 1 ? 's' : '' }})
-          </span>
+          <span class="item-count">({{ cartSvc.itemCount() }} item{{ cartSvc.itemCount() !== 1 ? 's' : '' }})</span>
         }
       </h1>
 
       @if (loading()) {
-        <div class="grid lg:grid-cols-3 gap-8">
-          <div class="lg:col-span-2 space-y-4">
+        <div class="cart-grid">
+          <div style="display:flex;flex-direction:column;gap:16px">
             @for (i of [0,1,2]; track i) {
-              <lg-skeleton height="120px" borderRadius="1rem"></lg-skeleton>
+              <lg-skeleton height="116px" borderRadius="16px"></lg-skeleton>
             }
           </div>
-          <lg-skeleton height="320px" borderRadius="1rem"></lg-skeleton>
+          <lg-skeleton height="340px" borderRadius="20px"></lg-skeleton>
         </div>
 
       } @else if (!cartSvc.cart() || cartSvc.cart()!.items.length === 0) {
-        <div class="flex flex-col items-center justify-center py-24 text-center">
-          <div class="w-24 h-24 rounded-full bg-surface-100 flex items-center justify-center mb-6">
-            <mat-icon class="!text-4xl text-text-muted">shopping_cart</mat-icon>
+        <div class="empty">
+          <div class="empty-icon">
+            <mat-icon style="font-size:40px;width:40px;height:40px;color:var(--color-sage)">eco</mat-icon>
           </div>
-          <h3 class="font-display text-xl font-semibold text-text-primary mb-2">Your cart is empty</h3>
-          <p class="text-text-secondary mb-8">Looks like you haven't added anything yet.</p>
-          <lg-button variant="primary" size="lg" routerLink="/products" prefixIcon="explore">
-            Start Shopping
-          </lg-button>
+          <h3>Your cart is empty</h3>
+          <p>Discover beautiful plants, seeds, and garden essentials.</p>
+          <a routerLink="/products" class="empty-btn">
+            <mat-icon style="font-size:20px;width:20px;height:20px">local_florist</mat-icon>
+            Browse Plants
+          </a>
         </div>
 
       } @else {
-        <div class="grid lg:grid-cols-3 gap-8 items-start">
+        <div class="cart-grid">
 
-          <!-- Cart items -->
-          <div class="lg:col-span-2 space-y-4">
+          <!-- ── Cart items ───────────────────────── -->
+          <div style="display:flex;flex-direction:column;gap:12px">
             @for (item of cartSvc.cart()!.items; track item.id) {
-              <div class="flex gap-4 p-4 rounded-2xl border border-border-default bg-bg-base
-                          hover:border-primary-200 transition-colors">
+              <div class="item-card">
 
-                <a [routerLink]="['/products', item.productSlug]"
-                   class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-surface-50">
-                  <img [src]="item.image || '/assets/placeholder.png'"
-                       [alt]="item.productName"
-                       class="w-full h-full object-cover" />
+                <a [routerLink]="['/products', item.productSlug]" class="item-img">
+                  <img [src]="item.image || '/assets/placeholder.png'" [alt]="item.productName" />
                 </a>
 
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-2">
-                    <div>
-                      <a [routerLink]="['/products', item.productSlug]"
-                         class="font-medium text-text-primary hover:text-primary-600 transition-colors line-clamp-2">
+                <div class="item-body">
+                  <div class="item-top">
+                    <div style="flex:1;min-width:0">
+                      <a [routerLink]="['/products', item.productSlug]" class="item-name">
                         {{ item.productName }}
                       </a>
                       @if (item.variantAttrs) {
-                        <p class="text-xs text-text-muted mt-0.5">
-                          @for (entry of objectEntries(item.variantAttrs); track entry[0]) {
-                            <span class="capitalize">{{ entry[0] }}: {{ entry[1] }}</span>
-                            <span class="mx-1 last:hidden">·</span>
+                        <p class="item-meta" style="margin-top:2px">
+                          @for (e of objectEntries(item.variantAttrs); track e[0]) {
+                            <span class="capitalize">{{ e[0] }}: {{ e[1] }}</span>
+                            @if (!$last) { <span style="margin:0 4px">·</span> }
                           }
                         </p>
                       }
-                      @if (item.sku) {
-                        <p class="text-xs text-text-muted">SKU: {{ item.sku }}</p>
-                      }
                     </div>
-                    <button
-                      class="flex-shrink-0 w-7 h-7 rounded-full text-text-muted hover:text-red-500
-                             hover:bg-red-50 transition-colors flex items-center justify-center"
-                      (click)="remove(item)" aria-label="Remove">
-                      <mat-icon class="!text-base">close</mat-icon>
+                    <button class="remove-btn" (click)="remove(item)" aria-label="Remove">
+                      <mat-icon style="font-size:16px;width:16px;height:16px">close</mat-icon>
                     </button>
                   </div>
 
-                  <div class="flex items-center justify-between mt-3 gap-4">
-                    <div class="flex items-center border border-border-default rounded-lg overflow-hidden">
-                      <button class="px-2.5 py-1.5 hover:bg-surface-100 transition-colors disabled:opacity-40"
-                              [disabled]="item.qty <= 1"
-                              (click)="updateQty(item, item.qty - 1)">
-                        <mat-icon class="!text-sm">remove</mat-icon>
+                  <div class="item-footer">
+                    <div class="qty-stepper">
+                      <button class="qty-btn" [disabled]="item.qty <= 1" (click)="updateQty(item, item.qty - 1)">
+                        <mat-icon style="font-size:16px;width:16px;height:16px">remove</mat-icon>
                       </button>
-                      <span class="px-3 py-1.5 text-sm font-semibold min-w-[2rem] text-center">{{ item.qty }}</span>
-                      <button class="px-2.5 py-1.5 hover:bg-surface-100 transition-colors"
-                              (click)="updateQty(item, item.qty + 1)">
-                        <mat-icon class="!text-sm">add</mat-icon>
+                      <span class="qty-val">{{ item.qty }}</span>
+                      <button class="qty-btn" (click)="updateQty(item, item.qty + 1)">
+                        <mat-icon style="font-size:16px;width:16px;height:16px">add</mat-icon>
                       </button>
                     </div>
-                    <div class="text-right">
-                      <p class="font-bold text-text-primary">{{ item.lineTotal | currencyInr }}</p>
+
+                    <div class="item-price">
+                      <div class="total">{{ item.lineTotal | currencyInr }}</div>
                       @if (item.effectivePrice !== item.price) {
-                        <p class="text-xs text-text-muted line-through">{{ (item.price * item.qty) | currencyInr }}</p>
+                        <div class="mrp">{{ (item.price * item.qty) | currencyInr }}</div>
                       }
                     </div>
                   </div>
 
                   @if (item.isOutOfStock) {
-                    <lg-badge variant="error" class="mt-2">Out of stock — please remove</lg-badge>
+                    <div>
+                      <span class="oos-chip">
+                        <mat-icon style="font-size:12px;width:12px;height:12px">warning</mat-icon>
+                        Out of stock — please remove
+                      </span>
+                    </div>
                   }
                 </div>
               </div>
             }
 
-            <a routerLink="/products"
-               class="inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium">
-              <mat-icon class="!text-base">arrow_back</mat-icon>
+            <a routerLink="/products" class="continue-link">
+              <mat-icon style="font-size:16px;width:16px;height:16px">arrow_back</mat-icon>
               Continue shopping
             </a>
           </div>
 
-          <!-- Order summary -->
-          <div class="rounded-2xl border border-border-default bg-bg-base p-6 space-y-4 sticky top-20">
-            <h2 class="font-display font-bold text-lg text-text-primary">Order Summary</h2>
+          <!-- ── Order summary ────────────────────── -->
+          <div class="summary-panel">
+            <h2 class="summary-heading">Order Summary</h2>
 
-            <div class="flex gap-2">
-              <input [(ngModel)]="couponInput"
-                     placeholder="Coupon code"
-                     class="flex-1 h-9 px-3 rounded-lg border border-border-default bg-surface-50
-                            text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 uppercase"
-              />
-              <button class="h-9 px-3 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm
-                             font-medium transition-colors disabled:opacity-50"
-                      [disabled]="!couponInput.trim() || applyingCoupon()"
-                      (click)="applyCoupon()">
-                Apply
-              </button>
+            <!-- Coupon -->
+            <div>
+              <div class="coupon-row">
+                <input class="coupon-inp" [(ngModel)]="couponInput" placeholder="Enter coupon code" />
+                <button class="coupon-btn"
+                        [disabled]="!couponInput.trim() || applyingCoupon()"
+                        (click)="applyCoupon()">
+                  Apply
+                </button>
+              </div>
+              @if (couponError()) {
+                <p class="coupon-err" style="margin-top:6px">{{ couponError() }}</p>
+              }
+              @if (pricing()?.couponCode) {
+                <p class="coupon-ok" style="margin-top:6px">
+                  🎉 Coupon "{{ pricing()!.couponCode }}" applied!
+                </p>
+              }
             </div>
-            @if (couponError()) {
-              <p class="text-xs text-red-600 -mt-2">{{ couponError() }}</p>
-            }
 
             @if (pricing()) {
-              <div class="space-y-2.5 text-sm">
-                <div class="flex justify-between text-text-secondary">
+              <!-- Free shipping nudge -->
+              @if (pricing()!.shipping > 0) {
+                <div class="free-shipping-nudge">
+                  <mat-icon style="font-size:16px;width:16px;height:16px">local_shipping</mat-icon>
+                  Add {{ (499 - pricing()!.subtotal) | currencyInr }} more for <strong>FREE delivery</strong>
+                </div>
+              }
+
+              <!-- Price breakdown -->
+              <div class="price-rows">
+                <div class="price-row">
                   <span>Subtotal ({{ pricing()!.itemCount }} items)</span>
                   <span>{{ pricing()!.subtotal | currencyInr }}</span>
                 </div>
                 @if (pricing()!.discount > 0) {
-                  <div class="flex justify-between text-green-600">
-                    <span>Coupon ({{ pricing()!.couponCode }})</span>
+                  <div class="price-row saving">
+                    <span>Coupon discount</span>
                     <span>−{{ pricing()!.discount | currencyInr }}</span>
                   </div>
                 }
-                <div class="flex justify-between text-text-secondary">
-                  <span>Shipping</span>
-                  @if (pricing()!.shipping === 0) {
-                    <span class="text-green-600 font-medium">FREE</span>
-                  } @else {
-                    <span>{{ pricing()!.shipping | currencyInr }}</span>
-                  }
+                <div class="price-row" [class.free]="pricing()!.shipping === 0">
+                  <span>Delivery</span>
+                  <span>{{ pricing()!.shipping === 0 ? 'FREE' : (pricing()!.shipping | currencyInr) }}</span>
                 </div>
-                <div class="flex justify-between text-text-muted text-xs">
-                  <span>GST (18% included)</span>
+                <div class="price-row" style="color:var(--text-muted);font-size:.8125rem">
+                  <span>GST (18% incl.)</span>
                   <span>{{ pricing()!.tax | currencyInr }}</span>
                 </div>
-                @if (pricing()!.shipping > 0) {
-                  <p class="text-xs text-primary-600 bg-primary-50 rounded-lg px-3 py-2">
-                    Add {{ (499 - pricing()!.subtotal) | currencyInr }} more for FREE shipping
-                  </p>
-                }
-                <div class="border-t border-border-default pt-2.5 flex justify-between font-bold text-text-primary text-base">
+                <div class="price-divider"></div>
+                <div class="price-total">
                   <span>Total</span>
                   <span>{{ pricing()!.total | currencyInr }}</span>
                 </div>
                 @if (pricing()!.savings > 0) {
-                  <p class="text-xs text-green-600 font-medium text-center">
-                    You save {{ pricing()!.savings | currencyInr }} on this order!
-                  </p>
+                  <div style="text-align:center;font-size:.8125rem;color:var(--color-primary);font-weight:600;
+                               background:var(--color-primary-50);border-radius:9px;padding:8px">
+                    🌿 You save {{ pricing()!.savings | currencyInr }} on this order!
+                  </div>
                 }
               </div>
             }
 
-            <lg-button variant="primary" size="lg" [fullWidth]="true" prefixIcon="lock"
-                       [disabled]="hasOutOfStock()" routerLink="/checkout">
+            <button class="checkout-btn" [disabled]="hasOutOfStock()" routerLink="/checkout">
+              <mat-icon style="font-size:20px;width:20px;height:20px">lock</mat-icon>
               Proceed to Checkout
-            </lg-button>
+            </button>
 
-            <div class="flex justify-center gap-6 pt-1">
+            <div class="trust-row">
               @for (t of trustItems; track t.icon) {
-                <div class="flex flex-col items-center gap-0.5 text-text-muted">
-                  <mat-icon class="!text-base text-green-500">{{ t.icon }}</mat-icon>
-                  <span class="text-[10px]">{{ t.label }}</span>
+                <div class="trust-item">
+                  <mat-icon style="font-size:18px;width:18px;height:18px;color:var(--color-primary)">{{ t.icon }}</mat-icon>
+                  <span class="trust-label">{{ t.label }}</span>
                 </div>
               }
             </div>
           </div>
+
         </div>
       }
     </div>
@@ -234,9 +403,10 @@ export class CartComponent implements OnInit {
   );
 
   readonly trustItems = [
-    { icon: 'verified_user', label: 'Secure' },
-    { icon: 'replay',        label: 'Returns' },
-    { icon: 'support_agent', label: 'Support' },
+    { icon: 'verified_user', label: 'Secure Pay' },
+    { icon: 'replay',        label: '7-Day Return' },
+    { icon: 'local_shipping',label: 'Fast Delivery' },
+    { icon: 'support_agent', label: '24/7 Support' },
   ];
 
   ngOnInit(): void {

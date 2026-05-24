@@ -9,56 +9,220 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, MatIconModule, ToastContainerComponent],
+  styles: [`
+    :host { display: block; }
+
+    .auth-wrap { min-height: 100vh; display: flex; }
+
+    /* ── Left botanical panel ────────────────────── */
+    .left-panel {
+      display: none;
+      width: 50%;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(160deg, #1e3326 0%, #2a4d31 45%, #3d6b45 100%);
+    }
+    @media (min-width: 1024px) { .left-panel { display: flex; flex-direction: column; justify-content: space-between; } }
+
+    /* Leaf pattern overlay */
+    .leaf-bg {
+      position: absolute; inset: 0; opacity: .07;
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 10 C30 10 10 40 10 60 C10 80 30 110 60 110 C90 110 110 80 110 60 C110 40 90 10 60 10Z' fill='%23ffffff' fill-opacity='.3'/%3E%3Cpath d='M60 10 L60 110 M10 60 L110 60' stroke='%23ffffff' stroke-width='1' stroke-opacity='.2'/%3E%3C/svg%3E");
+      background-size: 120px 120px;
+    }
+
+    /* Floating botanical decorations */
+    .deco-circle {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,.06);
+    }
+
+    .panel-content { position: relative; z-index: 1; padding: 48px 56px; }
+
+    .panel-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 64px; }
+    .panel-logo img { height: 36px; width: auto; filter: brightness(0) invert(1); opacity: .9; }
+
+    .panel-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2rem, 3vw, 2.75rem);
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+      margin: 0 0 20px;
+    }
+    .panel-headline em { font-style: italic; color: rgba(255,255,255,.75); }
+
+    .panel-sub { font-size: 1rem; color: rgba(255,255,255,.65); line-height: 1.7; max-width: 360px; margin: 0; }
+
+    /* Feature pills on left panel */
+    .feature-list { list-style: none; padding: 0; margin: 40px 0 0; display: flex; flex-direction: column; gap: 16px; }
+    .feature-item { display: flex; align-items: center; gap: 12px; }
+    .feature-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(255,255,255,.12);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature-text { font-size: .9375rem; color: rgba(255,255,255,.8); font-weight: 500; }
+
+    /* Testimonial card at bottom of left panel */
+    .panel-footer { position: relative; z-index: 1; padding: 0 56px 48px; }
+    .testimonial {
+      background: rgba(255,255,255,.1);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .testimonial p { font-size: .875rem; color: rgba(255,255,255,.85); line-height: 1.6; margin: 0 0 12px; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 10px; }
+    .testimonial-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .875rem; font-weight: 700; color: #fff;
+    }
+    .testimonial-name { font-size: .8125rem; font-weight: 600; color: rgba(255,255,255,.9); }
+    .testimonial-role { font-size: .75rem; color: rgba(255,255,255,.5); }
+
+    /* ── Right form panel ────────────────────────── */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      background: linear-gradient(160deg, #f0f5f0 0%, #f5ede2 60%, #eef4ec 100%);
+      min-height: 100vh;
+      position: relative;
+    }
+    :host-context(.dark) .right-panel {
+      background: linear-gradient(160deg, #141f16 0%, #1a1e14 100%);
+    }
+
+    .mobile-logo { display: flex; margin-bottom: 32px; }
+    @media (min-width: 1024px) { .mobile-logo { display: none; } }
+    .mobile-logo a { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .mobile-logo img { height: 32px; width: auto; }
+
+    .theme-btn {
+      position: absolute; top: 16px; right: 16px;
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.8); border: 1px solid var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-muted);
+      transition: background 150ms;
+    }
+    .theme-btn:hover { background: var(--bg-muted); }
+
+    .form-card {
+      width: 100%; max-width: 440px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 24px;
+      padding: 36px 36px 32px;
+      box-shadow: 0 8px 40px rgba(30,58,35,.12), 0 2px 12px rgba(30,58,35,.06);
+      animation: fadeUp .4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .back-home {
+      display: flex; align-items: center; gap: 4px;
+      font-size: .8125rem; color: var(--text-muted);
+      text-decoration: none; margin-top: 20px;
+      transition: color 150ms;
+    }
+    .back-home:hover { color: var(--color-primary); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  `],
   template: `
-    <div class="min-h-screen flex">
-      <!-- Left decorative panel (desktop) -->
-      <div class="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary-700 via-primary-600 to-accent overflow-hidden">
-        <div class="absolute inset-0 opacity-20"
-             style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
-        </div>
-        <div class="relative z-10 flex flex-col justify-center px-16 text-white">
-          <a routerLink="/" class="flex items-center gap-3 mb-12">
-            <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <span class="text-white font-bold text-lg">L</span>
-            </div>
-            <span class="font-display font-bold text-2xl">lagaao</span>
+    <div class="auth-wrap">
+
+      <!-- ── Left botanical panel ─────────────── -->
+      <div class="left-panel">
+        <div class="leaf-bg"></div>
+
+        <!-- Decorative circles -->
+        <div class="deco-circle" style="width:300px;height:300px;top:-100px;right:-80px"></div>
+        <div class="deco-circle" style="width:200px;height:200px;bottom:100px;left:-60px"></div>
+
+        <div class="panel-content">
+          <a routerLink="/" class="panel-logo">
+            <img src="/logo.png" alt="Lagaao" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <span style="display:none;font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#fff">Lagaao</span>
           </a>
-          <h1 class="font-display text-4xl font-bold leading-tight mb-4">
-            India's Smartest<br>Marketplace
+
+          <h1 class="panel-headline">
+            Grow Something<br><em>Beautiful Today</em>
           </h1>
-          <p class="text-white/70 text-lg leading-relaxed max-w-md">
-            Millions of products. Thousands of sellers. One seamless experience powered by AI.
+          <p class="panel-sub">
+            India's premier destination for plants, seeds, pots, and everything your garden needs — delivered with care.
           </p>
+
+          <ul class="feature-list">
+            <li class="feature-item">
+              <div class="feature-icon">
+                <mat-icon style="font-size:18px;width:18px;height:18px;color:#fff">local_florist</mat-icon>
+              </div>
+              <span class="feature-text">1,000+ plant varieties curated by experts</span>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon">
+                <mat-icon style="font-size:18px;width:18px;height:18px;color:#fff">local_shipping</mat-icon>
+              </div>
+              <span class="feature-text">Safe, eco-friendly packaging & fast delivery</span>
+            </li>
+            <li class="feature-item">
+              <div class="feature-icon">
+                <mat-icon style="font-size:18px;width:18px;height:18px;color:#fff">support_agent</mat-icon>
+              </div>
+              <span class="feature-text">Plant care experts available 7 days a week</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="panel-footer">
+          <div class="testimonial">
+            <p>"My balcony looks like a jungle now — in the best way! The plants arrived perfectly packed and the care guide was super helpful."</p>
+            <div class="testimonial-author">
+              <div class="testimonial-avatar">P</div>
+              <div>
+                <div class="testimonial-name">Priya Menon</div>
+                <div class="testimonial-role">Plant parent · Mumbai</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Right auth panel -->
-      <div class="flex-1 flex flex-col justify-center items-center px-6 py-12
-                  bg-bg-base min-h-screen">
-        <!-- Mobile logo -->
-        <div class="lg:hidden mb-8 text-center">
-          <a routerLink="/" class="inline-flex items-center gap-2">
-            <div class="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center">
-              <span class="text-white font-bold">L</span>
-            </div>
-            <span class="font-display font-bold text-xl gradient-text">lagaao</span>
-          </a>
-        </div>
+      <!-- ── Right form panel ──────────────────── -->
+      <div class="right-panel">
 
-        <!-- Theme toggle -->
-        <button
-          class="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center
-                 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-          (click)="theme.toggle()"
-        >
-          <mat-icon class="text-text-secondary">
+        <button class="theme-btn" (click)="theme.toggle()" aria-label="Toggle theme">
+          <mat-icon style="font-size:18px;width:18px;height:18px">
             {{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
           </mat-icon>
         </button>
 
-        <div class="w-full max-w-md animate-fade-in">
+        <div class="mobile-logo">
+          <a routerLink="/">
+            <img src="/logo.png" alt="Lagaao" style="height:32px;width:auto" />
+          </a>
+        </div>
+
+        <div class="form-card">
           <router-outlet></router-outlet>
         </div>
+
+        <a routerLink="/" class="back-home">
+          <mat-icon style="font-size:14px;width:14px;height:14px">arrow_back</mat-icon>
+          Back to homepage
+        </a>
       </div>
     </div>
 

@@ -4,15 +4,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { SkeletonCardComponent } from '../../shared/components/skeleton/skeleton.component';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
 import { ProductCarouselComponent } from '../../shared/components/product-carousel/product-carousel.component';
+import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { CmsService, Banner } from '../../core/services/cms.service';
 import { AiService, AiProduct } from '../../core/services/ai.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ProductService, Product } from '../../core/services/product.service';
 
 @Component({
   selector: 'lg-home',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent],
+  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent, ProductCardComponent],
   template: `
 
     <!-- ═══════════════════════════════════════════════════════
@@ -182,7 +184,7 @@ import { AuthService } from '../../core/services/auth.service';
     <!-- ═══════════════════════════════════════════════════════
          SHOP BY CATEGORY — icon grid
     ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-white">
+    <section class="py-14 bg-[var(--bg-subtle)]">
       <div class="max-w-screen-xl mx-auto px-4 md:px-6">
         <div class="text-center mb-10">
           <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-2">Browse</p>
@@ -261,7 +263,7 @@ import { AuthService } from '../../core/services/auth.service';
     <!-- ═══════════════════════════════════════════════════════
          BESTSELLERS
     ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-white">
+    <section class="py-14 bg-[var(--color-cream)]">
       <div class="max-w-screen-xl mx-auto px-4 md:px-6">
         <div class="flex items-end justify-between mb-8">
           <div>
@@ -275,8 +277,14 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          @for (i of [1,2,3,4,5]; track i) {
-            <lg-skeleton-card></lg-skeleton-card>
+          @if (bestsellers().length === 0) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <lg-skeleton-card></lg-skeleton-card>
+            }
+          } @else {
+            @for (p of bestsellers(); track p.id) {
+              <lg-product-card [product]="p"></lg-product-card>
+            }
           }
         </div>
       </div>
@@ -299,8 +307,14 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          @for (i of [1,2,3,4]; track i) {
-            <lg-skeleton-card></lg-skeleton-card>
+          @if (newArrivals().length === 0) {
+            @for (i of [1,2,3,4]; track i) {
+              <lg-skeleton-card></lg-skeleton-card>
+            }
+          } @else {
+            @for (p of newArrivals(); track p.id) {
+              <lg-product-card [product]="p"></lg-product-card>
+            }
           }
         </div>
       </div>
@@ -340,7 +354,7 @@ import { AuthService } from '../../core/services/auth.service';
     <!-- ═══════════════════════════════════════════════════════
          PLANT CARE PRODUCTS
     ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-white">
+    <section class="py-14 bg-[var(--bg-subtle)]">
       <div class="max-w-screen-xl mx-auto px-4 md:px-6">
         <div class="flex items-end justify-between mb-8">
           <div>
@@ -361,7 +375,7 @@ import { AuthService } from '../../core/services/auth.service';
           @for (tag of careTags; track tag.label) {
             <a [routerLink]="['/products']" [queryParams]="{ category: tag.slug }"
                class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-sand
-                      bg-white hover:bg-primary-50 hover:border-primary-300
+                      bg-[var(--bg-base)] hover:bg-primary-50 hover:border-primary-300
                       text-sm font-medium text-text-secondary hover:text-primary-600
                       transition-all whitespace-nowrap flex-shrink-0">
               {{ tag.emoji }} {{ tag.label }}
@@ -370,8 +384,14 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          @for (i of [1,2,3,4,5]; track i) {
-            <lg-skeleton-card></lg-skeleton-card>
+          @if (careProducts().length === 0) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <lg-skeleton-card></lg-skeleton-card>
+            }
+          } @else {
+            @for (p of careProducts(); track p.id) {
+              <lg-product-card [product]="p"></lg-product-card>
+            }
           }
         </div>
       </div>
@@ -421,7 +441,7 @@ import { AuthService } from '../../core/services/auth.service';
     <!-- ═══════════════════════════════════════════════════════
          COMBO PACKS
     ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-white">
+    <section class="py-14 bg-[var(--color-cream)]">
       <div class="max-w-screen-xl mx-auto px-4 md:px-6">
         <div class="flex items-end justify-between mb-8">
           <div>
@@ -435,8 +455,14 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          @for (i of [1,2,3,4]; track i) {
-            <lg-skeleton-card></lg-skeleton-card>
+          @if (comboProducts().length === 0) {
+            @for (i of [1,2,3,4]; track i) {
+              <lg-skeleton-card></lg-skeleton-card>
+            }
+          } @else {
+            @for (p of comboProducts(); track p.id) {
+              <lg-product-card [product]="p"></lg-product-card>
+            }
           }
         </div>
       </div>
@@ -473,7 +499,7 @@ import { AuthService } from '../../core/services/auth.service';
     <!-- ═══════════════════════════════════════════════════════
          BLOG SECTION
     ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-white">
+    <section class="py-14 bg-[var(--bg-subtle)]">
       <div class="max-w-screen-xl mx-auto px-4 md:px-6">
         <div class="flex items-end justify-between mb-8">
           <div>
@@ -524,7 +550,7 @@ import { AuthService } from '../../core/services/auth.service';
         </p>
         <div class="flex gap-2 max-w-sm mx-auto">
           <input type="email" placeholder="your@email.com"
-                 class="flex-1 px-4 py-3 rounded-full border border-sand bg-white text-sm
+                 class="flex-1 px-4 py-3 rounded-full border border-sand bg-[var(--bg-base)] text-sm
                         outline-none focus:border-primary-400 transition-colors" />
           <button class="btn-primary px-6 py-3 whitespace-nowrap">Subscribe</button>
         </div>
@@ -535,15 +561,20 @@ import { AuthService } from '../../core/services/auth.service';
   `,
 })
 export class HomeComponent implements OnInit {
-  readonly #cms  = inject(CmsService);
-  readonly #ai   = inject(AiService);
-  readonly #auth = inject(AuthService);
+  readonly #cms     = inject(CmsService);
+  readonly #ai      = inject(AiService);
+  readonly #auth    = inject(AuthService);
+  readonly #product = inject(ProductService);
 
   heroBanners    = signal<Banner[]>([]);
   midBanners     = signal<Banner[]>([]);
   activeBanner   = signal(0);
   forYou         = signal<AiProduct[]>([]);
   recentlyViewed = signal<AiProduct[]>([]);
+  bestsellers    = signal<Product[]>([]);
+  newArrivals    = signal<Product[]>([]);
+  careProducts   = signal<Product[]>([]);
+  comboProducts  = signal<Product[]>([]);
 
   readonly trustPills = [
     { icon: 'eco',           label: '100% Healthy Plants' },
@@ -560,22 +591,22 @@ export class HomeComponent implements OnInit {
   ];
 
   readonly shopCategories = [
-    { label: 'Indoor Plants',    emoji: '🪴', slug: 'indoor-plants',   bg: '#d8ecdb' },
-    { label: 'Outdoor Plants',   emoji: '🌳', slug: 'outdoor-plants',  bg: '#e8f4ea' },
-    { label: 'Flowering',        emoji: '🌸', slug: 'flowering-plants',bg: '#fde8d8' },
-    { label: 'Succulents',       emoji: '🌵', slug: 'succulents',      bg: '#f0f7f1' },
-    { label: 'Seeds',            emoji: '🌱', slug: 'seeds',           bg: '#fafae8' },
-    { label: 'Pots & Planters',  emoji: '🏺', slug: 'pots-planters',   bg: '#fdf3ef' },
-    { label: 'Plant Care',       emoji: '🧪', slug: 'plant-care',      bg: '#f4f8f4' },
-    { label: 'Gifts',            emoji: '🎁', slug: 'gifts-combos',    bg: '#fdf3ef' },
-    { label: 'Air Purifying',    emoji: '💨', slug: 'air-purifying',   bg: '#e8f0fe' },
-    { label: 'Pet Friendly',     emoji: '🐾', slug: 'pet-friendly',    bg: '#fef9e8' },
-    { label: 'Low Maintenance',  emoji: '⏱️', slug: 'low-maintenance',  bg: '#f4f8f4' },
-    { label: 'Medicinal',        emoji: '🌿', slug: 'medicinal',       bg: '#d8ecdb' },
-    { label: 'Fruit Plants',     emoji: '🍋', slug: 'fruit-plants',    bg: '#fef9e8' },
-    { label: 'XL Plants',        emoji: '🌴', slug: 'xl-plants',       bg: '#e8f4ea' },
-    { label: 'Combos',           emoji: '📦', slug: 'combo-packs',     bg: '#fde8d8' },
-    { label: 'New Arrivals',     emoji: '✨', slug: 'new-arrivals',    bg: '#f0f7f1' },
+    { label: 'Indoor Plants',    emoji: '🪴', slug: 'indoor-plants',   bg: '#a8d5b0' },
+    { label: 'Outdoor Plants',   emoji: '🌳', slug: 'outdoor-plants',  bg: '#b5dbb9' },
+    { label: 'Flowering',        emoji: '🌸', slug: 'flowering-plants',bg: '#f5b8a0' },
+    { label: 'Succulents',       emoji: '🌵', slug: 'succulents',      bg: '#99c9a8' },
+    { label: 'Seeds',            emoji: '🌱', slug: 'seeds',           bg: '#d4d97a' },
+    { label: 'Pots & Planters',  emoji: '🏺', slug: 'pots-planters',   bg: '#f0c8b0' },
+    { label: 'Plant Care',       emoji: '🧪', slug: 'plant-care',      bg: '#b0d4c8' },
+    { label: 'Gifts',            emoji: '🎁', slug: 'gifts-combos',    bg: '#f5c0b8' },
+    { label: 'Air Purifying',    emoji: '💨', slug: 'air-purifying',   bg: '#a8c4f0' },
+    { label: 'Pet Friendly',     emoji: '🐾', slug: 'pet-friendly',    bg: '#f0d890' },
+    { label: 'Low Maintenance',  emoji: '⏱️', slug: 'low-maintenance',  bg: '#b8d4b0' },
+    { label: 'Medicinal',        emoji: '🌿', slug: 'medicinal',       bg: '#90c4a0' },
+    { label: 'Fruit Plants',     emoji: '🍋', slug: 'fruit-plants',    bg: '#f0e090' },
+    { label: 'XL Plants',        emoji: '🌴', slug: 'xl-plants',       bg: '#a8c8b8' },
+    { label: 'Combos',           emoji: '📦', slug: 'combo-packs',     bg: '#f0b8a0' },
+    { label: 'New Arrivals',     emoji: '✨', slug: 'new-arrivals',    bg: '#c8b8f0' },
   ];
 
   readonly careTags = [
@@ -627,6 +658,14 @@ export class HomeComponent implements OnInit {
     if (this.#auth.isLoggedIn()) {
       this.#ai.getForYou().subscribe({ next: r => this.forYou.set(r.data), error: () => {} });
     }
+    this.#product.getProducts({ sort: 'rating', limit: 10 })
+      .subscribe({ next: r => this.bestsellers.set(r.data), error: () => {} });
+    this.#product.getProducts({ sort: 'newest', limit: 8 })
+      .subscribe({ next: r => this.newArrivals.set(r.data), error: () => {} });
+    this.#product.getProducts({ category: 'plant-care', sort: 'rating', limit: 10 })
+      .subscribe({ next: r => this.careProducts.set(r.data), error: () => {} });
+    this.#product.getProducts({ category: 'gifts-combos', sort: 'rating', limit: 8 })
+      .subscribe({ next: r => this.comboProducts.set(r.data), error: () => {} });
   }
 
   prevBanner(): void { this.activeBanner.update(i => i > 0 ? i - 1 : this.heroBanners().length - 1); }

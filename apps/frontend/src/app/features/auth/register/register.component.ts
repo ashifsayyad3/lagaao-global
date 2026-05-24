@@ -2,157 +2,231 @@ import {
   Component, ChangeDetectionStrategy, inject, signal
 } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
-import { FormBuilder, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder, Validators, ReactiveFormsModule, FormsModule,
+  AbstractControl, ValidationErrors
+} from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
 
 function strongPassword(c: AbstractControl): ValidationErrors | null {
   const v = c.value as string;
   if (!v) return null;
-  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(v)) {
-    return { weak: true };
-  }
-  return null;
+  return /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(v) ? null : { weak: true };
 }
 
 @Component({
   selector: 'lg-register',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, FormsModule, MatIconModule, ButtonComponent],
+  imports: [RouterLink, ReactiveFormsModule, FormsModule, MatIconModule],
+  styles: [`
+    :host { display: block; }
+
+    .form-heading { font-family:var(--font-display); font-size:1.625rem; font-weight:600; color:var(--text-primary); margin:0 0 4px; }
+    .form-sub { font-size:.9375rem; color:var(--text-muted); margin:0 0 24px; }
+
+    .field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+    .field label { font-size:.8125rem; font-weight:600; color:var(--text-secondary); }
+
+    .inp-wrap { position:relative; }
+    .inp {
+      width:100%; height:46px; padding:0 14px;
+      border:1.5px solid var(--border-default); border-radius:12px;
+      font-family:var(--font-sans); font-size:.9375rem;
+      color:var(--text-primary); background:var(--bg-subtle);
+      outline:none; transition:border-color 150ms, background 150ms;
+    }
+    .inp:focus { border-color:var(--color-primary); background:var(--bg-base); }
+    .inp.error { border-color:var(--color-error); }
+    .inp::placeholder { color:var(--text-muted); }
+    .inp.pr { padding-right:44px; }
+
+    .inp-icon {
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer;
+      color:var(--text-muted); display:flex; align-items:center;
+      transition:color 150ms;
+    }
+    .inp-icon:hover { color:var(--text-primary); }
+
+    .phone-wrap { display:flex; gap:8px; }
+    .dial-code {
+      height:46px; padding:0 12px;
+      border:1.5px solid var(--border-default); border-radius:12px;
+      background:var(--bg-subtle); font-family:var(--font-sans);
+      font-size:.9375rem; color:var(--text-secondary);
+      display:flex; align-items:center; flex-shrink:0;
+    }
+
+    .field-err { font-size:.75rem; color:var(--color-error); }
+
+    /* Password strength bar */
+    .strength-bar { display:flex; gap:4px; margin-top:6px; }
+    .strength-seg { flex:1; height:3px; border-radius:9999px; background:var(--border-default); transition:background 250ms; }
+
+    .error-box { background:rgba(192,57,43,.06); border:1px solid rgba(192,57,43,.2); border-radius:10px; padding:10px 14px; font-size:.875rem; color:var(--color-error); margin-bottom:14px; }
+
+    .submit-btn {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      width:100%; height:50px; border:none; border-radius:14px;
+      background:var(--color-primary); color:#fff;
+      font-family:var(--font-sans); font-size:1rem; font-weight:700;
+      cursor:pointer; transition:background 150ms, transform 150ms, box-shadow 150ms;
+      margin-top:4px; margin-bottom:20px;
+    }
+    .submit-btn:hover:not(:disabled) { background:var(--color-primary-dark); transform:translateY(-1px); box-shadow:0 6px 20px rgba(61,107,69,.28); }
+    .submit-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+    .bottom-link { text-align:center; font-size:.875rem; color:var(--text-muted); }
+    .bottom-link a { color:var(--color-primary); font-weight:700; text-decoration:none; margin-left:4px; }
+    .bottom-link a:hover { text-decoration:underline; }
+
+    /* OTP screen */
+    .otp-icon {
+      width:64px; height:64px; border-radius:18px;
+      background:var(--color-primary-100);
+      display:flex; align-items:center; justify-content:center;
+      margin:0 auto 20px;
+    }
+    .otp-heading { font-family:var(--font-display); font-size:1.5rem; font-weight:600; color:var(--text-primary); text-align:center; margin:0 0 6px; }
+    .otp-sub { font-size:.875rem; color:var(--text-muted); text-align:center; margin:0 0 28px; }
+
+    .otp-input {
+      width:100%; height:60px; padding:0 14px;
+      border:1.5px solid var(--border-default); border-radius:14px;
+      font-family:var(--font-mono); font-size:1.75rem; font-weight:700;
+      color:var(--text-primary); background:var(--bg-subtle);
+      text-align:center; letter-spacing:.5em; outline:none;
+      transition:border-color 150ms, background 150ms;
+    }
+    .otp-input:focus { border-color:var(--color-primary); background:var(--bg-base); }
+
+    .resend-btn { background:none; border:none; cursor:pointer; font-family:var(--font-sans); font-size:.875rem; }
+  `],
   template: `
     @if (!otpSent()) {
-      <!-- Registration Form -->
-      <div class="animate-fade-in">
-        <h2 class="font-display text-3xl font-bold text-text-primary mb-1">Create account</h2>
-        <p class="text-text-secondary mb-8">Join millions of smart shoppers on Lagaao</p>
+      <!-- ── Registration form ─────────────────── -->
+      <h2 class="form-heading">Create your account 🌱</h2>
+      <p class="form-sub">Join thousands of plant lovers on Lagaao</p>
 
-        <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1.5">Full name</label>
-            <input formControlName="name" type="text" placeholder="Asif Sayyad"
-                   class="input-field" [class.border-red-500]="err('name')" />
-            @if (err('name')) { <p class="mt-1 text-xs text-red-500">{{ err('name') }}</p> }
+      <form [formGroup]="form" (ngSubmit)="submit()">
+
+        <div class="field">
+          <label for="reg-name">Full name</label>
+          <div class="inp-wrap">
+            <input id="reg-name" formControlName="name" type="text"
+                   placeholder="Rahul Sharma" class="inp" [class.error]="err('name')" />
           </div>
+          @if (err('name')) { <span class="field-err">{{ err('name') }}</span> }
+        </div>
 
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1.5">Email address</label>
-            <input formControlName="email" type="email" placeholder="you@example.com"
-                   class="input-field" [class.border-red-500]="err('email')" />
-            @if (err('email')) { <p class="mt-1 text-xs text-red-500">{{ err('email') }}</p> }
+        <div class="field">
+          <label for="reg-email">Email address</label>
+          <div class="inp-wrap">
+            <input id="reg-email" formControlName="email" type="email"
+                   placeholder="you@example.com" class="inp" [class.error]="err('email')" />
           </div>
+          @if (err('email')) { <span class="field-err">{{ err('email') }}</span> }
+        </div>
 
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1.5">
-              Phone <span class="text-text-muted font-normal">(optional)</span>
-            </label>
-            <div class="flex gap-2">
-              <span class="h-11 px-3 flex items-center rounded-lg border border-border-default
-                           bg-surface-100 dark:bg-surface-800 text-sm text-text-secondary">
-                +91
-              </span>
-              <input formControlName="phone" type="tel" placeholder="9876543210"
-                     class="input-field flex-1" [class.border-red-500]="err('phone')" />
-            </div>
-            @if (err('phone')) { <p class="mt-1 text-xs text-red-500">{{ err('phone') }}</p> }
+        <div class="field">
+          <label for="reg-phone">
+            Phone <span style="font-weight:400;color:var(--text-muted)">(optional)</span>
+          </label>
+          <div class="phone-wrap">
+            <span class="dial-code">🇮🇳 +91</span>
+            <input id="reg-phone" formControlName="phone" type="tel"
+                   placeholder="9876543210" class="inp" style="flex:1" [class.error]="err('phone')" />
           </div>
+          @if (err('phone')) { <span class="field-err">{{ err('phone') }}</span> }
+        </div>
 
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1.5">Password</label>
-            <div class="relative">
-              <input formControlName="password" [type]="showPw() ? 'text' : 'password'"
-                     placeholder="Min 8 chars, upper, lower, number"
-                     class="input-field pr-10" [class.border-red-500]="err('password')" />
-              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
-                      (click)="showPw.update(v => !v)">
-                <mat-icon class="!text-xl">{{ showPw() ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-            </div>
-            <!-- Strength bar -->
-            <div class="mt-2 flex gap-1">
-              @for (i of [1,2,3,4]; track i) {
-                <div class="h-1 flex-1 rounded-full transition-colors"
-                     [class]="strengthColor(i)"></div>
-              }
-            </div>
-            @if (err('password')) { <p class="mt-1 text-xs text-red-500">{{ err('password') }}</p> }
+        <div class="field">
+          <label for="reg-pw">Password</label>
+          <div class="inp-wrap">
+            <input id="reg-pw" formControlName="password"
+                   [type]="showPw() ? 'text' : 'password'"
+                   placeholder="Min 8 chars, upper, lower & number"
+                   class="inp pr" [class.error]="err('password')" />
+            <button type="button" class="inp-icon" (click)="showPw.update(v => !v)">
+              <mat-icon style="font-size:18px;width:18px;height:18px">
+                {{ showPw() ? 'visibility_off' : 'visibility' }}
+              </mat-icon>
+            </button>
           </div>
+          <!-- Strength bar -->
+          <div class="strength-bar">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="strength-seg" [style.background]="strengthSegColor(i)"></div>
+            }
+          </div>
+          @if (err('password')) { <span class="field-err">{{ err('password') }}</span> }
+        </div>
 
-          @if (errorMsg()) {
-            <div class="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 p-3">
-              <p class="text-sm text-red-600 dark:text-red-400">{{ errorMsg() }}</p>
-            </div>
-          }
+        @if (errorMsg()) {
+          <div class="error-box">{{ errorMsg() }}</div>
+        }
 
-          <lg-button type="submit" variant="primary" size="lg" [fullWidth]="true" [loading]="loading()">
+        <button type="submit" class="submit-btn" [disabled]="loading()">
+          @if (loading()) {
+            <mat-icon style="font-size:18px;width:18px;height:18px;animation:spin 1s linear infinite">refresh</mat-icon>
+            Creating account…
+          } @else {
             Create account
-          </lg-button>
-        </form>
+          }
+        </button>
+      </form>
 
-        <p class="mt-6 text-center text-sm text-text-secondary">
-          Already have an account?
-          <a routerLink="/auth/login" class="text-primary-600 font-semibold hover:underline ml-1">Sign in</a>
-        </p>
-      </div>
+      <p class="bottom-link">
+        Already have an account?
+        <a routerLink="/auth/login">Sign in</a>
+      </p>
 
     } @else {
-      <!-- OTP Verification -->
-      <div class="animate-fade-in">
-        <div class="w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900 flex items-center justify-center mx-auto mb-6">
-          <mat-icon class="!text-3xl text-primary-600">mark_email_read</mat-icon>
+      <!-- ── OTP verification ───────────────────── -->
+      <div>
+        <div class="otp-icon">
+          <mat-icon style="font-size:28px;width:28px;height:28px;color:var(--color-primary)">mark_email_read</mat-icon>
         </div>
-        <h2 class="font-display text-3xl font-bold text-text-primary mb-1 text-center">
-          Check your email
-        </h2>
-        <p class="text-text-secondary mb-8 text-center">
-          We've sent a 6-digit OTP to <strong>{{ form.value.email }}</strong>
+        <h2 class="otp-heading">Check your email</h2>
+        <p class="otp-sub">
+          We've sent a 6-digit code to<br>
+          <strong style="color:var(--text-primary)">{{ form.value.email }}</strong>
         </p>
 
-        <form (ngSubmit)="submitOtp()" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1.5 text-center">
-              Enter OTP
-            </label>
-            <input
-              [(ngModel)]="otp" name="otp"
-              type="text" inputmode="numeric" maxlength="6"
-              placeholder="• • • • • •"
-              class="input-field text-center text-2xl tracking-[0.5em] font-mono"
-            />
+        <form (ngSubmit)="submitOtp()">
+          <div class="field">
+            <input [(ngModel)]="otp" name="otp"
+                   type="text" inputmode="numeric" maxlength="6"
+                   placeholder="· · · · · ·"
+                   class="otp-input" />
           </div>
 
           @if (otpError()) {
-            <div class="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 p-3">
-              <p class="text-sm text-red-600 dark:text-red-400 text-center">{{ otpError() }}</p>
-            </div>
+            <div class="error-box">{{ otpError() }}</div>
           }
 
-          <lg-button type="submit" variant="primary" size="lg" [fullWidth]="true" [loading]="loading()">
-            Verify & continue
-          </lg-button>
-
-          <button type="button"
-                  class="w-full text-sm text-text-secondary hover:text-text-primary text-center py-2"
-                  (click)="resendOtp()">
-            Didn't receive it?
-            <span class="text-primary-600 font-medium ml-1">Resend OTP</span>
+          <button type="submit" class="submit-btn" [disabled]="otp.length !== 6 || loading()">
+            @if (loading()) {
+              <mat-icon style="font-size:18px;width:18px;height:18px;animation:spin 1s linear infinite">refresh</mat-icon>
+              Verifying…
+            } @else {
+              Verify & Continue
+            }
           </button>
         </form>
+
+        <p class="bottom-link">
+          Didn't receive it?
+          <button class="resend-btn" style="color:var(--color-primary);font-weight:700" (click)="resendOtp()">
+            Resend OTP
+          </button>
+        </p>
       </div>
     }
   `,
-  styles: [`
-    .input-field {
-      width: 100%; height: 2.75rem; padding: 0 1rem;
-      border-radius: 0.5rem; border: 1px solid var(--border-default);
-      background: var(--bg-base); color: var(--text-primary);
-      font-size: 0.875rem; transition: all 150ms;
-      &::placeholder { color: var(--text-muted); }
-      &:focus { outline: none; box-shadow: 0 0 0 2px var(--color-primary); border-color: transparent; }
-    }
-  `],
 })
 export class RegisterComponent {
   readonly #auth   = inject(AuthService);
@@ -178,48 +252,46 @@ export class RegisterComponent {
   err(field: string): string | null {
     const c = this.form.get(field)!;
     if (!c.dirty || !c.errors) return null;
-    if (c.errors['required'])   return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-    if (c.errors['minlength'])  return `Too short`;
-    if (c.errors['email'])      return 'Enter a valid email';
-    if (c.errors['pattern'])    return 'Invalid format';
-    if (c.errors['weak'])       return 'Add uppercase, lowercase and a number';
+    if (c.errors['required'])  return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+    if (c.errors['minlength']) return 'Too short';
+    if (c.errors['email'])     return 'Enter a valid email';
+    if (c.errors['pattern'])   return 'Enter a valid 10-digit mobile number';
+    if (c.errors['weak'])      return 'Must include uppercase, lowercase and a number';
     return null;
   }
 
-  strengthColor(i: number): string {
+  strengthSegColor(i: number): string {
     const pw  = this.form.value.password ?? '';
-    const str = this.#passwordStrength(pw);
-    if (str < i) return 'bg-surface-200 dark:bg-surface-700';
-    if (str === 1) return 'bg-red-500';
-    if (str === 2) return 'bg-amber-500';
-    if (str === 3) return 'bg-yellow-500';
-    return 'bg-green-500';
+    const str = this.#strength(pw);
+    if (i > str) return 'var(--border-default)';
+    if (str === 1) return '#c0392b';
+    if (str === 2) return '#d4880a';
+    if (str === 3) return '#f59e0b';
+    return 'var(--color-primary)';
   }
 
-  #passwordStrength(pw: string): number {
+  #strength(pw: string): number {
     let s = 0;
-    if (pw.length >= 8)               s++;
-    if (/[A-Z]/.test(pw))             s++;
-    if (/[0-9]/.test(pw))             s++;
-    if (/[^A-Za-z0-9]/.test(pw))      s++;
+    if (pw.length >= 8)          s++;
+    if (/[A-Z]/.test(pw))        s++;
+    if (/[0-9]/.test(pw))        s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
     return s;
   }
 
   submit(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.loading()) return;
-
     this.loading.set(true);
     this.errorMsg.set('');
     const { name, email, password, phone } = this.form.getRawValue();
-
     this.#auth.register({ name, email, password, phone: phone || undefined }).subscribe({
       next: () => {
         this.loading.set(false);
         this.otpSent.set(true);
         this.#toast.info('OTP sent', `Check your email at ${email}`);
       },
-      error: (err) => {
+      error: err => {
         this.errorMsg.set(err.error?.message ?? 'Registration failed');
         this.loading.set(false);
       },
@@ -228,17 +300,15 @@ export class RegisterComponent {
 
   submitOtp(): void {
     if (this.otp.length !== 6 || this.loading()) return;
-
     this.loading.set(true);
     this.otpError.set('');
-
     this.#auth.verifyOtp(this.form.value.email!, this.otp).subscribe({
       next: () => {
-        this.#toast.success('Account created!', 'Welcome to Lagaao');
+        this.#toast.success('Account created!', 'Welcome to Lagaao 🌿');
         this.#router.navigate(['/']);
       },
-      error: (err) => {
-        this.otpError.set(err.error?.message ?? 'Invalid OTP');
+      error: err => {
+        this.otpError.set(err.error?.message ?? 'Invalid or expired OTP');
         this.loading.set(false);
       },
     });
@@ -246,7 +316,7 @@ export class RegisterComponent {
 
   resendOtp(): void {
     this.#auth.resendOtp(this.form.value.email!).subscribe({
-      next: () => this.#toast.info('OTP resent'),
+      next: () => this.#toast.info('OTP resent', 'Check your inbox'),
     });
   }
 }

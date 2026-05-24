@@ -84,6 +84,54 @@ export const routes: Routes = [
         title: 'Blog — Lagaao',
       },
       {
+        path: 'pages/about',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'About Lagaao',
+      },
+      {
+        path: 'pages/contact',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Contact Us — Lagaao',
+      },
+      {
+        path: 'pages/returns',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Returns & Refunds — Lagaao',
+      },
+      {
+        path: 'pages/shipping',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Shipping Info — Lagaao',
+      },
+      {
+        path: 'pages/careers',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Careers — Lagaao',
+      },
+      {
+        path: 'pages/privacy',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Privacy Policy — Lagaao',
+      },
+      {
+        path: 'pages/terms',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Terms of Use — Lagaao',
+      },
+      {
+        path: 'pages/plant-care-guide',
+        loadComponent: () =>
+          import('./features/pages/static-page.component').then(m => m.StaticPageComponent),
+        title: 'Plant Care Guide — Lagaao',
+      },
+      {
         path: 'pages/:slug',
         loadComponent: () =>
           import('./features/cms-page/cms-page.component').then(m => m.CmsPageComponent),

@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, inject, OnInit, signal, HostListener,
+  Component, ChangeDetectionStrategy, inject, OnInit, signal, HostListener, ElementRef,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterOutlet, RouterLink } from '@angular/router';
@@ -12,6 +12,7 @@ import { CartService } from '../../../core/services/cart.service';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { AnnouncementBarComponent } from '../../components/announcement-bar/announcement-bar.component';
 import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
+import { LgLogoComponent } from '../../components/logo/logo.component';
 
 interface MegaMenuCategory {
   label: string;
@@ -26,7 +27,7 @@ interface MegaMenuCategory {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, MatIconModule,
-            ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent],
+            ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent, LgLogoComponent],
   template: `
     <!-- ── Announcement / Utility bar ─────────────────────────── -->
     <lg-announcement-bar></lg-announcement-bar>
@@ -77,15 +78,7 @@ interface MegaMenuCategory {
       <div class="max-w-screen-xl mx-auto px-4 md:px-6 h-16 flex items-center gap-4 lg:gap-6">
 
         <!-- Logo -->
-        <a routerLink="/" class="flex-shrink-0 group">
-          <img
-            src="/logo.png"
-            alt="Lagaao — Plants & Garden"
-            class="h-10 w-auto object-contain transition-transform duration-300
-                   group-hover:scale-105 drop-shadow-sm"
-            style="max-width: 148px;"
-          />
-        </a>
+        <lg-logo size="40px"></lg-logo>
 
         <!-- Search (expanded on desktop) -->
         <div class="flex-1 max-w-xl hidden md:block">
@@ -112,15 +105,55 @@ interface MegaMenuCategory {
 
           <!-- Account -->
           @if (auth.isLoggedIn()) {
-            <a routerLink="/profile"
-               class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-text-secondary
-                      hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium group">
-              <div class="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center
-                          text-primary-700 font-bold text-xs group-hover:bg-primary-200 transition-colors">
-                {{ (auth.user()?.name ?? '?')[0].toUpperCase() }}
-              </div>
-              <span class="hidden lg:block">{{ (auth.user()?.name?.split(' ') ?? [''])[0] }}</span>
-            </a>
+            <div class="relative user-menu-wrap">
+              <button (click)="toggleUserMenu()"
+                      class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-text-secondary
+                             hover:text-primary-600 hover:bg-primary-50 transition-all text-sm font-medium group">
+                <div class="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center
+                            text-primary-700 font-bold text-xs group-hover:bg-primary-200 transition-colors">
+                  {{ (auth.user()?.name ?? '?')[0].toUpperCase() }}
+                </div>
+                <span class="hidden lg:block">{{ (auth.user()?.name?.split(' ') ?? [''])[0] }}</span>
+                <mat-icon class="!text-sm transition-transform duration-200"
+                          [style.transform]="userMenuOpen() ? 'rotate(180deg)' : 'rotate(0deg)'">
+                  expand_more
+                </mat-icon>
+              </button>
+
+              @if (userMenuOpen()) {
+                <div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-surface-900
+                            border border-sand dark:border-surface-700 rounded-xl shadow-warm-xl
+                            py-1 z-dropdown animate-slide-down">
+                  <a routerLink="/profile" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">person_outline</mat-icon>
+                    My Profile
+                  </a>
+                  <a routerLink="/orders" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">receipt_long</mat-icon>
+                    My Orders
+                  </a>
+                  @if (auth.user()?.role === 'vendor' || auth.user()?.role === 'super_admin') {
+                    <a routerLink="/vendor/dashboard" (click)="userMenuOpen.set(false)"
+                       class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                              hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                      <mat-icon class="!text-base">store</mat-icon>
+                      Vendor Dashboard
+                    </a>
+                  }
+                  <div class="my-1 h-px bg-sand dark:bg-surface-700"></div>
+                  <button (click)="auth.logout(); userMenuOpen.set(false)"
+                          class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500
+                                 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <mat-icon class="!text-base">logout</mat-icon>
+                    Sign Out
+                  </button>
+                </div>
+              }
+            </div>
           } @else {
             <a routerLink="/auth/login"
                class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg
@@ -282,7 +315,7 @@ interface MegaMenuCategory {
           <!-- Brand -->
           <div class="col-span-2 md:col-span-1">
             <div class="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Lagaao" style="height:36px;filter:brightness(0) invert(1)" />
+              <lg-logo size="36px" variant="white"></lg-logo>
             </div>
             <p class="text-sm text-primary-300 leading-relaxed mb-4">
               India's most loved plant store. Bringing nature closer to you, one plant at a time.
@@ -350,13 +383,24 @@ export class MainLayoutComponent implements OnInit {
   readonly auth      = inject(AuthService);
   readonly cart      = inject(CartService);
   readonly #sanitizer = inject(DomSanitizer);
+  readonly #el        = inject(ElementRef);
   readonly year      = new Date().getFullYear();
-  readonly scrolled  = signal(false);
+  readonly scrolled      = signal(false);
+  readonly userMenuOpen  = signal(false);
 
   safe(html: string): SafeHtml { return this.#sanitizer.bypassSecurityTrustHtml(html); }
 
+  toggleUserMenu(): void { this.userMenuOpen.update(v => !v); }
+
   @HostListener('window:scroll')
   onScroll() { this.scrolled.set(window.scrollY > 20); }
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(e: Event): void {
+    if (!this.#el.nativeElement.querySelector('.user-menu-wrap')?.contains(e.target as Node)) {
+      this.userMenuOpen.set(false);
+    }
+  }
 
   readonly megaMenu: MegaMenuCategory[] = [
     {

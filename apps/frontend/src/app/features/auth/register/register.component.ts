@@ -314,12 +314,17 @@ export class RegisterComponent {
     this.errorMsg.set('');
     const { name, email, password, phone } = this.form.getRawValue();
     this.#auth.register({ name, email, password, phone: phone || undefined }).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.loading.set(false);
         this.otpSent.set(true);
-        this.#toast.info('OTP sent', `Check your email at ${email}`);
+        if (res?.data?.devOtp) {
+          this.otp = res.data.devOtp;
+          this.#toast.info('Dev mode — OTP auto-filled', `OTP: ${res.data.devOtp}`);
+        } else {
+          this.#toast.info('OTP sent', `Check your email at ${email}`);
+        }
       },
-      error: err => {
+      error: (err: any) => {
         this.errorMsg.set(err.error?.message ?? 'Registration failed');
         this.loading.set(false);
       },

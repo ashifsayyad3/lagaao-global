@@ -1,16 +1,57 @@
 import https from 'https';
+import bcrypt from 'bcryptjs';
+import { QueryTypes } from 'sequelize';
 import { redis } from '../../config/redis';
 import { logger } from '../../config/logger';
 import { env } from '../../config/env';
-import { User, RefreshToken } from '../../models';
+import { User, RefreshToken, sequelize } from '../../models';
 import {
   signAccessToken, signRefreshToken, hashToken, generateOtp
 } from '../../shared/utils/jwt.util';
 import { AppError } from '../../middleware/errorHandler.middleware';
 import { Role } from '../../shared/types/roles';
 
-const OTP_TTL      = 10 * 60;       // 10 minutes
+const OTP_TTL      = 10 * 60;       // 10 minutes (seconds)
 const OTP_ATTEMPTS = 5;
+
+// ── In-memory fallback when Redis is unavailable ──────────────
+interface MemEntry { value: string; expiry: number; }
+const memStore = new Map<string, MemEntry>();
+
+async function kSet(key: string, value: string, ttlSec: number): Promise<void> {
+  try {
+    if (redis.isReady) { await redis.setEx(key, ttlSec, value); return; }
+  } catch { /* fall through */ }
+  memStore.set(key, { value, expiry: Date.now() + ttlSec * 1000 });
+}
+
+async function kGet(key: string): Promise<string | null> {
+  try {
+    if (redis.isReady) return await redis.get(key);
+  } catch { /* fall through */ }
+  const entry = memStore.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) { memStore.delete(key); return null; }
+  return entry.value;
+}
+
+async function kDel(...keys: string[]): Promise<void> {
+  try {
+    if (redis.isReady) { await redis.del(keys); return; }
+  } catch { /* fall through */ }
+  keys.forEach(k => memStore.delete(k));
+}
+
+async function kIncr(key: string): Promise<number> {
+  try {
+    if (redis.isReady) return await redis.incr(key);
+  } catch { /* fall through */ }
+  const entry = memStore.get(key);
+  const cur = entry && Date.now() <= entry.expiry ? parseInt(entry.value, 10) : 0;
+  const next = cur + 1;
+  memStore.set(key, { value: String(next), expiry: Date.now() + OTP_TTL * 1000 });
+  return next;
+}
 
 export interface AuthTokens {
   accessToken:        string;
@@ -26,43 +67,44 @@ export class AuthService {
     email: string,
     password: string,
     phone?: string,
-  ): Promise<{ userId: number; email: string }> {
+  ): Promise<{ userId: number; email: string; devOtp?: string }> {
     const exists = await User.findOne({ where: { email } });
     if (exists) throw new AppError('Email already registered', 409);
 
+    const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
       name,
       email,
       phone:        phone ?? null,
-      passwordHash: password,           // hashed by BeforeCreate hook
+      passwordHash,
       role:         Role.CUSTOMER,
       isVerified:   false,
       isActive:     true,
     });
 
-    await this.#sendOtp(email);
-    return { userId: user.id, email };
+    const otp = await this.#sendOtp(email);
+    const result: { userId: number; email: string; devOtp?: string } = { userId: user.id, email };
+    if (env.NODE_ENV === 'development') result.devOtp = otp;
+    return result;
   }
 
   // ─── Verify OTP ────────────────────────────────────────────
   async verifyOtp(email: string, otp: string): Promise<AuthTokens> {
     const key      = `otp:${email}`;
     const attKey   = `otp_attempts:${email}`;
-    const attempts = parseInt(await redis.get(attKey) ?? '0', 10);
+    const attempts = parseInt((await kGet(attKey)) ?? '0', 10);
 
     if (attempts >= OTP_ATTEMPTS) {
       throw new AppError('Too many OTP attempts. Request a new OTP.', 429);
     }
 
-    const stored = await redis.get(key);
+    const stored = await kGet(key);
     if (!stored || stored !== otp) {
-      await redis.incr(attKey);
-      await redis.expire(attKey, OTP_TTL);
+      await kIncr(attKey);
       throw new AppError('Invalid or expired OTP', 400);
     }
 
-    await redis.del(key);
-    await redis.del(attKey);
+    await kDel(key, attKey);
 
     const user = await User.findOne({ where: { email } });
     if (!user) throw new AppError('User not found', 404);
@@ -76,17 +118,32 @@ export class AuthService {
 
   // ─── Login ─────────────────────────────────────────────────
   async login(email: string, password: string, ip?: string, ua?: string): Promise<AuthTokens> {
-    const user = await User.findOne({ where: { email } });
-    if (!user) throw new AppError('Invalid credentials', 401);
-    if (!user.isActive) throw new AppError('Account deactivated', 403);
+    // Use raw query to bypass ORM column-mapping issues with underscored fields
+    type RawUser = {
+      id: number; name: string; email: string; phone: string | null;
+      password_hash: string | null; role: string; avatar: string | null;
+      is_verified: number; is_active: number; mfa_enabled: number;
+      last_login_at: string | null;
+    };
+    const results = await sequelize.query<RawUser>(
+      `SELECT id, name, email, phone, password_hash, role, avatar, is_verified, is_active, mfa_enabled, last_login_at
+       FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`,
+      { replacements: [email], type: QueryTypes.SELECT }
+    );
+    const raw = results[0];
+    if (!raw) throw new AppError('Invalid credentials', 401);
+    if (!raw.is_active) throw new AppError('Account deactivated', 403);
 
-    const valid = await user.comparePassword(password);
+    const valid = raw.password_hash ? await bcrypt.compare(password, raw.password_hash) : false;
     if (!valid) throw new AppError('Invalid credentials', 401);
 
-    if (!user.isVerified) {
+    if (!raw.is_verified) {
       await this.#sendOtp(email);
       throw new AppError('Email not verified. A new OTP has been sent.', 403);
     }
+
+    const user = await User.findByPk(raw.id);
+    if (!user) throw new AppError('Invalid credentials', 401);
 
     user.lastLoginAt = new Date();
     await user.save();
@@ -126,9 +183,9 @@ export class AuthService {
 
     const token   = generateOtp() + generateOtp(); // 12-char token
     const key     = `reset_pw:${email}`;
-    await redis.setEx(key, OTP_TTL, token);
+    await kSet(key, token, OTP_TTL);
 
-    logger.info('password_reset_requested', { email });
+    logger.info('password_reset_requested', { email, devToken: env.NODE_ENV === 'development' ? token : undefined });
     // In production: send email with token
     // await emailService.sendPasswordReset(email, token);
   }
@@ -136,25 +193,26 @@ export class AuthService {
   // ─── Reset Password ────────────────────────────────────────
   async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
     const key    = `reset_pw:${email}`;
-    const stored = await redis.get(key);
+    const stored = await kGet(key);
     if (!stored || stored !== token) throw new AppError('Invalid or expired reset token', 400);
 
     const user = await User.findOne({ where: { email } });
     if (!user) throw new AppError('User not found', 404);
 
-    user.passwordHash = newPassword;
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
     await user.save();
-    await redis.del(key);
+    await kDel(key);
 
     // Invalidate all refresh tokens for this user
     await RefreshToken.destroy({ where: { userId: user.id } });
   }
 
   // ─── Resend OTP ────────────────────────────────────────────
-  async resendOtp(email: string): Promise<void> {
+  async resendOtp(email: string): Promise<{ devOtp?: string }> {
     const user = await User.findOne({ where: { email } });
-    if (!user) return;
-    await this.#sendOtp(email);
+    if (!user) return {};
+    const otp = await this.#sendOtp(email);
+    return env.NODE_ENV === 'development' ? { devOtp: otp } : {};
   }
 
   // ─── Google OAuth ──────────────────────────────────────────
@@ -204,11 +262,12 @@ export class AuthService {
 
     let user = await User.findOne({ where: { email: profile.email } });
     if (!user) {
+      const randomPw = await bcrypt.hash(Math.random().toString(36) + Date.now(), 10);
       user = await User.create({
         name:         profile.name,
         email:        profile.email,
         phone:        null,
-        passwordHash: Math.random().toString(36) + Date.now(),
+        passwordHash: randomPw,
         role:         Role.CUSTOMER,
         isVerified:   true,
         isActive:     true,
@@ -248,10 +307,11 @@ export class AuthService {
   }
 
   // ─── Private helpers ───────────────────────────────────────
-  async #sendOtp(email: string): Promise<void> {
+  async #sendOtp(email: string): Promise<string> {
     const otp = generateOtp();
-    await redis.setEx(`otp:${email}`, OTP_TTL, otp);
-    logger.info('otp_sent', { email, otp }); // Replace with real email in production
+    await kSet(`otp:${email}`, otp, OTP_TTL);
+    logger.info('otp_sent', { email, otp }); // In production: send via email
+    return otp;
   }
 
   async #issueTokens(user: User, ip?: string, ua?: string): Promise<AuthTokens> {

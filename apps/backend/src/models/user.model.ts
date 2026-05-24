@@ -1,12 +1,12 @@
 import {
-  Table, Column, Model, DataType, HasMany, BeforeCreate, BeforeUpdate
+  Table, Column, Model, DataType, HasMany,
 } from 'sequelize-typescript';
 import bcrypt from 'bcryptjs';
 import { Role } from '../shared/types/roles';
 import type { RefreshToken } from './refreshToken.model';
 import type { Address } from './address.model';
 
-@Table({ tableName: 'users', paranoid: true })
+@Table({ tableName: 'users', paranoid: true, underscored: true })
 export class User extends Model {
   @Column({ type: DataType.STRING(100), allowNull: false })
   name!: string;
@@ -17,7 +17,7 @@ export class User extends Model {
   @Column({ type: DataType.STRING(20), allowNull: true })
   phone!: string | null;
 
-  @Column({ type: DataType.STRING(255), allowNull: true })
+  @Column({ field: 'password_hash', type: DataType.STRING(255), allowNull: true })
   passwordHash!: string | null;
 
   @Column({
@@ -30,22 +30,22 @@ export class User extends Model {
   @Column({ type: DataType.STRING(500), allowNull: true })
   avatar!: string | null;
 
-  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  @Column({ field: 'is_verified', type: DataType.BOOLEAN, defaultValue: false })
   isVerified!: boolean;
 
-  @Column({ type: DataType.BOOLEAN, defaultValue: true })
+  @Column({ field: 'is_active', type: DataType.BOOLEAN, defaultValue: true })
   isActive!: boolean;
 
-  @Column({ type: DataType.BOOLEAN, defaultValue: false })
+  @Column({ field: 'mfa_enabled', type: DataType.BOOLEAN, defaultValue: false })
   mfaEnabled!: boolean;
 
-  @Column({ type: DataType.STRING(100), allowNull: true })
+  @Column({ field: 'mfa_secret', type: DataType.STRING(100), allowNull: true })
   mfaSecret!: string | null;
 
-  @Column({ type: DataType.STRING(100), allowNull: true })
+  @Column({ field: 'google_id', type: DataType.STRING(100), allowNull: true })
   googleId!: string | null;
 
-  @Column({ type: DataType.DATE, allowNull: true })
+  @Column({ field: 'last_login_at', type: DataType.DATE, allowNull: true })
   lastLoginAt!: Date | null;
 
   // ─── Associations ─────────────────────────────────────────
@@ -57,8 +57,9 @@ export class User extends Model {
 
   // ─── Instance methods ─────────────────────────────────────
   async comparePassword(plain: string): Promise<boolean> {
-    if (!this.passwordHash) return false;
-    return bcrypt.compare(plain, this.passwordHash);
+    const hash = (this.getDataValue('password_hash') ?? this.passwordHash) as string | null;
+    if (!hash) return false;
+    return bcrypt.compare(plain, hash);
   }
 
   toJSON(): object {
@@ -66,13 +67,5 @@ export class User extends Model {
     delete v['passwordHash'];
     delete v['mfaSecret'];
     return v;
-  }
-
-  @BeforeCreate
-  @BeforeUpdate
-  static async hashPassword(instance: User): Promise<void> {
-    if (instance.changed('passwordHash') && instance.passwordHash) {
-      instance.passwordHash = await bcrypt.hash(instance.passwordHash, 12);
-    }
   }
 }

@@ -22,7 +22,10 @@ export class AuthController {
     try {
       const { name, email, password, phone } = req.body;
       const result = await authService.register(name, email, password, phone);
-      created(res, result, 'Registration successful. Please verify your email with the OTP sent.');
+      const msg = env.NODE_ENV === 'development' && result.devOtp
+        ? `OTP sent (dev mode — check server logs or use: ${result.devOtp})`
+        : 'Registration successful. Please verify your email with the OTP sent.';
+      created(res, result, msg);
     } catch (e) { next(e); }
   }
 
@@ -97,8 +100,8 @@ export class AuthController {
 
   async resendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await authService.resendOtp(req.body.email);
-      ok(res, null, 'OTP resent if email exists');
+      const result = await authService.resendOtp(req.body.email);
+      ok(res, result, 'OTP resent if email exists');
     } catch (e) { next(e); }
   }
 

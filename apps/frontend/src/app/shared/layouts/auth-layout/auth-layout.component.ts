@@ -3,12 +3,13 @@ import { RouterOutlet, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ThemeService } from '../../../core/services/theme.service';
 import { ToastContainerComponent } from '../../components/toast/toast.component';
+import { LgLogoComponent } from '../../components/logo/logo.component';
 
 @Component({
   selector: 'lg-auth-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, MatIconModule, ToastContainerComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, ToastContainerComponent, LgLogoComponent],
   styles: [`
     :host { display: block; }
 
@@ -39,8 +40,7 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
 
     .panel-content { position: relative; z-index: 1; padding: 48px 56px; }
 
-    .panel-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 64px; }
-    .panel-logo img { height: 36px; width: auto; filter: brightness(0) invert(1); opacity: .9; }
+    .panel-content lg-logo { margin-bottom: 64px; }
 
     .panel-headline {
       font-family: 'Playfair Display', Georgia, serif;
@@ -103,8 +103,6 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
 
     .mobile-logo { display: flex; margin-bottom: 32px; }
     @media (min-width: 1024px) { .mobile-logo { display: none; } }
-    .mobile-logo a { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .mobile-logo img { height: 32px; width: auto; }
 
     .theme-btn {
       position: absolute; top: 16px; right: 16px;
@@ -156,10 +154,7 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
         <div class="deco-circle" style="width:200px;height:200px;bottom:100px;left:-60px"></div>
 
         <div class="panel-content">
-          <a routerLink="/" class="panel-logo">
-            <img src="/logo.png" alt="Lagaao" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-            <span style="display:none;font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#fff">Lagaao</span>
-          </a>
+          <lg-logo variant="white" size="38px"></lg-logo>
 
           <h1 class="panel-headline">
             Grow Something<br><em>Beautiful Today</em>
@@ -214,9 +209,7 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
         </button>
 
         <div class="mobile-logo">
-          <a routerLink="/">
-            <img src="/logo.png" alt="Lagaao" style="height:32px;width:auto" />
-          </a>
+          <lg-logo size="34px"></lg-logo>
         </div>
 
         <div class="form-card">

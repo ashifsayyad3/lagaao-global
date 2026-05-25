@@ -4,6 +4,7 @@ import { ok, created, paginated } from '../../shared/utils/response.util';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/rbac.middleware';
 import { getPagination } from '../../shared/utils/paginate.util';
+import { Role } from '../../shared/types/roles';
 
 const router = Router();
 
@@ -136,7 +137,7 @@ router.post('/:id/cancel', async (req: Request, res: Response, next: NextFunctio
 
 // ─── Admin routes ──────────────────────────────────────────────
 const adminRouter = Router();
-adminRouter.use(authenticate, authorize('admin', 'super_admin'));
+adminRouter.use(authenticate, authorize(Role.ADMIN, Role.SUPER_ADMIN));
 
 // GET /api/v1/admin/orders
 adminRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {

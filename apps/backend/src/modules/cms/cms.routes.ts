@@ -2,6 +2,7 @@
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize as requireRole } from '../../middleware/rbac.middleware';
 import { ok, created } from '../../shared/utils/response.util';
+import { Role } from '../../shared/types/roles';
 import * as cms from './cms.service';
 
 // â”€â”€â”€ Public router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -72,7 +73,7 @@ export default router;
 
 // â”€â”€â”€ Admin router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const adminCmsRouter = Router();
-adminCmsRouter.use(authenticate, requireRole('admin'));
+adminCmsRouter.use(authenticate, requireRole(Role.ADMIN, Role.SUPER_ADMIN));
 
 // Banners
 adminCmsRouter.get('/banners', async (_req: Request, res: Response, next: NextFunction) => {

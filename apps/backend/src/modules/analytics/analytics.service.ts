@@ -45,6 +45,9 @@ export async function getSummary() {
     revenuePrevMonth,
     ordersThisMonth,
     ordersPrevMonth,
+    pendingOrders,
+    pendingVendors,
+    refundRequests,
   ] = await Promise.all([
     User.count(),
     Order.count({ where: { status: { [Op.ne]: 'cancelled' } } }),
@@ -58,6 +61,9 @@ export async function getSummary() {
     Order.sum('total',     { where: { createdAt: { [Op.between]: [pMonth, month] }, status: { [Op.ne]: 'cancelled' } } }),
     Order.count(           { where: { createdAt: { [Op.gte]: month }, status: { [Op.ne]: 'cancelled' } } }),
     Order.count(           { where: { createdAt: { [Op.between]: [pMonth, month] }, status: { [Op.ne]: 'cancelled' } } }),
+    Order.count(           { where: { status: 'pending' } }),
+    VendorProfile.count(   { where: { status: 'pending' } }),
+    Order.count(           { where: { status: 'refund_requested' } }),
   ]);
 
   function pctChange(curr: number, prev: number) {
@@ -68,10 +74,13 @@ export async function getSummary() {
   return {
     totalUsers,
     totalOrders,
-    totalRevenue:  Number(totalRevenue ?? 0),
+    totalRevenue:       Number(totalRevenue ?? 0),
     totalProducts,
     totalVendors,
     totalSubscribers,
+    pendingOrders,
+    pendingVendors,
+    refundRequests,
     revenueThisMonth:   Number(revenueThisMonth  ?? 0),
     ordersThisMonth,
     revenueChange:  pctChange(Number(revenueThisMonth ?? 0),  Number(revenuePrevMonth ?? 0)),

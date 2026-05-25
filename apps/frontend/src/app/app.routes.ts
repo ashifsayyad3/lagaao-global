@@ -129,13 +129,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/cms-page/cms-page.component').then(m => m.CmsPageComponent),
       },
-      {
-        path: 'admin/dashboard',
-        canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
-        title: 'Admin Dashboard — Lagaao',
-      },
+      // admin/dashboard kept as legacy redirect handled below
     ],
   },
   {
@@ -175,6 +169,12 @@ export const routes: Routes = [
     path: 'vendor',
     loadChildren: () =>
       import('./features/vendor/vendor.routes').then(m => m.VENDOR_ROUTES),
+  },
+  // ── Admin Console (has its own full-page layout) ──────────────
+  {
+    path: 'admin',
+    loadChildren: () =>
+      import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
   },
   { path: '**', redirectTo: '' },
 ];

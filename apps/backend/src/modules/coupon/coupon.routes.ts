@@ -3,6 +3,7 @@ import { couponService } from './coupon.service';
 import { ok, created } from '../../shared/utils/response.util';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/rbac.middleware';
+import { Role } from '../../shared/types/roles';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ router.post('/validate', async (req: Request, res: Response, next: NextFunction)
   } catch (err) { next(err); }
 });
 
-router.use(authenticate, authorize('admin', 'super_admin'));
+router.use(authenticate, authorize(Role.ADMIN, Role.SUPER_ADMIN));
 
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try { ok(res, await couponService.list()); } catch (err) { next(err); }

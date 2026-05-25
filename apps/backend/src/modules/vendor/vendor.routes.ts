@@ -4,6 +4,7 @@ import { ok, created, paginated } from '../../shared/utils/response.util';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/rbac.middleware';
 import { getPagination } from '../../shared/utils/paginate.util';
+import { Role } from '../../shared/types/roles';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get('/:storeSlug', async (req: Request, res: Response, next: NextFunction
 
 // ─── Vendor routes (require vendor/admin role) ────────────────
 const vendorRouter = Router();
-vendorRouter.use(authenticate, authorize('vendor', 'admin', 'super_admin'));
+vendorRouter.use(authenticate, authorize(Role.VENDOR, Role.ADMIN, Role.SUPER_ADMIN));
 
 // POST /api/v1/vendor/apply  — vendor onboarding
 vendorRouter.post('/apply', async (req: Request, res: Response, next: NextFunction) => {
@@ -241,7 +242,7 @@ vendorRouter.delete('/products/:id', async (req: Request, res: Response, next: N
 
 // ─── Admin vendor management ──────────────────────────────────
 const adminVendorRouter = Router();
-adminVendorRouter.use(authenticate, authorize('admin', 'super_admin'));
+adminVendorRouter.use(authenticate, authorize(Role.ADMIN, Role.SUPER_ADMIN));
 
 // GET /api/v1/admin/vendors
 adminVendorRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {

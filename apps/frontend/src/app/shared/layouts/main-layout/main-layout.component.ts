@@ -137,7 +137,7 @@ interface MegaMenuCategory {
                     My Orders
                   </a>
                   @if (auth.user()?.role === 'vendor' || auth.user()?.role === 'super_admin') {
-                    <a routerLink="/vendor/dashboard" (click)="userMenuOpen.set(false)"
+                    <a routerLink="/vendor" (click)="userMenuOpen.set(false)"
                        class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
                               hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
                       <mat-icon class="!text-base">store</mat-icon>
@@ -494,7 +494,7 @@ export class MainLayoutComponent implements OnInit {
         { label: 'Blog',          route: '/blog' },
         { label: 'Careers',       route: '/pages/careers' },
         { label: 'Sell on Lagaao',route: '/sell' },
-        { label: 'Vendor Login',  route: '/vendor/dashboard' },
+        { label: 'Vendor Login',  route: '/vendor' },
       ],
     },
   ];

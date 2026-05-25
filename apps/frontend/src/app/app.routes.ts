@@ -47,13 +47,6 @@ export const routes: Routes = [
         title: 'Become a Seller — Lagaao',
       },
       {
-        path: 'vendor/dashboard',
-        canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/vendor/dashboard/vendor-dashboard.component').then(m => m.VendorDashboardComponent),
-        title: 'Vendor Dashboard — Lagaao',
-      },
-      {
         path: 'vendors/:storeSlug',
         loadComponent: () =>
           import('./features/vendor/store/vendor-store.component').then(m => m.VendorStoreComponent),
@@ -176,6 +169,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/google-callback/google-callback.component').then(m => m.GoogleCallbackComponent),
     title: 'Signing in — Lagaao',
+  },
+  // ── Vendor / Seller Hub (has its own layout — must be top-level) ──
+  {
+    path: 'vendor',
+    loadChildren: () =>
+      import('./features/vendor/vendor.routes').then(m => m.VENDOR_ROUTES),
   },
   { path: '**', redirectTo: '' },
 ];

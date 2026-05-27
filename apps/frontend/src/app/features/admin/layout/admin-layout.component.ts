@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeSwitcherComponent } from '../../../shared/components/theme-switcher/theme-switcher.component';
 
 interface NavItem {
   label:    string;
@@ -168,6 +169,21 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    label: 'SEO', icon: 'travel_explore',
+    children: [
+      { label: 'Overview',     icon: 'dashboard',      route: '/admin/seo' },
+      { label: 'Meta Tags',    icon: 'label',          route: '/admin/seo/meta' },
+      { label: 'Redirects',    icon: 'swap_horiz',     route: '/admin/seo/redirects' },
+      { label: 'Sitemap',      icon: 'map',            route: '/admin/seo/sitemap' },
+    ],
+  },
+  {
+    label: 'Performance', icon: 'speed',
+    children: [
+      { label: 'Web Vitals',   icon: 'monitor_heart',  route: '/admin/performance' },
+    ],
+  },
+  {
     label: 'Reports', icon: 'summarize',
     children: [
       { label: 'Sales Reports', icon: 'receipt',        route: '/admin/reports/sales' },
@@ -202,7 +218,7 @@ const NAV: NavItem[] = [
   selector: 'lg-admin-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, ThemeSwitcherComponent],
   template: `
 <div class="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
 
@@ -336,10 +352,7 @@ const NAV: NavItem[] = [
       <!-- Right actions -->
       <div class="flex items-center gap-2 shrink-0">
         <!-- Theme toggle -->
-        <button (click)="toggleTheme()"
-          class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <span class="material-icons text-[20px]">{{ isDark() ? 'light_mode' : 'dark_mode' }}</span>
-        </button>
+        <lg-theme-switcher variant="icon" />
 
         <!-- Quick link to storefront -->
         <a href="/" target="_blank"
@@ -416,7 +429,8 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   logout(): void {
-    this.#auth.logout().subscribe(() => this.#router.navigate(['/auth/login']));
+    this.#auth.logout();
+    this.#router.navigate(['/auth/login']);
   }
 
   @HostListener('document:keydown.escape')

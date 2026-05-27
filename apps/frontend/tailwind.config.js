@@ -57,15 +57,23 @@ module.exports = {
         error:   '#c0392b',
         info:    '#2e7d9f',
 
-        // ── Surface for dark mode ─────────────────────────────
+        // ── Surface (dark mode charcoal) ───────────────────────
         surface: {
-          50:  '#faf6f0',
-          100: '#f2ebe0',
-          200: '#e8ddd0',
-          800: '#2f3d33',
-          900: '#1e2d22',
-          950: '#111a14',
+          50:  '#faf8f5',
+          100: '#f5f0e8',
+          200: '#ede8df',
+          700: '#2a2a2a',
+          800: '#242424',
+          850: '#1c1c1c',
+          900: '#161616',
+          950: '#0f0f0f',
         },
+
+        // ── Semantic ──────────────────────────────────────────
+        success: { DEFAULT: '#16a34a', light: '#dcfce7', dark: '#15803d' },
+        warning: { DEFAULT: '#d97706', light: '#fffbeb', dark: '#b45309' },
+        error:   { DEFAULT: '#dc2626', light: '#fef2f2', dark: '#b91c1c' },
+        info:    { DEFAULT: '#2563eb', light: '#eff6ff', dark: '#1d4ed8' },
       },
 
       fontFamily: {
@@ -94,15 +102,19 @@ module.exports = {
       },
 
       boxShadow: {
-        'plant':      '0 2px 12px rgba(61,107,69,.08), 0 0 0 1px rgba(61,107,69,.06)',
-        'plant-hover':'0 8px 32px rgba(61,107,69,.16), 0 0 0 1px rgba(61,107,69,.10)',
-        'warm-sm':    '0 2px 8px rgba(61,107,69,.08)',
-        'warm-md':    '0 4px 16px rgba(61,107,69,.10)',
-        'warm-lg':    '0 8px 32px rgba(61,107,69,.12)',
-        'warm-xl':    '0 16px 48px rgba(61,107,69,.14)',
-        'elevation-1':'0 1px 3px rgba(0,0,0,.08)',
-        'elevation-2':'0 3px 8px rgba(0,0,0,.10)',
-        'elevation-3':'0 8px 24px rgba(0,0,0,.12)',
+        'plant':       '0 2px 12px rgba(61,107,69,.08), 0 0 0 1px rgba(61,107,69,.06)',
+        'plant-hover': '0 8px 32px rgba(61,107,69,.16), 0 0 0 1px rgba(61,107,69,.10)',
+        'warm-sm':     '0 2px 8px rgba(61,107,69,.08)',
+        'warm-md':     '0 4px 16px rgba(61,107,69,.10)',
+        'warm-lg':     '0 8px 32px rgba(61,107,69,.12)',
+        'warm-xl':     '0 16px 48px rgba(61,107,69,.14)',
+        'elevation-1': '0 1px 3px rgba(0,0,0,.08)',
+        'elevation-2': '0 3px 8px rgba(0,0,0,.10)',
+        'elevation-3': '0 8px 24px rgba(0,0,0,.12)',
+        'card':        '0 1px 3px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04)',
+        'card-hover':  '0 8px 24px rgba(0,0,0,.12), 0 0 0 1px rgba(61,107,69,.1)',
+        'primary':     '0 4px 14px rgba(61,107,69,.3)',
+        'premium':     '0 20px 40px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.04)',
       },
 
       zIndex: {
@@ -122,13 +134,25 @@ module.exports = {
           from: { opacity: '0' },
           to:   { opacity: '1' },
         },
+        'fade-in-scale': {
+          from: { opacity: '0', transform: 'scale(0.94) translateY(8px)' },
+          to:   { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
         'slide-down': {
           from: { opacity: '0', transform: 'translateY(-8px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-up': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
           to:   { opacity: '1', transform: 'translateY(0)' },
         },
         'scale-in': {
           from: { opacity: '0', transform: 'scale(0.96)' },
           to:   { opacity: '1', transform: 'scale(1)' },
+        },
+        'drawer-in': {
+          from: { transform: 'translateX(100%)' },
+          to:   { transform: 'translateX(0)' },
         },
         shimmer: {
           '0%':   { backgroundPosition: '-200% 0' },
@@ -138,15 +162,22 @@ module.exports = {
           '0%, 100%': { transform: 'rotate(-2deg)' },
           '50%':      { transform: 'rotate(2deg)' },
         },
+        spin: {
+          to: { transform: 'rotate(360deg)' },
+        },
       },
 
       animation: {
-        'fade-up':   'fade-up 0.5s cubic-bezier(0.16,1,0.3,1) both',
-        'fade-in':   'fade-in 0.3s ease-out both',
-        'slide-down':'slide-down 0.25s cubic-bezier(0.16,1,0.3,1) both',
-        'scale-in':  'scale-in 0.2s ease-out both',
-        shimmer:     'shimmer 1.8s linear infinite',
-        'leaf-sway': 'leaf-sway 3s ease-in-out infinite',
+        'fade-up':       'fade-up 0.5s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in':       'fade-in 0.3s ease-out both',
+        'fade-in-scale': 'fade-in-scale 0.35s cubic-bezier(0.16,1,0.3,1) both',
+        'slide-down':    'slide-down 0.25s cubic-bezier(0.16,1,0.3,1) both',
+        'slide-up':      'slide-up 0.3s cubic-bezier(0.16,1,0.3,1) both',
+        'scale-in':      'scale-in 0.2s ease-out both',
+        'drawer-in':     'drawer-in 0.35s cubic-bezier(0.16,1,0.3,1) both',
+        shimmer:         'shimmer 1.8s linear infinite',
+        'leaf-sway':     'leaf-sway 3s ease-in-out infinite',
+        spin:            'spin 0.7s linear infinite',
       },
 
       backdropBlur: { xs: '2px' },

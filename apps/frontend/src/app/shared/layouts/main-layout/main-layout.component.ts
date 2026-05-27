@@ -9,10 +9,13 @@ import { ToastContainerComponent } from '../../components/toast/toast.component'
 import { LoadingService } from '../../../core/services/loading.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { WishlistService } from '../../../core/services/wishlist.service';
+import { WalletService } from '../../../core/services/wallet.service';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { AnnouncementBarComponent } from '../../components/announcement-bar/announcement-bar.component';
 import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
 import { LgLogoComponent } from '../../components/logo/logo.component';
+import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
 
 interface MegaMenuCategory {
   label: string;
@@ -27,7 +30,8 @@ interface MegaMenuCategory {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, MatIconModule,
-            ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent, LgLogoComponent],
+            ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent, LgLogoComponent,
+            ThemeSwitcherComponent],
   template: `
     <!-- ── Announcement / Utility bar ─────────────────────────── -->
     <lg-announcement-bar></lg-announcement-bar>
@@ -53,10 +57,7 @@ interface MegaMenuCategory {
           <a routerLink="/pages/contact" class="flex items-center gap-1 hover:text-white transition-colors">
             <mat-icon class="!text-sm">support_agent</mat-icon> Help
           </a>
-          <button (click)="theme.toggle()"
-                  class="flex items-center gap-1 hover:text-white transition-colors">
-            <mat-icon class="!text-sm">{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-          </button>
+          <lg-theme-switcher variant="icon" />
         </div>
       </div>
     </div>
@@ -88,18 +89,34 @@ interface MegaMenuCategory {
         <!-- Right actions -->
         <div class="flex items-center gap-1 ml-auto md:ml-0 flex-shrink-0">
 
+          <!-- Theme switcher (desktop) -->
+          <div class="hidden md:flex">
+            <lg-theme-switcher variant="icon" />
+          </div>
+
           <!-- Mobile search toggle -->
-          <button class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg
+          <button class="md:hidden w-9 h-9 flex items-center justify-content rounded-lg
                          hover:bg-primary-50 text-primary-700 transition-colors">
             <mat-icon>search</mat-icon>
           </button>
 
           <!-- Wishlist -->
-          <a routerLink="/wishlist"
+          <a routerLink="/profile/wishlist"
              class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg
                     text-text-secondary hover:text-primary-600 hover:bg-primary-50
-                    dark:hover:bg-primary-900/30 transition-all text-sm font-medium group">
-            <mat-icon class="!text-xl group-hover:scale-110 transition-transform">favorite_border</mat-icon>
+                    dark:hover:bg-primary-900/30 transition-all text-sm font-medium group"
+             style="position:relative">
+            <mat-icon class="!text-xl group-hover:scale-110 transition-transform">
+              {{ wishlist.count() > 0 ? 'favorite' : 'favorite_border' }}
+            </mat-icon>
+            @if (wishlist.count() > 0) {
+              <span style="position:absolute;top:4px;right:4px;min-width:16px;height:16px;
+                           background:var(--color-primary);color:#fff;border-radius:99px;
+                           font-size:.625rem;font-weight:700;display:flex;align-items:center;
+                           justify-content:center;padding:0 3px;line-height:1">
+                {{ wishlist.count() > 9 ? '9+' : wishlist.count() }}
+              </span>
+            }
             <span class="hidden lg:block">Wishlist</span>
           </a>
 
@@ -135,6 +152,38 @@ interface MegaMenuCategory {
                             hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
                     <mat-icon class="!text-base">receipt_long</mat-icon>
                     My Orders
+                  </a>
+                  <a routerLink="/profile/wallet" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">account_balance_wallet</mat-icon>
+                    My Wallet
+                    @if (wallet.balance() > 0) {
+                      <span style="margin-left:auto;font-size:.6875rem;font-weight:700;
+                                   color:var(--color-primary);background:var(--color-primary-50);
+                                   padding:1px 7px;border-radius:99px">
+                        ₹{{ wallet.balance() }}
+                      </span>
+                    }
+                  </a>
+                  <a routerLink="/profile/support" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">support_agent</mat-icon>
+                    Support
+                  </a>
+                  <a routerLink="/profile/wishlist" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">favorite_border</mat-icon>
+                    My Wishlist
+                    @if (wishlist.count() > 0) {
+                      <span style="margin-left:auto;background:var(--color-primary-50);
+                                   color:var(--color-primary);font-size:.6875rem;font-weight:700;
+                                   padding:1px 7px;border-radius:99px">
+                        {{ wishlist.count() }}
+                      </span>
+                    }
                   </a>
                   @if (auth.user()?.role === 'vendor' || auth.user()?.role === 'super_admin') {
                     <a routerLink="/vendor" (click)="userMenuOpen.set(false)"
@@ -382,6 +431,8 @@ export class MainLayoutComponent implements OnInit {
   readonly loading   = inject(LoadingService);
   readonly auth      = inject(AuthService);
   readonly cart      = inject(CartService);
+  readonly wishlist  = inject(WishlistService);
+  readonly wallet    = inject(WalletService);
   readonly #sanitizer = inject(DomSanitizer);
   readonly #el        = inject(ElementRef);
   readonly year      = new Date().getFullYear();
@@ -520,5 +571,7 @@ export class MainLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.cart.load().subscribe();
+    this.wishlist.load();
+    this.wallet.loadBalance();
   }
 }

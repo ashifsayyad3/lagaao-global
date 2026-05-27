@@ -9,6 +9,7 @@ import { CmsService, Banner } from '../../core/services/cms.service';
 import { AiService, AiProduct } from '../../core/services/ai.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductService, Product } from '../../core/services/product.service';
+import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'lg-home',
@@ -565,6 +566,7 @@ export class HomeComponent implements OnInit {
   readonly #ai      = inject(AiService);
   readonly #auth    = inject(AuthService);
   readonly #product = inject(ProductService);
+  readonly #seo     = inject(SeoService);
 
   heroBanners    = signal<Banner[]>([]);
   midBanners     = signal<Banner[]>([]);
@@ -652,6 +654,15 @@ export class HomeComponent implements OnInit {
   ];
 
   ngOnInit() {
+    this.#seo.setMeta({
+      title:       'Lagaao — Shop Everything Online',
+      description: 'Discover fashion, electronics, home décor & more on Lagaao — India\'s AI-powered marketplace. Free delivery on orders above ₹499.',
+      canonical:   'https://lagaao.com/',
+      type:        'website',
+      keywords:    'online shopping India, fashion, electronics, home décor, Lagaao',
+    });
+    this.#seo.setOrganizationSchema();
+
     this.#cms.getBanners('hero').subscribe({ next: r => this.heroBanners.set(r.data), error: () => {} });
     this.#cms.getBanners('mid').subscribe({ next: r => this.midBanners.set(r.data), error: () => {} });
     this.#ai.getRecentlyViewed().subscribe({ next: r => this.recentlyViewed.set(r.data), error: () => {} });

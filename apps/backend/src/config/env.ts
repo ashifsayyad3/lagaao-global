@@ -35,8 +35,20 @@ const schema = z.object({
   ELASTIC_USERNAME: z.string().optional(),
   ELASTIC_PASSWORD: z.string().optional(),
 
-  RAZORPAY_KEY_ID:     z.string().optional(),
-  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_KEY_ID:       z.string().optional(),
+  RAZORPAY_KEY_SECRET:   z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+
+  // File uploads
+  UPLOAD_STORAGE:   z.enum(['local', 's3']).default('local'),
+  UPLOAD_MAX_MB:    z.coerce.number().default(10),
+  UPLOAD_DIR:       z.string().default('uploads'),
+  // S3 (optional — only needed when UPLOAD_STORAGE=s3)
+  AWS_REGION:          z.string().optional(),
+  AWS_ACCESS_KEY_ID:   z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_S3_BUCKET:       z.string().optional(),
+  AWS_S3_CDN_URL:      z.string().optional(),  // CloudFront or custom CDN
 
   GOOGLE_CLIENT_ID:     z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),

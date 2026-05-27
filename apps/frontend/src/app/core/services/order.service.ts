@@ -71,8 +71,11 @@ export interface Order {
 export interface PlaceOrderInput {
   shippingAddress: ShippingAddress;
   paymentMethod:   PaymentMethod;
+  upiId?:          string;
   couponCode?:     string;
   sessionId?:      string;
+  useWallet?:      boolean;
+  walletAmount?:   number;
 }
 
 export interface OrdersPage {

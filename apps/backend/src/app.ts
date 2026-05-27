@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import path    from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -39,6 +40,14 @@ import emailAdminRoutes      from './modules/email/email.routes';
 import notificationRoutes, { adminNotificationsRouter } from './modules/notifications/notification.routes';
 import trackingRoutes        from './modules/tracking/tracking.routes';
 import crmRoutes             from './modules/crm/crm.routes';
+import { seoPublicRoutes, seoAdminRoutes } from './modules/seo/seo.routes';
+import paymentsRoutes from './modules/payments/payments.routes';
+import uploadsRoutes  from './modules/uploads/uploads.routes';
+import reviewsRoutes  from './modules/reviews/reviews.routes';
+import { wishlistRoutes } from './modules/wishlist/wishlist.routes';
+import { walletRoutes, adminWalletRouter } from './modules/wallet/wallet.routes';
+import { returnsRoutes, adminReturnsRouter } from './modules/returns/returns.routes';
+import { supportRoutes, adminSupportRouter } from './modules/support/support.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -78,6 +87,20 @@ app.use(helmet({
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use(compression() as any);
+// Capture raw body for Razorpay webhook HMAC verification
+app.use((req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => {
+  if (req.path === '/api/v1/payments/webhook') {
+    let raw = '';
+    req.setEncoding('utf8');
+    req.on('data', (chunk: string) => { raw += chunk; });
+    req.on('end', () => {
+      (req as unknown as Record<string, string>)['rawBody'] = raw;
+      next();
+    });
+  } else {
+    next();
+  }
+});
 app.use(express.json({ limit: '2mb' }));  // tightened from 10mb
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -155,6 +178,20 @@ app.use('/api/v1/notifications',        notificationRoutes);
 app.use('/api/v1/admin/notifications',  adminNotificationsRouter);
 app.use('/api/v1/admin/tracking',       trackingRoutes);
 app.use('/api/v1/admin/crm',            crmRoutes);
+app.use('/api/v1',                      seoPublicRoutes);
+app.use('/api/v1/admin/seo',            seoAdminRoutes);
+app.use('/api/v1/payments',             paymentsRoutes);
+app.use('/api/v1/admin/payments',       paymentsRoutes);
+app.use('/api/v1/uploads',             uploadsRoutes);
+app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
+app.use('/api/v1',                     reviewsRoutes);
+app.use('/api/v1/wishlist',            wishlistRoutes);
+app.use('/api/v1/wallet',             walletRoutes);
+app.use('/api/v1/admin/wallets',      adminWalletRouter);
+app.use('/api/v1/returns',            returnsRoutes);
+app.use('/api/v1/admin/returns',      adminReturnsRouter);
+app.use('/api/v1/support',            supportRoutes);
+app.use('/api/v1/admin/support',      adminSupportRouter);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

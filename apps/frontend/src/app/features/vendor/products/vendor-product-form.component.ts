@@ -6,12 +6,16 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { VendorService, VendorProductInput } from '../../../core/services/vendor.service';
 import { ProductService } from '../../../core/services/product.service';
+import {
+  ImageUploaderComponent,
+  UploadedFile,
+} from '../../../shared/components/image-uploader/image-uploader.component';
 
 @Component({
   selector: 'lg-vendor-product-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, ImageUploaderComponent],
   template: `
 <div class="p-6 max-w-4xl mx-auto space-y-6">
 
@@ -111,32 +115,16 @@ import { ProductService } from '../../../core/services/product.service';
 
       <!-- Images -->
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-        <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2">
-          <h2 class="font-semibold text-gray-900 dark:text-white text-sm">Images</h2>
-          <button type="button" (click)="addImage()"
-            class="text-xs text-green-600 dark:text-green-400 hover:underline">+ Add Image</button>
-        </div>
-        <div formArrayName="images" class="space-y-2">
-          @for (img of images.controls; track $index) {
-            <div [formGroupName]="$index" class="flex gap-2 items-center">
-              <input formControlName="url" type="url" placeholder="Image URL"
-                class="field-input flex-1 text-xs" />
-              <input formControlName="alt" type="text" placeholder="Alt text"
-                class="field-input w-36 text-xs" />
-              <label class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                <input formControlName="isPrimary" type="checkbox" class="rounded" />
-                Primary
-              </label>
-              <button type="button" (click)="removeImage($index)"
-                class="text-red-400 hover:text-red-600 p-1">
-                <span class="material-icons text-[16px]">close</span>
-              </button>
-            </div>
-          }
-          @if (images.length === 0) {
-            <p class="text-xs text-gray-400">No images yet. Click "+ Add Image" to add one.</p>
-          }
-        </div>
+        <h2 class="font-semibold text-gray-900 dark:text-white text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
+          Product Images
+        </h2>
+        <lg-image-uploader
+          [existingUrls]="existingImageUrls()"
+          [entityType]="'product'"
+          [maxFiles]="10"
+          (uploaded)="onImageUploaded($event)"
+          (existingRemoved)="onExistingImageRemoved($event)"
+        />
       </div>
 
       <!-- SEO -->
@@ -197,11 +185,16 @@ export class VendorProductFormComponent implements OnInit {
   readonly #route   = inject(ActivatedRoute);
   readonly #router  = inject(Router);
 
-  readonly isEdit       = signal(false);
+  readonly isEdit         = signal(false);
   readonly loadingProduct = signal(false);
-  readonly saving       = signal(false);
-  readonly error        = signal('');
-  readonly categories   = this.#product.categories;
+  readonly saving         = signal(false);
+  readonly error          = signal('');
+  readonly categories     = this.#product.categories;
+
+  /** Tracks uploaded image URLs for the form payload */
+  readonly uploadedImages = signal<{ url: string; alt: string; isPrimary: boolean }[]>([]);
+  /** Existing image URLs shown in uploader (populated on edit) */
+  readonly existingImageUrls = signal<string[]>([]);
 
   private editId: number | null = null;
 
@@ -242,12 +235,33 @@ export class VendorProductFormComponent implements OnInit {
             salePrice: p.salePrice, taxRate: p.taxRate, status: p.status,
             metaTitle: p.metaTitle, metaDescription: p.metaDescription,
           });
-          (p.images ?? []).forEach((img: any) => this.addImage(img));
+          // Populate existing image URLs for the uploader
+          const existingUrls = (p.images ?? []).map((img: { url: string }) => img.url).filter(Boolean);
+          this.existingImageUrls.set(existingUrls);
+          this.uploadedImages.set(
+            (p.images ?? []).map((img: any, i: number) => ({
+              url: img.url, alt: img.alt ?? '', isPrimary: i === 0,
+            })),
+          );
           this.loadingProduct.set(false);
         },
         error: () => this.loadingProduct.set(false),
       });
     }
+  }
+
+  /** Called when ImageUploader successfully uploads a file */
+  onImageUploaded(file: UploadedFile): void {
+    this.uploadedImages.update(imgs => {
+      const isPrimary = imgs.length === 0; // first uploaded = primary
+      return [...imgs, { url: file.url, alt: file.originalName, isPrimary }];
+    });
+  }
+
+  /** Called when user removes an existing image in the uploader */
+  onExistingImageRemoved(url: string): void {
+    this.existingImageUrls.update(urls => urls.filter(u => u !== url));
+    this.uploadedImages.update(imgs => imgs.filter(i => i.url !== url));
   }
 
   addImage(data?: { url?: string; alt?: string; isPrimary?: boolean }): void {
@@ -282,9 +296,9 @@ export class VendorProductFormComponent implements OnInit {
       status: raw.status as any,
       metaTitle: raw.metaTitle || undefined,
       metaDescription: raw.metaDescription || undefined,
-      images: raw.images.map((img: any) => ({
-        url: img.url, alt: img.alt || undefined, isPrimary: img.isPrimary,
-      })).filter((img: any) => !!img.url),
+      images: this.uploadedImages().map((img, i) => ({
+        url: img.url, alt: img.alt || undefined, isPrimary: i === 0,
+      })),
     };
     this.saving.set(true);
     this.error.set('');

@@ -30,6 +30,7 @@
     "mysql2": "^3.9.7",
     "nodemailer": "^6.9.13",
     "openai": "^4.52.0",
+    "razorpay": "^2.9.6",
     "redis": "^4.6.14",
     "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.3",

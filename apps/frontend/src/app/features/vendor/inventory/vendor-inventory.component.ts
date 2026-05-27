@@ -297,10 +297,12 @@ export class VendorInventoryComponent {
   private async fetchInventory(page: number, q?: string): Promise<void> {
     this.loading.set(true);
     try {
-      const res = await (this.vendorService.getVendorInventory(page, q || undefined) as Promise<{
+      const res = await new Promise<{
         data: InventoryVariant[];
         meta: { total: number; totalPages: number; page: number; limit: number };
-      }>);
+      }>((resolve, reject) =>
+        this.vendorService.getVendorInventory(page, q || undefined).subscribe({ next: resolve, error: reject }),
+      );
       this.variants.set(res.data);
       this.meta.set(res.meta);
     } catch {
@@ -312,7 +314,9 @@ export class VendorInventoryComponent {
 
   private async fetchLowStock(): Promise<void> {
     try {
-      const res = await (this.vendorService.getVendorLowStock() as Promise<{ data: InventoryVariant[] }>);
+      const res = await new Promise<{ data: InventoryVariant[] }>((resolve, reject) =>
+        this.vendorService.getVendorLowStock().subscribe({ next: resolve, error: reject }),
+      );
       this.lowStockCount.set(res.data.length);
     } catch {
       // non-critical

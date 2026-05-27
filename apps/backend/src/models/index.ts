@@ -22,6 +22,15 @@ import {
 import { EmailLog }    from './emailLog.model';
 import { Notification } from './notification.model';
 import { Shipment }    from './shipment.model';
+import { SeoMeta }     from './seoMeta.model';
+import { RedirectRule } from './redirectRule.model';
+import { PaymentTransaction } from './paymentTransaction.model';
+import { MediaFile }          from './mediaFile.model';
+import { Review }             from './review.model';
+import { Wishlist, WishlistItem } from './wishlist.model';
+import { Wallet, WalletTransaction } from './wallet.model';
+import { ReturnRequest } from './returnRequest.model';
+import { SupportTicket, SupportMessage } from './supportTicket.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -40,6 +49,14 @@ export const sequelize = new Sequelize({
     VendorProfile, VendorPayout,
     Banner, Announcement, NewsletterSubscriber, BlogPost, CmsPage,
     EmailLog, Notification, Shipment,
+    SeoMeta, RedirectRule,
+    PaymentTransaction,
+    MediaFile,
+    Review,
+    Wishlist, WishlistItem,
+    Wallet, WalletTransaction,
+    ReturnRequest,
+    SupportTicket, SupportMessage,
   ],
   logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
@@ -61,6 +78,14 @@ export {
   VendorProfile, VendorPayout,
   Banner, Announcement, NewsletterSubscriber, BlogPost, CmsPage,
   EmailLog, Notification, Shipment,
+  SeoMeta, RedirectRule,
+  PaymentTransaction,
+  MediaFile,
+  Review,
+  Wishlist, WishlistItem,
+  Wallet, WalletTransaction,
+  ReturnRequest,
+  SupportTicket, SupportMessage,
 };
 
 export async function connectDB(): Promise<void> {

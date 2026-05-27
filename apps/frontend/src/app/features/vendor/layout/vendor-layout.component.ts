@@ -5,6 +5,7 @@ import {
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ThemeService } from '../../../core/services/theme.service';
+import { ThemeSwitcherComponent } from '../../../shared/components/theme-switcher/theme-switcher.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { VendorService } from '../../../core/services/vendor.service';
 
@@ -24,7 +25,7 @@ interface NavSection {
   selector: 'lg-vendor-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, ThemeSwitcherComponent],
   styles: [`
     :host { display: flex; min-height: 100vh; background: var(--bg-subtle); }
 
@@ -333,11 +334,7 @@ interface NavSection {
         <div class="header-actions">
 
           <!-- Theme toggle -->
-          <button class="header-btn" (click)="theme.toggle()" [title]="'Toggle theme'">
-            <mat-icon style="font-size:18px;width:18px;height:18px">
-              {{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
-            </mat-icon>
-          </button>
+          <lg-theme-switcher variant="icon" />
 
           <!-- View store -->
           <a [href]="'/vendors/' + storeSlug()" target="_blank"

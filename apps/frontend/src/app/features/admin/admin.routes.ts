@@ -165,6 +165,15 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'monitoring/metrics',      loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Server Metrics — Admin' },
       { path: 'monitoring/backups',      loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Backups — Admin' },
 
+      // ── SEO ──────────────────────────────────────────────
+      { path: 'seo',             loadComponent: () => import('./seo/admin-seo.component').then(m => m.AdminSeoComponent), title: 'SEO Center — Admin' },
+      { path: 'seo/meta',        loadComponent: () => import('./seo/admin-seo.component').then(m => m.AdminSeoComponent), title: 'SEO Meta Tags — Admin' },
+      { path: 'seo/redirects',   loadComponent: () => import('./seo/admin-seo.component').then(m => m.AdminSeoComponent), title: 'Redirects — Admin' },
+      { path: 'seo/sitemap',     loadComponent: () => import('./seo/admin-seo.component').then(m => m.AdminSeoComponent), title: 'Sitemap — Admin' },
+
+      // ── Performance ───────────────────────────────────────
+      { path: 'performance',     loadComponent: () => import('./performance/admin-performance.component').then(m => m.AdminPerformanceComponent), title: 'Performance Center — Admin' },
+
       // ── Reports ───────────────────────────────────────────
       { path: 'reports/sales',    loadComponent: () => import('./reports/admin-reports.component').then(m => m.AdminReportsComponent), title: 'Sales Reports — Admin' },
       { path: 'reports/tax',      loadComponent: () => import('./reports/admin-reports.component').then(m => m.AdminReportsComponent), title: 'Tax Reports — Admin' },
@@ -184,6 +193,12 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'system/api-keys', loadComponent: () => import('./system/admin-system.component').then(m => m.AdminSystemComponent), title: 'API Keys — Admin' },
       { path: 'system/cache',    loadComponent: () => import('./system/admin-system.component').then(m => m.AdminSystemComponent), title: 'Cache — Admin' },
       { path: 'system/health',   loadComponent: () => import('./system/admin-system.component').then(m => m.AdminSystemComponent), title: 'Health Monitor — Admin' },
+
+      // ── Wallets ───────────────────────────────────────────
+      { path: 'wallets', loadComponent: () => import('./wallets/admin-wallets.component').then(m => m.AdminWalletsComponent), title: 'Wallets — Admin' },
+
+      // ── Returns ───────────────────────────────────────────
+      { path: 'returns', loadComponent: () => import('./returns/admin-returns.component').then(m => m.AdminReturnsComponent), title: 'Returns & Refunds — Admin' },
 
     ],
   },

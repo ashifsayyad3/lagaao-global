@@ -5,13 +5,18 @@ import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CartService, PriceSummary } from '../../core/services/cart.service';
-import { OrderService } from '../../core/services/order.service';
+import { OrderService, PaymentMethod } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { RazorpayService } from '../../core/services/razorpay.service';
+import { WalletService } from '../../core/services/wallet.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
+import {
+  PaymentMethodSelectorComponent,
+  PaymentSelection,
+} from '../../shared/components/payment-method-selector/payment-method-selector.component';
 
 type Step = 'address' | 'payment' | 'review';
-type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod';
 
 interface AddressForm {
   fullName: string; phone: string;
@@ -23,7 +28,7 @@ interface AddressForm {
   selector: 'lg-checkout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe],
+  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe, PaymentMethodSelectorComponent],
   styles: [`
     :host { display: block; }
     .page { max-width: 1080px; margin: 0 auto; padding: 24px 24px 80px; }
@@ -267,42 +272,16 @@ interface AddressForm {
 
           <!-- Step 2: Payment -->
           @if (currentStep() === 'payment') {
-            <div class="step-card">
-              <h2 class="step-card-heading">💳 Payment Method</h2>
-              <div class="payment-list">
-                @for (method of paymentMethods; track method.key) {
-                  <div class="pay-option" [class.active]="paymentMethod() === method.key"
-                       (click)="paymentMethod.set(method.key)">
-                    <div class="pay-icon">
-                      <mat-icon style="color:var(--color-primary)">{{ method.icon }}</mat-icon>
-                    </div>
-                    <div style="flex:1">
-                      <div class="pay-label">{{ method.label }}</div>
-                      <div class="pay-desc">{{ method.desc }}</div>
-                    </div>
-                    @if (method.key === 'cod') {
-                      <span class="pay-badge">+₹20 fee</span>
-                    }
-                    <div style="width:20px;height:20px;border-radius:50%;border:2px solid;flex-shrink:0;
-                                display:flex;align-items:center;justify-content:center"
-                         [style.border-color]="paymentMethod() === method.key ? 'var(--color-primary)' : 'var(--border-strong)'">
-                      @if (paymentMethod() === method.key) {
-                        <div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary)"></div>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-              <div class="step-actions">
-                <button class="btn-back" (click)="goToStep('address')">
-                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_back</mat-icon>
-                  Back
-                </button>
-                <button class="btn-next" (click)="nextStep()">
-                  Review Order
-                  <mat-icon style="font-size:16px;width:16px;height:16px">arrow_forward</mat-icon>
-                </button>
-              </div>
+            <lg-payment-method-selector
+              [(selected)]="paymentMethod"
+              [amount]="finalTotal()"
+              (confirmed)="onPaymentConfirmed($event)"
+            />
+            <div class="step-actions" style="margin-top:16px">
+              <button class="btn-back" (click)="goToStep('address')">
+                <mat-icon style="font-size:16px;width:16px;height:16px">arrow_back</mat-icon>
+                Back
+              </button>
             </div>
           }
 
@@ -334,9 +313,19 @@ interface AddressForm {
                     <span class="review-box-label">Payment</span>
                     <button class="edit-link" (click)="goToStep('payment')">Edit</button>
                   </div>
-                  <p style="font-size:.9375rem;font-weight:600;color:var(--text-primary);margin:0">
-                    {{ selectedPaymentMethod()?.label }}
+                  <p style="font-size:.9375rem;font-weight:600;color:var(--text-primary);margin:0 0 2px">
+                    {{ paymentMethodLabel() }}
                   </p>
+                  @if (paymentSelection()?.upiResult?.upiId) {
+                    <p style="font-size:.8125rem;color:var(--text-muted);margin:0">
+                      {{ paymentSelection()!.upiResult!.upiId }}
+                    </p>
+                  }
+                  @if (paymentSelection()?.upiResult?.app) {
+                    <p style="font-size:.8125rem;color:var(--text-muted);margin:0">
+                      via {{ paymentSelection()!.upiResult!.app }}
+                    </p>
+                  }
                 </div>
 
                 <!-- Items -->
@@ -406,6 +395,35 @@ interface AddressForm {
                   <span>COD fee</span><span>+₹20</span>
                 </div>
               }
+              @if (walletSvc.balance() > 0) {
+                <div style="margin:10px 0;padding:10px 12px;background:var(--bg-subtle);
+                             border-radius:10px;border:1.5px solid var(--border-default)">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.875rem">
+                    <input type="checkbox" [checked]="useWallet()" (change)="useWallet.set(!useWallet())"
+                           style="width:16px;height:16px;accent-color:var(--color-primary)" />
+                    <mat-icon style="font-size:16px;width:16px;height:16px;color:var(--color-primary)">
+                      account_balance_wallet
+                    </mat-icon>
+                    <span style="flex:1;color:var(--text-primary);font-weight:500">
+                      Use Wallet Balance
+                      <span style="color:var(--text-muted);font-weight:400">
+                        ({{ walletSvc.balance() | currencyInr }} available)
+                      </span>
+                    </span>
+                  </label>
+                  @if (useWallet() && walletDeduction() > 0) {
+                    <div style="margin-top:6px;font-size:.8125rem;color:var(--color-primary);font-weight:600;padding-left:26px">
+                      −{{ walletDeduction() | currencyInr }} will be deducted from wallet
+                    </div>
+                  }
+                </div>
+              }
+              @if (useWallet() && walletDeduction() > 0) {
+                <div class="price-row saving">
+                  <span>Wallet Discount</span>
+                  <span>−{{ walletDeduction() | currencyInr }}</span>
+                </div>
+              }
               <div class="price-divider"></div>
               <div class="price-total">
                 <span>Total</span>
@@ -439,17 +457,21 @@ interface AddressForm {
   `,
 })
 export class CheckoutComponent implements OnInit {
-  readonly cartSvc   = inject(CartService);
-  readonly #orderSvc = inject(OrderService);
-  readonly #auth     = inject(AuthService);
-  readonly #toast    = inject(ToastService);
-  readonly #router   = inject(Router);
+  readonly cartSvc    = inject(CartService);
+  readonly #orderSvc  = inject(OrderService);
+  readonly #auth      = inject(AuthService);
+  readonly #toast     = inject(ToastService);
+  readonly #router    = inject(Router);
+  readonly #razorpay  = inject(RazorpayService);
+  readonly walletSvc  = inject(WalletService);
 
-  readonly currentStep   = signal<Step>('address');
-  readonly paymentMethod = signal<PaymentMethod>('upi');
-  readonly pricing       = signal<PriceSummary | null>(null);
-  readonly placing       = signal(false);
-  readonly completed     = signal<Set<Step>>(new Set());
+  readonly currentStep      = signal<Step>('address');
+  readonly paymentMethod    = signal<PaymentMethod>('upi');
+  readonly pricing          = signal<PriceSummary | null>(null);
+  readonly placing          = signal(false);
+  readonly completed        = signal<Set<Step>>(new Set());
+  readonly paymentSelection = signal<PaymentSelection | null>(null);
+  readonly useWallet        = signal(false);
 
   address: AddressForm = {
     fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '',
@@ -482,9 +504,28 @@ export class CheckoutComponent implements OnInit {
     this.paymentMethods.find(m => m.key === this.paymentMethod())
   );
 
+  readonly paymentMethodLabel = computed(() => {
+    const sel = this.paymentSelection();
+    if (sel) {
+      const labels: Record<string, string> = {
+        upi: 'UPI', card: 'Credit / Debit Card',
+        netbanking: 'Net Banking', cod: 'Cash on Delivery', wallet: 'Wallet',
+      };
+      return labels[sel.method] ?? sel.method;
+    }
+    return this.selectedPaymentMethod()?.label ?? 'UPI';
+  });
+
+  readonly walletDeduction = computed(() => {
+    if (!this.useWallet()) return 0;
+    const base = (this.pricing()?.total ?? 0) + (this.paymentMethod() === 'cod' ? 20 : 0);
+    return Math.min(this.walletSvc.balance(), base);
+  });
+
   readonly finalTotal = computed(() => {
     const base = this.pricing()?.total ?? 0;
-    return this.paymentMethod() === 'cod' ? base + 20 : base;
+    const withCod = this.paymentMethod() === 'cod' ? base + 20 : base;
+    return Math.max(0, withCod - this.walletDeduction());
   });
 
   ngOnInit(): void {
@@ -497,6 +538,9 @@ export class CheckoutComponent implements OnInit {
     if (user) {
       this.address.fullName = user.name ?? '';
       this.address.phone    = (user as any).phone ?? '';
+    }
+    if (this.#auth.isLoggedIn()) {
+      this.walletSvc.loadBalance();
     }
   }
 
@@ -519,6 +563,12 @@ export class CheckoutComponent implements OnInit {
     if (idx < order.length - 1) this.currentStep.set(order[idx + 1]);
   }
 
+  onPaymentConfirmed(selection: PaymentSelection): void {
+    this.paymentSelection.set(selection);
+    this.paymentMethod.set(selection.method as PaymentMethod);
+    this.nextStep();
+  }
+
   goToStep(step: Step): void {
     const order: Step[] = ['address', 'payment', 'review'];
     const target  = order.indexOf(step);
@@ -528,22 +578,60 @@ export class CheckoutComponent implements OnInit {
 
   placeOrder(): void {
     this.placing.set(true);
-    const a = this.address;
+    const a   = this.address;
+    const sel = this.paymentSelection();
+
+    // Step 1: create the order in our backend
     this.#orderSvc.placeOrder({
       shippingAddress: {
         fullName: a.fullName, phone: a.phone,
         line1: a.line1, line2: a.line2 || undefined,
         city: a.city, state: a.state, pincode: a.pincode, country: 'India',
       },
-      paymentMethod: this.paymentMethod(),
-      couponCode:    this.pricing()?.couponCode ?? undefined,
-      sessionId:     this.cartSvc.sessionId,
+      paymentMethod:   this.paymentMethod(),
+      upiId:           sel?.upiResult?.upiId ?? undefined,
+      couponCode:      this.pricing()?.couponCode ?? undefined,
+      sessionId:       this.cartSvc.sessionId,
+      useWallet:       this.useWallet(),
+      walletAmount:    this.walletDeduction() > 0 ? this.walletDeduction() : undefined,
     }).subscribe({
-      next: r => {
-        this.placing.set(false);
-        this.cartSvc.cart.set(null);
-        this.#toast.success('Order placed!', r.data.orderNumber);
-        this.#router.navigate(['/orders', r.data.id]);
+      next: async r => {
+        const order = r.data;
+
+        // COD — no online payment needed
+        if (this.paymentMethod() === 'cod') {
+          this.placing.set(false);
+          this.cartSvc.cart.set(null);
+          this.#toast.success('Order placed!', order.orderNumber);
+          this.#router.navigate(['/orders', order.id]);
+          return;
+        }
+
+        // Online payment — open Razorpay modal
+        const user = this.#auth.user();
+        try {
+          await this.#razorpay.pay({
+            orderId:     order.id,
+            name:        user?.name ?? a.fullName,
+            email:       (user as { email?: string })?.email ?? '',
+            phone:       a.phone,
+            description: `Order #${order.orderNumber}`,
+          });
+          this.placing.set(false);
+          this.cartSvc.cart.set(null);
+          this.#toast.success('Payment successful! 🎉', `Order #${order.orderNumber} confirmed`);
+          this.#router.navigate(['/orders', order.id]);
+        } catch (payErr: unknown) {
+          this.placing.set(false);
+          const msg = payErr instanceof Error ? payErr.message : 'Payment failed';
+          if (msg === 'Payment cancelled by user') {
+            this.#toast.error('Payment cancelled', 'Your order is saved. You can retry payment from Orders.');
+          } else {
+            this.#toast.error('Payment failed', msg);
+          }
+          // Navigate to order so user can retry
+          this.#router.navigate(['/orders', order.id]);
+        }
       },
       error: err => {
         this.placing.set(false);

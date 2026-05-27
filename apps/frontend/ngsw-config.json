@@ -3,8 +3,9 @@
   "index": "/index.html",
   "assetGroups": [
     {
-      "name": "app",
+      "name": "app-shell",
       "installMode": "prefetch",
+      "updateMode": "prefetch",
       "resources": {
         "files": [
           "/favicon.ico",
@@ -21,8 +22,66 @@
       "installMode": "lazy",
       "updateMode": "prefetch",
       "resources": {
-        "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
+        "files": [
+          "/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
+        ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-products",
+      "urls": ["/api/v1/products/**"],
+      "cacheConfig": {
+        "maxSize": 50,
+        "maxAge": "10m",
+        "timeout": "5s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "api-categories",
+      "urls": ["/api/v1/categories/**"],
+      "cacheConfig": {
+        "maxSize": 20,
+        "maxAge": "1h",
+        "timeout": "5s",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-home",
+      "urls": [
+        "/api/v1/products/featured",
+        "/api/v1/products/trending",
+        "/api/v1/products/new-arrivals"
+      ],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "5m",
+        "timeout": "3s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "api-ai-recommendations",
+      "urls": [
+        "/api/v1/ai/recommendations/**",
+        "/api/v1/ai/recently-viewed"
+      ],
+      "cacheConfig": {
+        "maxSize": 20,
+        "maxAge": "2m",
+        "timeout": "3s",
+        "strategy": "freshness"
+      }
+    }
+  ],
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/*__*",
+    "!/**/*__*/**",
+    "!/api/**"
   ]
 }

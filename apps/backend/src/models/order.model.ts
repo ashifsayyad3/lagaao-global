@@ -54,6 +54,9 @@ export class Order extends Model {
   discount!: number;
 
   @Column({ type: DataType.DECIMAL(12, 2), allowNull: false, defaultValue: 0 })
+  walletAmount!: number;
+
+  @Column({ type: DataType.DECIMAL(12, 2), allowNull: false, defaultValue: 0 })
   shipping!: number;
 
   @Column({ type: DataType.DECIMAL(12, 2), allowNull: false, defaultValue: 0 })

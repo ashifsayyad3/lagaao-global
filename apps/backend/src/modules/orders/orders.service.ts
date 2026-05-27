@@ -8,6 +8,7 @@ import {
 } from '../../models';
 import { inventoryService } from '../inventory/inventory.service';
 import { couponService } from '../coupon/coupon.service';
+import { walletService } from '../wallet/wallet.service';
 import { AppError } from '../../middleware/errorHandler.middleware';
 import { getPagination } from '../../shared/utils/paginate.util';
 import type { Request } from 'express';
@@ -26,6 +27,8 @@ export interface CreateOrderInput {
   paymentMethod: PaymentMethod;
   couponCode?:   string;
   sessionId?:    string;
+  useWallet?:    boolean;
+  walletAmount?: number;
 }
 
 const ORDER_INCLUDE = [
@@ -95,7 +98,15 @@ export class OrdersService {
     if (input.paymentMethod === 'cod') shipping += COD_FEE;
 
     const tax   = Math.round((afterDiscount / (1 + TAX_RATE)) * TAX_RATE * 100) / 100;
-    const total = afterDiscount + shipping;
+    const baseTotal = afterDiscount + shipping;
+
+    // Wallet deduction
+    let walletDeduction = 0;
+    if (input.useWallet && input.walletAmount && input.walletAmount > 0) {
+      const walletBal = await walletService.getBalance(userId);
+      walletDeduction = Math.min(input.walletAmount, walletBal.balance, baseTotal);
+    }
+    const total = Math.max(0, baseTotal - walletDeduction);
 
     const order = await sequelize.transaction(async (t) => {
       // Create order
@@ -103,6 +114,7 @@ export class OrdersService {
         userId,
         subtotal,
         discount,
+        walletAmount: walletDeduction,
         shipping,
         tax,
         total,
@@ -112,6 +124,19 @@ export class OrdersService {
         shippingAddress: { ...input.shippingAddress, country: input.shippingAddress.country ?? 'India' },
         estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // +5 days
       }, { transaction: t });
+
+      // Debit wallet if applicable
+      if (walletDeduction > 0) {
+        await walletService.debit({
+          userId,
+          amount: walletDeduction,
+          type: 'debit',
+          description: `Used for Order #${newOrder.orderNumber}`,
+          referenceType: 'order',
+          referenceId: newOrder.id,
+          t,
+        });
+      }
 
       // Create order items and reserve inventory
       for (const item of cart.items) {

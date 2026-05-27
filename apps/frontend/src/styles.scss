@@ -4,6 +4,7 @@
 @use 'styles/typography' as *;
 @use 'styles/animations' as *;
 @use 'styles/glass' as *;
+@use 'styles/components' as *;
 
 @include mat.core();
 

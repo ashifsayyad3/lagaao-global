@@ -1157,7 +1157,7 @@ export class StaticPageComponent implements OnInit {
     { emoji: '🌱', title: 'Plant Care Advice', desc: 'Ask our plant experts anything — we love helping plants thrive.' },
     { emoji: '🔄', title: 'Returns & Replacements', desc: 'Plant arrived damaged? See our Returns page or message us directly.' },
     { emoji: '🛍', title: 'Bulk / Corporate Orders', desc: 'Office plants, event decor, gifts for employees — we handle large orders.' },
-    { emoji: '🏪', title: 'Sell on Lagaao', desc: 'Are you a nursery owner? We'd love to feature your plants.' },
+    { emoji: '🏪', title: 'Sell on Lagaao', desc: "Are you a nursery owner? We'd love to feature your plants." },
     { emoji: '🤝', title: 'Partnership & Collab', desc: 'Brand collaborations, influencer partnerships, community events.' },
   ];
 

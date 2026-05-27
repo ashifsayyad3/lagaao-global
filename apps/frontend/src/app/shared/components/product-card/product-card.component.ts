@@ -1,5 +1,5 @@
 import {
-  Component, Input, ChangeDetectionStrategy, inject, signal
+  Component, Input, ChangeDetectionStrategy, inject, computed,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,8 @@ import type { Product } from '../../../core/services/product.service';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { WishlistService } from '../../../core/services/wishlist.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'lg-product-card',
@@ -236,11 +238,13 @@ import { ToastService } from '../../../core/services/toast.service';
 export class ProductCardComponent {
   @Input({ required: true }) product!: Product;
 
-  readonly productSvc = inject(ProductService);
-  readonly #cartSvc   = inject(CartService);
-  readonly #toast     = inject(ToastService);
+  readonly productSvc  = inject(ProductService);
+  readonly #cartSvc    = inject(CartService);
+  readonly #toast      = inject(ToastService);
+  readonly #wishlist   = inject(WishlistService);
+  readonly #auth       = inject(AuthService);
 
-  readonly wishlisted = signal(false);
+  readonly wishlisted = computed(() => this.#wishlist.isWishlisted(this.product?.id));
 
   get effectivePrice(): number {
     return this.productSvc.getEffectivePrice(this.product);
@@ -282,8 +286,13 @@ export class ProductCardComponent {
 
   toggleWishlist(e: Event): void {
     e.preventDefault();
-    this.wishlisted.update(v => !v);
-    this.#toast.success(this.wishlisted() ? 'Added to wishlist' : 'Removed from wishlist');
+    if (!this.#auth.isLoggedIn()) {
+      this.#toast.error('Please login to use wishlist');
+      return;
+    }
+    const adding = !this.wishlisted();
+    this.#wishlist.toggle(this.product.id);
+    this.#toast.success(adding ? 'Added to wishlist' : 'Removed from wishlist');
   }
 
   addToCart(e: Event): void {

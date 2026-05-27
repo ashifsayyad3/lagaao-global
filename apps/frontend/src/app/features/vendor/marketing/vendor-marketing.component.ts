@@ -378,7 +378,7 @@ import {
               formControlName="value"
               type="number"
               [min]="1"
-              [max]="couponForm.get('type')?.value === 'percent' ? 100 : undefined"
+              [max]="couponForm.get('type')?.value === 'percent' ? 100 : null"
               placeholder="0"
               class="w-full pl-8 pr-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
               [class]="getFieldClass('value')"

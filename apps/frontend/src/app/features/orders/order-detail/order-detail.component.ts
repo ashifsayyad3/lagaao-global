@@ -3,6 +3,8 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { OrderService, Order, OrderStatus } from '../../../core/services/order.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -11,14 +13,18 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
+import { ReviewFormComponent } from '../../../shared/components/review-form/review-form.component';
+import { StarRatingComponent } from '../../../shared/components/star-rating/star-rating.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'lg-order-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink, MatIconModule, DatePipe,
+    RouterLink, FormsModule, MatIconModule, DatePipe,
     CurrencyInrPipe, SkeletonComponent, BadgeComponent, ButtonComponent, TimeAgoPipe,
+    ReviewFormComponent, StarRatingComponent,
   ],
   template: `
     <div class="max-w-screen-xl mx-auto px-4 md:px-6 py-8">
@@ -153,6 +159,140 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
               </div>
             </div>
 
+            <!-- ── Review your items (delivered orders only) ── -->
+            @if (order()!.status === 'delivered') {
+              <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
+                <div class="px-5 py-3 bg-surface-50 border-b border-border-default flex items-center justify-between">
+                  <h2 class="font-semibold text-text-primary text-sm">Rate Your Items</h2>
+                  @if (!showReviewForm()) {
+                    <button class="text-xs text-primary-600 font-semibold hover:underline"
+                            (click)="openReview()">
+                      + Write a Review
+                    </button>
+                  }
+                </div>
+
+                <!-- Per-item star display / review prompt -->
+                @if (!showReviewForm()) {
+                  <div class="divide-y divide-border-default">
+                    @for (item of order()!.items; track item.id) {
+                      <div class="flex gap-4 px-5 py-4 items-center">
+                        <div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-100 flex-shrink-0">
+                          <img [src]="item.image || '/assets/placeholder.png'"
+                               [alt]="item.productName"
+                               class="w-full h-full object-cover" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="font-medium text-text-primary text-sm truncate">{{ item.productName }}</p>
+                        </div>
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                          @if (reviewedProductIds().has(item.productId)) {
+                            <span class="text-xs text-primary-600 font-semibold flex items-center gap-1">
+                              <mat-icon class="!text-sm">check_circle</mat-icon> Reviewed
+                            </span>
+                          } @else {
+                            <lg-star-rating
+                              [value]="0"
+                              [size]="20"
+                              [interactive]="true"
+                              (ratingChange)="openReviewForProduct(item.productId, item.productName, $event)"
+                            />
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Inline review form -->
+                @if (showReviewForm() && reviewProductId()) {
+                  <div class="p-4">
+                    <p class="text-xs text-text-muted mb-3">
+                      Reviewing: <strong>{{ reviewProductName() }}</strong>
+                    </p>
+                    <lg-review-form
+                      [productId]="reviewProductId()!"
+                      [orderId]="order()!.id"
+                      (reviewSubmitted)="onReviewDone($event)"
+                      (cancelled)="showReviewForm.set(false)"
+                    />
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- ── Return request ── -->
+            @if (order()!.status === 'delivered' && !returnSubmitted()) {
+              <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
+                <div class="px-5 py-3 bg-surface-50 border-b border-border-default flex items-center justify-between">
+                  <h2 class="font-semibold text-text-primary text-sm">
+                    <mat-icon class="!text-sm" style="vertical-align:middle;margin-right:4px">assignment_return</mat-icon>
+                    Return / Refund
+                  </h2>
+                  @if (!showReturnForm()) {
+                    <button class="text-xs text-primary-600 font-semibold hover:underline"
+                            (click)="showReturnForm.set(true)">
+                      Request Return
+                    </button>
+                  }
+                </div>
+                @if (showReturnForm()) {
+                  <div class="p-5 flex flex-col gap-4">
+                    <div>
+                      <label class="text-xs font-semibold text-text-secondary block mb-1">Reason</label>
+                      <select [(ngModel)]="returnReason"
+                              style="width:100%;padding:9px 12px;border:1.5px solid var(--border-default);
+                                     border-radius:10px;background:var(--bg-subtle);font-size:.875rem;
+                                     color:var(--text-primary);outline:none">
+                        <option value="">Select a reason…</option>
+                        <option value="damaged">Item arrived damaged</option>
+                        <option value="wrong_item">Wrong item sent</option>
+                        <option value="not_as_described">Not as described</option>
+                        <option value="changed_mind">Changed my mind</option>
+                        <option value="quality_issue">Quality issue</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-xs font-semibold text-text-secondary block mb-1">Description (optional)</label>
+                      <textarea [(ngModel)]="returnDescription" rows="3"
+                                placeholder="Describe the issue…"
+                                style="width:100%;padding:9px 12px;border:1.5px solid var(--border-default);
+                                       border-radius:10px;background:var(--bg-subtle);font-size:.875rem;
+                                       color:var(--text-primary);outline:none;resize:vertical"></textarea>
+                    </div>
+                    <div style="display:flex;gap:10px">
+                      <button (click)="submitReturn()"
+                              [disabled]="!returnReason || submittingReturn()"
+                              style="flex:1;padding:10px;background:var(--color-primary);color:#fff;
+                                     border:none;border-radius:10px;font-weight:600;font-size:.9375rem;
+                                     cursor:pointer;opacity:1"
+                              [style.opacity]="!returnReason || submittingReturn() ? '0.5' : '1'">
+                        {{ submittingReturn() ? 'Submitting…' : 'Submit Return Request' }}
+                      </button>
+                      <button (click)="showReturnForm.set(false)"
+                              style="padding:10px 18px;background:none;border:1.5px solid var(--border-default);
+                                     border-radius:10px;font-weight:600;font-size:.875rem;color:var(--text-secondary);cursor:pointer">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            @if (returnSubmitted()) {
+              <div style="background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.2);border-radius:16px;
+                           padding:16px 20px;display:flex;align-items:center;gap:10px">
+                <mat-icon style="color:#16a34a">check_circle</mat-icon>
+                <div>
+                  <p style="font-weight:600;color:#16a34a;margin:0;font-size:.9375rem">Return request submitted</p>
+                  <p style="font-size:.8125rem;color:var(--text-muted);margin:2px 0 0">
+                    Our team will review your request within 1–2 business days.
+                  </p>
+                </div>
+              </div>
+            }
+
             <!-- Status timeline -->
             @if ((order()!.statusHistory?.length ?? 0) > 0) {
               <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
@@ -253,10 +393,24 @@ export class OrderDetailComponent implements OnInit {
   readonly #route    = inject(ActivatedRoute);
   readonly #orderSvc = inject(OrderService);
   readonly #toast    = inject(ToastService);
+  readonly #http     = inject(HttpClient);
 
   readonly order      = signal<Order | null>(null);
   readonly loading    = signal(true);
   readonly cancelling = signal(false);
+
+  // ── Return state ───────────────────────────────────────
+  readonly showReturnForm   = signal(false);
+  readonly submittingReturn = signal(false);
+  readonly returnSubmitted  = signal(false);
+  returnReason      = '';
+  returnDescription = '';
+
+  // ── Review state ───────────────────────────────────────
+  readonly showReviewForm     = signal(false);
+  readonly reviewProductId    = signal<number | null>(null);
+  readonly reviewProductName  = signal('');
+  readonly reviewedProductIds = signal<Set<number>>(new Set());
 
   readonly trackingSteps = [
     { status: 'pending',          label: 'Ordered',   icon: 'check_circle' },
@@ -331,5 +485,59 @@ export class OrderDetailComponent implements OnInit {
 
   objectEntries(obj: Record<string, string>): [string, string][] {
     return Object.entries(obj);
+  }
+
+  // ── Review helpers ─────────────────────────────────────
+  openReview(): void {
+    const firstUnreviewed = this.order()?.items
+      .find(i => !this.reviewedProductIds().has(i.productId));
+    if (firstUnreviewed) {
+      this.reviewProductId.set(firstUnreviewed.productId);
+      this.reviewProductName.set(firstUnreviewed.productName);
+    }
+    this.showReviewForm.set(true);
+  }
+
+  openReviewForProduct(productId: number, productName: string, initialRating: number): void {
+    this.reviewProductId.set(productId);
+    this.reviewProductName.set(productName);
+    this.showReviewForm.set(true);
+    void initialRating; // rating is set inside the form via the star picker
+  }
+
+  submitReturn(): void {
+    if (!this.returnReason) return;
+    this.submittingReturn.set(true);
+    this.#http.post(
+      `${environment.apiUrl}/api/v1/returns`,
+      {
+        orderId:     this.order()!.id,
+        reason:      this.returnReason,
+        description: this.returnDescription.trim() || undefined,
+      },
+      { withCredentials: true },
+    ).subscribe({
+      next: () => {
+        this.submittingReturn.set(false);
+        this.returnSubmitted.set(true);
+        this.showReturnForm.set(false);
+        this.#toast.success('Return request submitted', 'We\'ll review it within 1–2 business days');
+      },
+      error: err => {
+        this.submittingReturn.set(false);
+        this.#toast.error('Error', err?.error?.message ?? 'Could not submit return request');
+      },
+    });
+  }
+
+  onReviewDone(_review: unknown): void {
+    const pid = this.reviewProductId();
+    if (pid) {
+      this.reviewedProductIds.update(s => new Set([...s, pid]));
+    }
+    this.showReviewForm.set(false);
+    this.reviewProductId.set(null);
+    this.reviewProductName.set('');
+    this.#toast.success('Review submitted!', 'Thank you for your feedback 🌿');
   }
 }

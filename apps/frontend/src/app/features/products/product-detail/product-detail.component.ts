@@ -13,6 +13,8 @@ import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { LazyImgDirective } from '../../../shared/directives/lazy-img.directive';
 import { AiService, AiProduct } from '../../../core/services/ai.service';
 import { ProductCarouselComponent } from '../../../shared/components/product-carousel/product-carousel.component';
+import { SeoService } from '../../../core/services/seo.service';
+import { ReviewListComponent } from '../../../shared/components/review-list/review-list.component';
 
 @Component({
   selector: 'lg-product-detail',
@@ -22,6 +24,7 @@ import { ProductCarouselComponent } from '../../../shared/components/product-car
     RouterLink, MatIconModule, TitleCasePipe,
     ProductCardComponent, SkeletonComponent,
     CurrencyInrPipe, LazyImgDirective, ProductCarouselComponent,
+    ReviewListComponent,
   ],
   styles: [`
     :host { display: block; }
@@ -577,6 +580,13 @@ import { ProductCarouselComponent } from '../../../shared/components/product-car
           }
         </div>
 
+        <!-- ── Reviews ─────────────────────────────── -->
+        @if (product()?.id) {
+          <div class="section">
+            <lg-review-list [productId]="product()!.id" />
+          </div>
+        }
+
         <!-- ── Related products ─────────────────────── -->
         @if (related().length > 0) {
           <div class="section">
@@ -606,6 +616,7 @@ export class ProductDetailComponent implements OnInit {
   readonly productSvc  = inject(ProductService);
   readonly #cartSvc    = inject(CartService);
   readonly #toast      = inject(ToastService);
+  readonly #seo        = inject(SeoService);
   readonly #ai         = inject(AiService);
 
   readonly product         = signal<Product | null>(null);
@@ -705,6 +716,49 @@ export class ProductDetailComponent implements OnInit {
           this.activeImageUrl.set(this.productSvc.getPrimaryImage(res.data));
           if (res.data.variants?.length) this.selectedVariant.set(res.data.variants[0]);
           this.loading.set(false);
+
+          // ── SEO ───────────────────────────────────────────────────────────
+          const p = res.data;
+          const img = this.productSvc.getPrimaryImage(p);
+          const pageUrl = `https://lagaao.com/products/${p.slug}`;
+          const effectivePrice = this.productSvc.getEffectivePrice(p);
+          const inStock = p.variants?.length
+            ? p.variants.some(v => (v as any).stock > 0)
+            : true;
+          this.#seo.setMeta({
+            title:        p.name,
+            description:  p.description?.substring(0, 160) ?? `Buy ${p.name} online at Lagaao`,
+            canonical:    pageUrl,
+            image:        img,
+            type:         'product',
+            price:        effectivePrice,
+            currency:     'INR',
+            availability: inStock ? 'InStock' : 'OutOfStock',
+            keywords:     [p.name, p.category?.name ?? '', 'buy online', 'India'].filter(Boolean).join(', '),
+          });
+          this.#seo.setProductSchema({
+            id:           p.id,
+            name:         p.name,
+            description:  p.description ?? `Buy ${p.name} at Lagaao`,
+            image:        p.images?.map((i: any) => i.url ?? i) ?? img,
+            price:        p.basePrice,
+            salePrice:    p.salePrice ?? null,
+            currency:     'INR',
+            sku:          String(p.id),
+            brand:        p.brand?.name,
+            availability: inStock ? 'InStock' : 'OutOfStock',
+            rating:       p.rating,
+            reviewCount:  p.reviewCount,
+            category:     p.category?.name,
+            url:          pageUrl,
+          });
+          this.#seo.setBreadcrumbSchema([
+            { name: 'Home',     url: 'https://lagaao.com/' },
+            { name: 'Products', url: 'https://lagaao.com/products' },
+            ...(p.category ? [{ name: p.category.name, url: `https://lagaao.com/products?category=${p.category.slug ?? p.category.id}` }] : []),
+            { name: p.name,     url: pageUrl },
+          ]);
+          // ── /SEO ──────────────────────────────────────────────────────────
 
           this.productSvc.getRelated(res.data.id).subscribe({
             next: r => this.related.set(r.data),

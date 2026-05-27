@@ -85,6 +85,18 @@ import { environment } from '../../../../environments/environment';
                     Cancel
                   </lg-button>
                 }
+                @if (canDownloadInvoice()) {
+                  <a [href]="invoiceUrl()" target="_blank"
+                     style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;
+                            border:1.5px solid var(--border-default);border-radius:8px;
+                            font-size:.8125rem;font-weight:600;color:var(--text-secondary);
+                            text-decoration:none;transition:border-color 150ms,color 150ms"
+                     onmouseover="this.style.borderColor='var(--color-primary)';this.style.color='var(--color-primary)'"
+                     onmouseout="this.style.borderColor='var(--border-default)';this.style.color='var(--text-secondary)'">
+                    <mat-icon style="font-size:15px;width:15px;height:15px">download</mat-icon>
+                    Invoice
+                  </a>
+                }
               </div>
             </div>
 
@@ -293,6 +305,35 @@ import { environment } from '../../../../environments/environment';
               </div>
             }
 
+            <!-- Tracking info -->
+            @if (order()!.awbCode) {
+              <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
+                <div class="px-5 py-3 bg-surface-50 border-b border-border-default flex items-center gap-2">
+                  <mat-icon class="text-primary-600 text-base">local_shipping</mat-icon>
+                  <h2 class="font-semibold text-text-primary text-sm">Shipment Tracking</h2>
+                </div>
+                <div class="px-5 py-4 space-y-2">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-text-secondary">AWB / Tracking No.</span>
+                    <span class="font-mono font-semibold text-text-primary">{{ order()!.awbCode }}</span>
+                  </div>
+                  @if (order()!.courierName) {
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-text-secondary">Courier</span>
+                      <span class="font-medium text-text-primary">{{ order()!.courierName }}</span>
+                    </div>
+                  }
+                  @if (order()!.trackingUrl) {
+                    <a [href]="order()!.trackingUrl" target="_blank" rel="noopener"
+                       class="mt-2 flex items-center gap-1.5 text-primary-600 text-sm font-medium hover:underline">
+                      <mat-icon class="text-base">open_in_new</mat-icon>
+                      Track Package
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+
             <!-- Status timeline -->
             @if ((order()!.statusHistory?.length ?? 0) > 0) {
               <div class="rounded-2xl border border-border-default bg-bg-base overflow-hidden">
@@ -437,6 +478,15 @@ export class OrderDetailComponent implements OnInit {
 
   canCancel(): boolean {
     return ['pending', 'confirmed'].includes(this.order()?.status ?? '');
+  }
+
+  canDownloadInvoice(): boolean {
+    const o = this.order();
+    return !!o && ['confirmed','processing','shipped','out_for_delivery','delivered'].includes(o.status);
+  }
+
+  invoiceUrl(): string {
+    return `${environment.apiUrl}/api/v1/orders/${this.order()!.id}/invoice`;
   }
 
   isReached(status: string): boolean {

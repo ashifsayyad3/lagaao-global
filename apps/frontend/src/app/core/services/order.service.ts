@@ -58,14 +58,20 @@ export interface Order {
   paymentMethod:    PaymentMethod;
   paymentStatus:    PaymentStatus;
   paymentRef:       string | null;
-  trackingNumber:   string | null;
-  courier:          string | null;
-  estimatedDelivery: string | null;
-  deliveredAt:      string | null;
-  cancelReason:     string | null;
-  items:            OrderItem[];
-  statusHistory:    StatusHistory[];
-  createdAt:        string;
+  trackingNumber:      string | null;
+  courier:             string | null;
+  estimatedDelivery:   string | null;
+  deliveredAt:         string | null;
+  cancelReason:        string | null;
+  shiprocketOrderId:   string | null;
+  shiprocketShipmentId: string | null;
+  awbCode:             string | null;
+  courierName:         string | null;
+  trackingUrl:         string | null;
+  walletAmount:        number;
+  items:               OrderItem[];
+  statusHistory:       StatusHistory[];
+  createdAt:           string;
 }
 
 export interface PlaceOrderInput {

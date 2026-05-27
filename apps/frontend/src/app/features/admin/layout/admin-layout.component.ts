@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
       { label: 'Inventory',     icon: 'warehouse',      route: '/admin/inventory' },
       { label: 'Reviews',       icon: 'star_outline',   route: '/admin/product-reviews' },
       { label: 'Approval Queue',icon: 'approval',       route: '/admin/product-approval' },
+      { label: 'Bulk Import',   icon: 'upload_file',    route: '/admin/products/bulk-import' },
     ],
   },
   {

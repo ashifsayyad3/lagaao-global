@@ -4,6 +4,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { OrderService, Order, OrderStatus } from '../../../core/services/order.service';
+import { environment } from '../../../../environments/environment';
 import { DatePipe } from '@angular/common';
 import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
@@ -90,6 +91,16 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
                      class="text-sm text-primary-600 hover:text-primary-700 font-medium">
                     Details →
                   </a>
+                  @if (['confirmed','processing','shipped','out_for_delivery','delivered'].includes(order.status)) {
+                    <a [href]="apiUrl + '/api/v1/orders/' + order.id + '/invoice'" target="_blank"
+                       style="display:inline-flex;align-items:center;gap:3px;font-size:.8125rem;
+                              font-weight:600;color:var(--text-muted);text-decoration:none"
+                       onmouseover="this.style.color='var(--color-primary)'"
+                       onmouseout="this.style.color='var(--text-muted)'">
+                      <mat-icon style="font-size:14px;width:14px;height:14px">download</mat-icon>
+                      Invoice
+                    </a>
+                  }
                 </div>
               </div>
 
@@ -170,6 +181,7 @@ import { TimeAgoPipe } from '../../../shared/pipes/time-ago.pipe';
 })
 export class OrderListComponent implements OnInit {
   readonly #orderSvc = inject(OrderService);
+  readonly apiUrl    = environment.apiUrl;
 
   readonly orders     = signal<Order[]>([]);
   readonly loading    = signal(true);

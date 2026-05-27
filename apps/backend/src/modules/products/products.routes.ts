@@ -1,10 +1,21 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { productsService } from './products.service';
+import { bulkImportProducts } from './bulk-import.service';
 import { ok, created, paginated } from '../../shared/utils/response.util';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/rbac.middleware';
 import { Role } from '../../shared/types/roles';
 import { VendorProfile } from '../../models';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) cb(null, true);
+    else cb(new Error('Only CSV files are allowed'));
+  },
+});
 
 const router = Router();
 
@@ -178,5 +189,19 @@ router.delete('/:id', authenticate, authorize(Role.ADMIN), async (req, res, next
   try { await productsService.remove(+req.params['id']); ok(res, null, 'Deleted'); }
   catch (e) { next(e); }
 });
+
+// POST /api/v1/products/bulk-import  (admin only)
+router.post('/bulk-import',
+  authenticate,
+  authorize(Role.ADMIN, Role.SUPER_ADMIN),
+  upload.single('file'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) { res.status(400).json({ success: false, message: 'No file uploaded' }); return; }
+      const result = await bulkImportProducts(req.file.buffer);
+      res.json({ success: true, data: result });
+    } catch (e) { next(e); }
+  }
+);
 
 export default router;

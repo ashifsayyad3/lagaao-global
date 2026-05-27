@@ -63,6 +63,9 @@ export class Product extends Model {
   @Column({ type: DataType.DECIMAL(5, 2), defaultValue: 18 })
   taxRate!: number;
 
+  @Column({ type: DataType.STRING(16), allowNull: true, defaultValue: '0602' })
+  hsnCode!: string | null;
+
   // SEO
   @Column({ type: DataType.STRING(255), allowNull: true })
   metaTitle!: string | null;

@@ -48,6 +48,8 @@ import { wishlistRoutes } from './modules/wishlist/wishlist.routes';
 import { walletRoutes, adminWalletRouter } from './modules/wallet/wallet.routes';
 import { returnsRoutes, adminReturnsRouter } from './modules/returns/returns.routes';
 import { supportRoutes, adminSupportRouter } from './modules/support/support.routes';
+import { invoiceRoutes } from './modules/invoice/invoice.routes';
+import { shiprocketRoutes } from './modules/shiprocket/shiprocket.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -192,6 +194,8 @@ app.use('/api/v1/returns',            returnsRoutes);
 app.use('/api/v1/admin/returns',      adminReturnsRouter);
 app.use('/api/v1/support',            supportRoutes);
 app.use('/api/v1/admin/support',      adminSupportRouter);
+app.use('/api/v1',                    invoiceRoutes);
+app.use('/api/v1',                    shiprocketRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

@@ -106,6 +106,22 @@ export class Order extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   cancelReason!: string | null;
 
+  // Shiprocket
+  @Column({ type: DataType.STRING(64), allowNull: true })
+  shiprocketOrderId!: string | null;
+
+  @Column({ type: DataType.STRING(64), allowNull: true })
+  shiprocketShipmentId!: string | null;
+
+  @Column({ type: DataType.STRING(64), allowNull: true })
+  awbCode!: string | null;
+
+  @Column({ type: DataType.STRING(128), allowNull: true })
+  courierName!: string | null;
+
+  @Column({ type: DataType.STRING(512), allowNull: true })
+  trackingUrl!: string | null;
+
   @HasMany(() => OrderItem)
   items!: OrderItem[];
 

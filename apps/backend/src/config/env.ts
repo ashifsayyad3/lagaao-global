@@ -52,6 +52,21 @@ const schema = z.object({
 
   GOOGLE_CLIENT_ID:     z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // Shiprocket
+  SHIPROCKET_EMAIL:    z.string().optional(),
+  SHIPROCKET_PASSWORD: z.string().optional(),
+  SHIPROCKET_CHANNEL_ID: z.coerce.number().optional(),
+
+  // Invoice / GST
+  INVOICE_COMPANY_NAME:    z.string().optional(),
+  INVOICE_COMPANY_ADDRESS: z.string().optional(),
+  INVOICE_GSTIN:           z.string().optional(),
+  INVOICE_PAN:             z.string().optional(),
+  INVOICE_EMAIL:           z.string().optional(),
+  INVOICE_PHONE:           z.string().optional(),
+  INVOICE_STATE:           z.string().optional(),
+  INVOICE_STATE_CODE:      z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

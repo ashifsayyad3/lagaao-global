@@ -34,6 +34,11 @@ export const ADMIN_ROUTES: Routes = [
         title: 'Add Product — Admin',
       },
       {
+        path: 'products/bulk-import',
+        loadComponent: () => import('./products/bulk-import/admin-bulk-import.component').then(m => m.AdminBulkImportComponent),
+        title: 'Bulk Import — Admin',
+      },
+      {
         path: 'categories',
         loadComponent: () => import('./products/admin-products.component').then(m => m.AdminProductsComponent),
         title: 'Categories — Admin',

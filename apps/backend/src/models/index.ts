@@ -31,6 +31,10 @@ import { Wishlist, WishlistItem } from './wishlist.model';
 import { Wallet, WalletTransaction } from './wallet.model';
 import { ReturnRequest } from './returnRequest.model';
 import { SupportTicket, SupportMessage } from './supportTicket.model';
+import { FlashSale, FlashSaleItem } from './flashSale.model';
+import { Referral } from './referral.model';
+import { LoyaltyPoint } from './loyaltyPoint.model';
+import { Affiliate, AffiliateClick, AffiliateConversion } from './affiliate.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -57,6 +61,10 @@ export const sequelize = new Sequelize({
     Wallet, WalletTransaction,
     ReturnRequest,
     SupportTicket, SupportMessage,
+    FlashSale, FlashSaleItem,
+    Referral,
+    LoyaltyPoint,
+    Affiliate, AffiliateClick, AffiliateConversion,
   ],
   logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
@@ -86,6 +94,10 @@ export {
   Wallet, WalletTransaction,
   ReturnRequest,
   SupportTicket, SupportMessage,
+  FlashSale, FlashSaleItem,
+  Referral,
+  LoyaltyPoint,
+  Affiliate, AffiliateClick, AffiliateConversion,
 };
 
 export async function connectDB(): Promise<void> {

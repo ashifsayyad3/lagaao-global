@@ -8,12 +8,13 @@ import { CartService, CartItem, PriceSummary } from '../../core/services/cart.se
 import { ToastService } from '../../core/services/toast.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { YouMayLikeComponent } from '../../shared/components/you-may-like/you-may-like.component';
 
 @Component({
   selector: 'lg-cart',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe, SkeletonComponent],
+  imports: [RouterLink, FormsModule, MatIconModule, CurrencyInrPipe, SkeletonComponent, YouMayLikeComponent],
   styles: [`
     :host { display: block; }
     .page { max-width: 1200px; margin: 0 auto; padding: 24px 24px 80px; }
@@ -385,6 +386,11 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
 
         </div>
       }
+
+      <!-- ── Recommendations ────────────────────── -->
+      <div class="mt-10">
+        <lg-you-may-like title="You May Also Like" />
+      </div>
     </div>
   `,
 })

@@ -15,7 +15,8 @@ export type OrderStatus =
   | 'delivered'
   | 'cancelled'
   | 'refund_requested'
-  | 'refunded';
+  | 'refunded'
+  | 'fraud_review';
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod' | 'wallet';
@@ -121,6 +122,19 @@ export class Order extends Model {
 
   @Column({ type: DataType.STRING(512), allowNull: true })
   trackingUrl!: string | null;
+
+  // Fraud detection
+  @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
+  fraudScore!: number;
+
+  @Column({ type: DataType.JSON, allowNull: true })
+  fraudFlags!: string[] | null;
+
+  @Column({ type: DataType.ENUM('low', 'medium', 'high'), defaultValue: 'low' })
+  riskLevel!: 'low' | 'medium' | 'high';
+
+  @Column({ type: DataType.STRING(45), allowNull: true })
+  ipAddress!: string | null;
 
   @HasMany(() => OrderItem)
   items!: OrderItem[];

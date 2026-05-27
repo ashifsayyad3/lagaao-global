@@ -1,7 +1,8 @@
 import { env } from '../../config/env';
 import { Order, OrderItem, OrderStatusHistory } from '../../models/index';
-import { AppError } from '../../shared/errors/AppError';
+import { AppError } from '../../middleware/errorHandler.middleware';
 import { logger } from '../../config/logger';
+import { whatsappService } from '../whatsapp/whatsapp.service';
 
 const BASE = 'https://apiv2.shiprocket.in/v1/external';
 
@@ -206,16 +207,33 @@ export class ShiprocketService {
     const updates: Record<string, unknown> = { status: newStatus };
     if (newStatus === 'delivered') updates['deliveredAt'] = new Date();
 
+    const prevStatus = order.status;
     await order.update(updates);
     await OrderStatusHistory.create({
       orderId:    order.id,
-      fromStatus: order.status,
+      fromStatus: prevStatus,
       toStatus:   newStatus,
       note:       `Shiprocket webhook: ${payload['current_status']}`,
       changedBy:  0,
     });
 
     logger.info(`Order ${order.orderNumber} → ${newStatus} via Shiprocket webhook`);
+
+    // WhatsApp notification (fire-and-forget)
+    const addr = order.shippingAddress as Record<string, string>;
+    const waBase = { phone: addr['phone'], name: addr['fullName'] ?? 'Customer', orderNumber: order.orderNumber };
+    if (newStatus === 'shipped') {
+      whatsappService.orderShipped({
+        ...waBase,
+        courierName: order.courierName ?? 'Courier',
+        awbCode:     awb,
+        trackingUrl: order.trackingUrl ?? '',
+      }).catch(() => {});
+    } else if (newStatus === 'out_for_delivery') {
+      whatsappService.orderOutForDelivery(waBase).catch(() => {});
+    } else if (newStatus === 'delivered') {
+      whatsappService.orderDelivered(waBase).catch(() => {});
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import {
 } from '../../shared/utils/jwt.util';
 import { AppError } from '../../middleware/errorHandler.middleware';
 import { Role } from '../../shared/types/roles';
+import { mfaService } from './mfa.service';
 
 const OTP_TTL      = 10 * 60;       // 10 minutes (seconds)
 const OTP_ATTEMPTS = 5;
@@ -60,6 +61,11 @@ export interface AuthTokens {
   user:               Record<string, unknown>;
 }
 
+export interface MfaChallenge {
+  mfaRequired: true;
+  tempToken:   string;
+}
+
 export class AuthService {
   // ─── Register ──────────────────────────────────────────────
   async register(
@@ -67,6 +73,7 @@ export class AuthService {
     email: string,
     password: string,
     phone?: string,
+    referralCode?: string,
   ): Promise<{ userId: number; email: string; devOtp?: string }> {
     const exists = await User.findOne({ where: { email } });
     if (exists) throw new AppError('Email already registered', 409);
@@ -81,6 +88,12 @@ export class AuthService {
       isVerified:   false,
       isActive:     true,
     });
+
+    // Record referral if code provided (fire-and-forget)
+    if (referralCode) {
+      const { referralService } = await import('../referral/referral.service');
+      referralService.recordReferral(user.id, referralCode).catch(() => {});
+    }
 
     const otp = await this.#sendOtp(email);
     const result: { userId: number; email: string; devOtp?: string } = { userId: user.id, email };
@@ -117,7 +130,7 @@ export class AuthService {
   }
 
   // ─── Login ─────────────────────────────────────────────────
-  async login(email: string, password: string, ip?: string, ua?: string): Promise<AuthTokens> {
+  async login(email: string, password: string, ip?: string, ua?: string): Promise<AuthTokens | MfaChallenge> {
     // Use raw query to bypass ORM column-mapping issues with underscored fields
     type RawUser = {
       id: number; name: string; email: string; phone: string | null;
@@ -147,6 +160,13 @@ export class AuthService {
 
     user.lastLoginAt = new Date();
     await user.save();
+
+    // If MFA is enabled, issue a short-lived temp token instead of full JWT
+    if (raw.mfa_enabled) {
+      const tempToken = await mfaService.issueTempToken(user.id);
+      logger.info('user_login_mfa_challenge', { userId: user.id, ip });
+      return { mfaRequired: true, tempToken };
+    }
 
     logger.info('user_login', { userId: user.id, ip });
     return this.#issueTokens(user, ip, ua);
@@ -337,6 +357,13 @@ export class AuthService {
       refreshTokenExpiry: expiry,
       user:               user.toJSON() as Record<string, unknown>,
     };
+  }
+
+  /** Public wrapper — used by MFA validate route after temp-token verified */
+  async issueTokensForUser(userId: number, ip?: string, ua?: string): Promise<AuthTokens> {
+    const user = await User.findByPk(userId);
+    if (!user) throw new AppError('User not found', 404);
+    return this.#issueTokens(user, ip, ua);
   }
 }
 

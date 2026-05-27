@@ -4,6 +4,10 @@ import { authorize }    from '../../middleware/rbac.middleware';
 import { ok, created, paginated } from '../../shared/utils/response.util';
 import { Role }   from '../../shared/types/roles';
 import { notificationService } from './notification.service';
+import { env } from '../../config/env';
+import { redis } from '../../config/redis';
+
+const NOTIF_SETTINGS_KEY = 'admin:notification_settings';
 
 const router = Router();
 
@@ -67,5 +71,25 @@ adminNotificationsRouter.post('/broadcast', async (req: Request, res: Response, 
     if (!title || !body) { res.status(400).json({ success: false, message: 'title and body required' }); return; }
     await notificationService.broadcast({ type, title, body });
     ok(res, null, 'Broadcast sent');
+  } catch (e) { next(e); }
+});
+
+// GET /api/v1/admin/notifications/settings
+adminNotificationsRouter.get('/settings', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const raw = await redis.get(NOTIF_SETTINGS_KEY).catch(() => null);
+    const settings = raw ? JSON.parse(raw) : null;
+    const waConfigured = !!(env.WHATSAPP_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ENABLED === 'true');
+    res.json({ success: true, data: { settings, waConfigured } });
+  } catch (e) { next(e); }
+});
+
+// POST /api/v1/admin/notifications/settings
+adminNotificationsRouter.post('/settings', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { settings } = req.body as { settings: unknown[] };
+    if (!Array.isArray(settings)) { res.status(400).json({ success: false, message: 'settings must be an array' }); return; }
+    await redis.set(NOTIF_SETTINGS_KEY, JSON.stringify(settings));
+    ok(res, null, 'Settings saved');
   } catch (e) { next(e); }
 });

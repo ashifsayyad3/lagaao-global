@@ -16,6 +16,7 @@ import { AnnouncementBarComponent } from '../../components/announcement-bar/anno
 import { AiChatComponent } from '../../components/ai-chat/ai-chat.component';
 import { LgLogoComponent } from '../../components/logo/logo.component';
 import { ThemeSwitcherComponent } from '../../components/theme-switcher/theme-switcher.component';
+import { FlashSaleBannerComponent } from '../../components/flash-sale-banner/flash-sale-banner.component';
 
 interface MegaMenuCategory {
   label: string;
@@ -31,7 +32,7 @@ interface MegaMenuCategory {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, MatIconModule,
             ToastContainerComponent, SearchBarComponent, AnnouncementBarComponent, AiChatComponent, LgLogoComponent,
-            ThemeSwitcherComponent],
+            ThemeSwitcherComponent, FlashSaleBannerComponent],
   template: `
     <!-- ── Announcement / Utility bar ─────────────────────────── -->
     <lg-announcement-bar></lg-announcement-bar>
@@ -171,6 +172,24 @@ interface MegaMenuCategory {
                             hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
                     <mat-icon class="!text-base">support_agent</mat-icon>
                     Support
+                  </a>
+                  <a routerLink="/profile/affiliate" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">campaign</mat-icon>
+                    Affiliate Program
+                  </a>
+                  <a routerLink="/profile/loyalty" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">stars</mat-icon>
+                    Loyalty Points
+                  </a>
+                  <a routerLink="/profile/security" (click)="userMenuOpen.set(false)"
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
+                            hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors">
+                    <mat-icon class="!text-base">security</mat-icon>
+                    Security & 2FA
                   </a>
                   <a routerLink="/profile/wishlist" (click)="userMenuOpen.set(false)"
                      class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary
@@ -324,6 +343,9 @@ interface MegaMenuCategory {
         </div>
       </nav>
     </header>
+
+    <!-- ── Flash sale banner ─────────────────────────────────────── -->
+    <lg-flash-sale-banner></lg-flash-sale-banner>
 
     <!-- ── Page content ────────────────────────────────────────── -->
     <main class="min-h-screen bg-[var(--bg-subtle)]">

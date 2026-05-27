@@ -42,6 +42,7 @@ const NAV: NavItem[] = [
       { label: 'Cancelled',     icon: 'cancel',         route: '/admin/orders/cancelled' },
       { label: 'Returns',       icon: 'assignment_return', route: '/admin/orders/returns' },
       { label: 'Refunds',       icon: 'currency_rupee', route: '/admin/orders/refunds' },
+      { label: 'Fraud Queue',   icon: 'gpp_bad',       route: '/admin/orders/fraud' },
     ],
   },
   {
@@ -79,6 +80,8 @@ const NAV: NavItem[] = [
       { label: 'Flash Sales',   icon: 'flash_on',       route: '/admin/marketing/flash-sales' },
       { label: 'Email',         icon: 'email',          route: '/admin/marketing/email' },
       { label: 'Push Notifs',   icon: 'notifications',  route: '/admin/marketing/push' },
+      { label: 'Loyalty',       icon: 'stars',          route: '/admin/marketing/loyalty' },
+      { label: 'Affiliates',    icon: 'campaign',       route: '/admin/marketing/affiliates' },
     ],
   },
   {

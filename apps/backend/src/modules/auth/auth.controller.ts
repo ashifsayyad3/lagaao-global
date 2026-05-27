@@ -20,8 +20,8 @@ function cookieOptions(expiry: Date) {
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password, phone } = req.body;
-      const result = await authService.register(name, email, password, phone);
+      const { name, email, password, phone, referralCode } = req.body;
+      const result = await authService.register(name, email, password, phone, referralCode);
       const msg = env.NODE_ENV === 'development' && result.devOtp
         ? `OTP sent (dev mode — check server logs or use: ${result.devOtp})`
         : 'Registration successful. Please verify your email with the OTP sent.';

@@ -82,6 +82,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'orders/returns',   loadComponent: () => import('./orders/admin-orders.component').then(m => m.AdminOrdersComponent), title: 'Returns — Admin' },
       { path: 'orders/refunds',   loadComponent: () => import('./orders/admin-orders.component').then(m => m.AdminOrdersComponent), title: 'Refunds — Admin' },
       { path: 'orders/:id',       loadComponent: () => import('./orders/admin-orders.component').then(m => m.AdminOrdersComponent), title: 'Order Detail — Admin' },
+      { path: 'orders/fraud',     loadComponent: () => import('./fraud/admin-fraud.component').then(m => m.AdminFraudComponent), title: 'Fraud Queue — Admin' },
 
       // ── Customers ─────────────────────────────────────────
       { path: 'customers',         loadComponent: () => import('./customers/admin-customers.component').then(m => m.AdminCustomersComponent), title: 'Customers — Admin' },
@@ -105,9 +106,11 @@ export const ADMIN_ROUTES: Routes = [
       // ── Marketing ─────────────────────────────────────────
       { path: 'marketing/coupons',    loadComponent: () => import('./marketing/admin-marketing.component').then(m => m.AdminMarketingComponent), title: 'Coupons — Admin' },
       { path: 'marketing/campaigns',  loadComponent: () => import('./marketing/admin-marketing.component').then(m => m.AdminMarketingComponent), title: 'Campaigns — Admin' },
-      { path: 'marketing/flash-sales',loadComponent: () => import('./marketing/admin-marketing.component').then(m => m.AdminMarketingComponent), title: 'Flash Sales — Admin' },
+      { path: 'marketing/flash-sales',loadComponent: () => import('./marketing/flash-sales/admin-flash-sales.component').then(m => m.AdminFlashSalesComponent), title: 'Flash Sales — Admin' },
       { path: 'marketing/email',      loadComponent: () => import('./marketing/admin-marketing.component').then(m => m.AdminMarketingComponent), title: 'Email — Admin' },
       { path: 'marketing/push',       loadComponent: () => import('./marketing/admin-marketing.component').then(m => m.AdminMarketingComponent), title: 'Push Notifications — Admin' },
+      { path: 'marketing/loyalty',      loadComponent: () => import('./marketing/loyalty/admin-loyalty.component').then(m => m.AdminLoyaltyComponent), title: 'Loyalty Points — Admin' },
+      { path: 'marketing/affiliates',   loadComponent: () => import('./affiliates/admin-affiliates.component').then(m => m.AdminAffiliatesComponent), title: 'Affiliates — Admin' },
 
       // ── CMS ───────────────────────────────────────────────
       { path: 'cms/banners',        loadComponent: () => import('./cms/admin-cms.component').then(m => m.AdminCmsComponent), title: 'Banners — Admin' },

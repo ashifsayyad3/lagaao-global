@@ -2,7 +2,7 @@ import {
   Component, ChangeDetectionStrategy, inject, signal
 } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -11,7 +11,7 @@ import { ToastService } from '../../../core/services/toast.service';
   selector: 'lg-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, MatIconModule],
+  imports: [RouterLink, ReactiveFormsModule, MatIconModule, FormsModule],
   styles: [`
     :host { display: block; }
 
@@ -97,6 +97,40 @@ import { ToastService } from '../../../core/services/toast.service';
     .bottom-link a:hover { text-decoration: underline; }
   `],
   template: `
+    @if (mfaStep()) {
+      <!-- ── MFA Step ─────────────────────────────────────────── -->
+      <h2 class="form-heading">Two-Factor Auth 🔐</h2>
+      <p class="form-sub">Enter the 6-digit code from your authenticator app</p>
+
+      <div class="field" style="margin-top:1.5rem">
+        <label>Authentication Code</label>
+        <input [(ngModel)]="mfaCode" type="text" inputmode="numeric"
+               maxlength="8" autocomplete="one-time-code" placeholder="000000"
+               class="inp" style="font-size:1.5rem;letter-spacing:.5rem;text-align:center" />
+        <p style="font-size:.75rem;color:var(--text-muted);margin-top:4px">
+          Or enter a backup code to sign in
+        </p>
+      </div>
+
+      @if (errorMsg()) {
+        <div class="error-box">{{ errorMsg() }}</div>
+      }
+
+      <button type="button" class="submit-btn" (click)="submitMfa()" [disabled]="loading()">
+        @if (loading()) {
+          <mat-icon style="font-size:18px;width:18px;height:18px;animation:spin 1s linear infinite">refresh</mat-icon>
+          Verifying…
+        } @else {
+          Verify & Sign In
+        }
+      </button>
+
+      <button type="button" (click)="mfaStep.set(false)"
+              style="display:block;margin:12px auto 0;font-size:.875rem;color:var(--text-muted);background:none;border:none;cursor:pointer">
+        ← Back to login
+      </button>
+    } @else {
+
     <h2 class="form-heading">Welcome back 🌿</h2>
     <p class="form-sub">Sign in to your Lagaao account</p>
 
@@ -166,6 +200,8 @@ import { ToastService } from '../../../core/services/toast.service';
       Don't have an account?
       <a routerLink="/auth/register">Create one free</a>
     </p>
+
+    } <!-- end @else (no MFA step) -->
   `,
 })
 export class LoginComponent {
@@ -176,9 +212,12 @@ export class LoginComponent {
   readonly #toast  = inject(ToastService);
   readonly #fb     = inject(FormBuilder);
 
-  readonly loading  = signal(false);
-  readonly errorMsg = signal('');
-  readonly showPw   = signal(false);
+  readonly loading   = signal(false);
+  readonly errorMsg  = signal('');
+  readonly showPw    = signal(false);
+  readonly mfaStep   = signal(false);
+  mfaCode            = '';
+  #tempToken         = '';
 
   form = this.#fb.nonNullable.group({
     email:    ['', [Validators.required, Validators.email]],
@@ -208,12 +247,35 @@ export class LoginComponent {
     this.errorMsg.set('');
     const { email, password } = this.form.getRawValue();
     this.#auth.login(email, password).subscribe({
+      next: res => {
+        this.loading.set(false);
+        if ('mfaRequired' in res.data) {
+          this.#tempToken = res.data.tempToken;
+          this.mfaCode    = '';
+          this.mfaStep.set(true);
+        } else {
+          this.#toast.success('Welcome back!');
+          this.#router.navigate(['/']);
+        }
+      },
+      error: err => {
+        this.errorMsg.set(err.error?.message ?? 'Login failed. Please try again.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  submitMfa(): void {
+    if (!this.mfaCode.trim() || this.loading()) return;
+    this.loading.set(true);
+    this.errorMsg.set('');
+    this.#auth.completeMfaLogin(this.#tempToken, this.mfaCode.trim()).subscribe({
       next: () => {
         this.#toast.success('Welcome back!');
         this.#router.navigate(['/']);
       },
       error: err => {
-        this.errorMsg.set(err.error?.message ?? 'Login failed. Please try again.');
+        this.errorMsg.set(err.error?.message ?? 'Invalid code. Please try again.');
         this.loading.set(false);
       },
     });

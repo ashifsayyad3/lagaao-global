@@ -58,6 +58,11 @@ const schema = z.object({
   SHIPROCKET_PASSWORD: z.string().optional(),
   SHIPROCKET_CHANNEL_ID: z.coerce.number().optional(),
 
+  // WhatsApp Business (Meta Cloud API)
+  WHATSAPP_TOKEN:           z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_ENABLED:         z.string().default('false'),
+
   // Invoice / GST
   INVOICE_COMPANY_NAME:    z.string().optional(),
   INVOICE_COMPANY_ADDRESS: z.string().optional(),

@@ -96,7 +96,9 @@ router.use(authenticate);
 // POST /api/v1/orders  — place order
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const order = await ordersService.createOrder(req.user!.id, req.body);
+    const ip           = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip;
+    const affiliateCode = (req.cookies?.['aff_code'] as string | undefined) ?? req.body.affiliateCode;
+    const order = await ordersService.createOrder(req.user!.id, { ...req.body, ipAddress: ip, affiliateCode });
     created(res, order, 'Order placed successfully');
   } catch (err) { next(err); }
 });

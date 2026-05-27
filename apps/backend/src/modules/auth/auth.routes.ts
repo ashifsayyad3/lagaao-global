@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authController } from './auth.controller';
 import {
   validate,
@@ -7,6 +7,8 @@ import {
 } from './auth.validator';
 import { authRateLimit } from '../../middleware/rateLimit.middleware';
 import { authenticate } from '../../middleware/auth.middleware';
+import { mfaService } from './mfa.service';
+import { ok } from '../../shared/utils/response.util';
 
 const router = Router();
 
@@ -158,5 +160,54 @@ router.get('/google/callback', (r, s, n) => authController.googleCallback(r, s, 
 
 // Protected
 router.get('/me', authenticate, (r, s, n) => authController.me(r, s, n));
+
+// ── MFA ──────────────────────────────────────────────────────────────────────
+
+/** POST /auth/mfa/validate — complete login when mfaRequired=true */
+router.post('/mfa/validate', authRateLimit, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { tempToken, token } = req.body as { tempToken: string; token: string };
+    if (!tempToken || !token) { res.status(400).json({ success: false, message: 'tempToken and token required' }); return; }
+    const userId = await mfaService.validate(tempToken, token);
+    // Issue full tokens via auth service
+    const { authService } = await import('./auth.service');
+    const tokens = await authService.issueTokensForUser(userId, req.ip, req.headers['user-agent']);
+    res.json({ success: true, data: tokens });
+  } catch (e) { next(e); }
+});
+
+/** GET /auth/mfa/setup — generate TOTP secret + QR */
+router.get('/mfa/setup', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try { ok(res, await mfaService.setup(req.user!.id)); }
+  catch (e) { next(e); }
+});
+
+/** POST /auth/mfa/enable — verify first code and enable MFA */
+router.post('/mfa/enable', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.body as { token: string };
+    if (!token) { res.status(400).json({ success: false, message: 'token required' }); return; }
+    ok(res, await mfaService.enable(req.user!.id, token), 'MFA enabled');
+  } catch (e) { next(e); }
+});
+
+/** POST /auth/mfa/disable */
+router.post('/mfa/disable', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.body as { token: string };
+    if (!token) { res.status(400).json({ success: false, message: 'token required' }); return; }
+    await mfaService.disable(req.user!.id, token);
+    ok(res, null, 'MFA disabled');
+  } catch (e) { next(e); }
+});
+
+/** POST /auth/mfa/backup-codes — regenerate backup codes */
+router.post('/mfa/backup-codes', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.body as { token: string };
+    if (!token) { res.status(400).json({ success: false, message: 'token required' }); return; }
+    ok(res, await mfaService.regenerateBackupCodes(req.user!.id, token), 'Backup codes regenerated');
+  } catch (e) { next(e); }
+});
 
 export default router;

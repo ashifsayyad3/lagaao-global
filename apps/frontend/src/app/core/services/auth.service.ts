@@ -9,6 +9,7 @@ export interface UserDTO {
   id: number; name: string; email: string; phone?: string;
   role: 'customer' | 'vendor' | 'admin' | 'super_admin';
   avatar?: string; createdAt: string;
+  mfaEnabled?: boolean;
 }
 
 export interface AuthState {
@@ -35,7 +36,7 @@ export class AuthService {
   readonly isLoggedIn   = computed(() => !!this.#state().user);
   readonly isLoading    = computed(() => this.#state().loading);
 
-  register(data: { name: string; email: string; password: string; phone?: string }): Observable<unknown> {
+  register(data: { name: string; email: string; password: string; phone?: string; referralCode?: string }): Observable<unknown> {
     return this.#api.post('/auth/register', data);
   }
 
@@ -45,9 +46,21 @@ export class AuthService {
       .pipe(tap(res => this.#setAuth(res.data.accessToken, res.data.user)));
   }
 
-  login(email: string, password: string): Observable<{ data: { accessToken: string; user: UserDTO } }> {
+  login(email: string, password: string): Observable<{
+    data: { accessToken: string; user: UserDTO } | { mfaRequired: true; tempToken: string }
+  }> {
     return this.#api
-      .post<{ data: { accessToken: string; user: UserDTO } }>('/auth/login', { email, password })
+      .post<{ data: { accessToken: string; user: UserDTO } | { mfaRequired: true; tempToken: string } }>(
+        '/auth/login', { email, password }
+      )
+      .pipe(tap(res => {
+        if ('accessToken' in res.data) this.#setAuth(res.data.accessToken, res.data.user);
+      }));
+  }
+
+  completeMfaLogin(tempToken: string, token: string): Observable<{ data: { accessToken: string; user: UserDTO } }> {
+    return this.#api
+      .post<{ data: { accessToken: string; user: UserDTO } }>('/auth/mfa/validate', { tempToken, token })
       .pipe(tap(res => this.#setAuth(res.data.accessToken, res.data.user)));
   }
 

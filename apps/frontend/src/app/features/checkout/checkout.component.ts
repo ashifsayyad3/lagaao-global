@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RazorpayService } from '../../core/services/razorpay.service';
 import { WalletService } from '../../core/services/wallet.service';
+import { LoyaltyService } from '../../core/services/loyalty.service';
 import { CurrencyInrPipe } from '../../shared/pipes/currency-inr.pipe';
 import {
   PaymentMethodSelectorComponent,
@@ -424,6 +425,33 @@ interface AddressForm {
                   <span>−{{ walletDeduction() | currencyInr }}</span>
                 </div>
               }
+              @if (loyaltySvc.balance() > 0) {
+                <div style="margin:10px 0;padding:10px 12px;background:var(--bg-subtle);
+                             border-radius:10px;border:1.5px solid var(--border-default)">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.875rem">
+                    <input type="checkbox" [checked]="useLoyalty()" (change)="useLoyalty.set(!useLoyalty())"
+                           style="width:16px;height:16px;accent-color:var(--color-primary)" />
+                    <mat-icon style="font-size:16px;width:16px;height:16px;color:var(--color-primary)">stars</mat-icon>
+                    <span style="flex:1;color:var(--text-primary);font-weight:500">
+                      Use Loyalty Points
+                      <span style="color:var(--text-muted);font-weight:400">
+                        ({{ loyaltySvc.balance() }} pts available)
+                      </span>
+                    </span>
+                  </label>
+                  @if (useLoyalty() && loyaltyDeduction() > 0) {
+                    <div style="margin-top:6px;font-size:.8125rem;color:var(--color-primary);font-weight:600;padding-left:26px">
+                      −{{ loyaltyDeduction() | currencyInr }} ({{ loyaltyPointsUsed() }} pts used)
+                    </div>
+                  }
+                </div>
+              }
+              @if (useLoyalty() && loyaltyDeduction() > 0) {
+                <div class="price-row saving">
+                  <span>Loyalty Discount</span>
+                  <span>−{{ loyaltyDeduction() | currencyInr }}</span>
+                </div>
+              }
               <div class="price-divider"></div>
               <div class="price-total">
                 <span>Total</span>
@@ -464,6 +492,7 @@ export class CheckoutComponent implements OnInit {
   readonly #router    = inject(Router);
   readonly #razorpay  = inject(RazorpayService);
   readonly walletSvc  = inject(WalletService);
+  readonly loyaltySvc = inject(LoyaltyService);
 
   readonly currentStep      = signal<Step>('address');
   readonly paymentMethod    = signal<PaymentMethod>('upi');
@@ -472,6 +501,7 @@ export class CheckoutComponent implements OnInit {
   readonly completed        = signal<Set<Step>>(new Set());
   readonly paymentSelection = signal<PaymentSelection | null>(null);
   readonly useWallet        = signal(false);
+  readonly useLoyalty       = signal(false);
 
   address: AddressForm = {
     fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '',
@@ -522,10 +552,21 @@ export class CheckoutComponent implements OnInit {
     return Math.min(this.walletSvc.balance(), base);
   });
 
+  /** Max 20% of order total redeemable via loyalty points (100 pts = ₹1) */
+  readonly loyaltyDeduction = computed(() => {
+    if (!this.useLoyalty()) return 0;
+    const base      = (this.pricing()?.total ?? 0) + (this.paymentMethod() === 'cod' ? 20 : 0);
+    const maxRupees = Math.floor(base * 0.2);
+    const rupees    = Math.floor(this.loyaltySvc.balance() / 100);
+    return Math.min(maxRupees, rupees);
+  });
+
+  readonly loyaltyPointsUsed = computed(() => this.loyaltyDeduction() * 100);
+
   readonly finalTotal = computed(() => {
     const base = this.pricing()?.total ?? 0;
     const withCod = this.paymentMethod() === 'cod' ? base + 20 : base;
-    return Math.max(0, withCod - this.walletDeduction());
+    return Math.max(0, withCod - this.walletDeduction() - this.loyaltyDeduction());
   });
 
   ngOnInit(): void {
@@ -541,6 +582,7 @@ export class CheckoutComponent implements OnInit {
     }
     if (this.#auth.isLoggedIn()) {
       this.walletSvc.loadBalance();
+      this.loyaltySvc.loadBalance();
     }
   }
 

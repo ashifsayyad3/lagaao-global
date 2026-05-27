@@ -15,6 +15,7 @@ import { AiService, AiProduct } from '../../../core/services/ai.service';
 import { ProductCarouselComponent } from '../../../shared/components/product-carousel/product-carousel.component';
 import { SeoService } from '../../../core/services/seo.service';
 import { ReviewListComponent } from '../../../shared/components/review-list/review-list.component';
+import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
 
 @Component({
   selector: 'lg-product-detail',
@@ -23,8 +24,8 @@ import { ReviewListComponent } from '../../../shared/components/review-list/revi
   imports: [
     RouterLink, MatIconModule, TitleCasePipe,
     ProductCardComponent, SkeletonComponent,
-    CurrencyInrPipe, LazyImgDirective, ProductCarouselComponent,
-    ReviewListComponent,
+    CurrencyInrPipe, LazyImgDirective,
+    ReviewListComponent, SimilarProductsComponent,
   ],
   styles: [`
     :host { display: block; }
@@ -599,10 +600,10 @@ import { ReviewListComponent } from '../../../shared/components/review-list/revi
           </div>
         }
 
-        <!-- ── Also bought carousel ─────────────────── -->
-        @if (alsoBought().length > 0) {
+        <!-- ── Similar products (co-purchase engine) ── -->
+        @if (product()?.id) {
           <div class="section" style="padding-top:0;border-top:none">
-            <lg-product-carousel title="Customers Also Bought" [products]="alsoBought()"></lg-product-carousel>
+            <lg-similar-products [productId]="product()!.id" title="Customers Also Bought" />
           </div>
         }
 

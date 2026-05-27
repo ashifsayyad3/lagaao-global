@@ -10,12 +10,13 @@ import { AiService, AiProduct } from '../../core/services/ai.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { SeoService } from '../../core/services/seo.service';
+import { YouMayLikeComponent } from '../../shared/components/you-may-like/you-may-like.component';
 
 @Component({
   selector: 'lg-home',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent, ProductCardComponent],
+  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent, ProductCardComponent, YouMayLikeComponent],
   template: `
 
     <!-- ═══════════════════════════════════════════════════════
@@ -557,6 +558,13 @@ import { SeoService } from '../../core/services/seo.service';
         </div>
         <p class="text-xs text-text-muted mt-3">Unsubscribe anytime. We respect your inbox.</p>
       </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PERSONALISED RECOMMENDATIONS
+    ═══════════════════════════════════════════════════════ -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <lg-you-may-like title="Recommended For You" />
     </section>
 
   `,

@@ -9,6 +9,11 @@ import {
 import { inventoryService } from '../inventory/inventory.service';
 import { couponService } from '../coupon/coupon.service';
 import { walletService } from '../wallet/wallet.service';
+import { whatsappService }  from '../whatsapp/whatsapp.service';
+import { referralService }  from '../referral/referral.service';
+import { loyaltyService }   from '../loyalty/loyalty.service';
+import { fraudService }     from '../fraud/fraud.service';
+import { affiliateService } from '../affiliate/affiliate.service';
 import { AppError } from '../../middleware/errorHandler.middleware';
 import { getPagination } from '../../shared/utils/paginate.util';
 import type { Request } from 'express';
@@ -29,6 +34,8 @@ export interface CreateOrderInput {
   sessionId?:    string;
   useWallet?:    boolean;
   walletAmount?: number;
+  ipAddress?:    string;
+  affiliateCode?: string;
 }
 
 const ORDER_INCLUDE = [
@@ -108,6 +115,15 @@ export class OrdersService {
     }
     const total = Math.max(0, baseTotal - walletDeduction);
 
+    // ── Fraud evaluation ──────────────────────────────────────────────────
+    const fraud = await fraudService.evaluate({
+      userId,
+      ipAddress:      input.ipAddress,
+      total,
+      paymentMethod:  input.paymentMethod,
+      shippingAddress: input.shippingAddress as Record<string, string>,
+    });
+
     const order = await sequelize.transaction(async (t) => {
       // Create order
       const newOrder = await Order.create({
@@ -121,6 +137,11 @@ export class OrdersService {
         couponCode:      input.couponCode ?? null,
         paymentMethod:   input.paymentMethod,
         paymentStatus:   input.paymentMethod === 'cod' ? 'pending' : 'pending',
+        status:          fraud.action === 'hold' ? 'fraud_review' : 'pending',
+        fraudScore:      fraud.score,
+        fraudFlags:      fraud.flags.length ? fraud.flags : null,
+        riskLevel:       fraud.riskLevel,
+        ipAddress:       input.ipAddress ?? null,
         shippingAddress: { ...input.shippingAddress, country: input.shippingAddress.country ?? 'India' },
         estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // +5 days
       }, { transaction: t });
@@ -183,7 +204,26 @@ export class OrdersService {
       return newOrder;
     });
 
-    return Order.findByPk(order.id, { include: ORDER_INCLUDE }) as Promise<Order>;
+    const placed = await Order.findByPk(order.id, { include: ORDER_INCLUDE }) as Order;
+
+    // Referral: reward on first order (fire-and-forget)
+    referralService.processFirstOrderReward(userId).catch(() => {});
+
+    // Affiliate: record conversion if cookie/code present (fire-and-forget)
+    if (input.affiliateCode) {
+      affiliateService.recordConversion(order.id, input.affiliateCode, Number(placed.total)).catch(() => {});
+    }
+
+    // WhatsApp: order placed (fire-and-forget)
+    const addr = placed.shippingAddress as Record<string, string>;
+    whatsappService.orderPlaced({
+      phone:       addr['phone'],
+      name:        addr['fullName'] ?? addr['name'] ?? 'Customer',
+      orderNumber: placed.orderNumber,
+      total:       Number(placed.total),
+    }).catch(() => {});
+
+    return placed;
   }
 
   async getOrders(userId: number, req: Request): Promise<{ rows: Order[]; count: number }> {
@@ -245,7 +285,18 @@ export class OrdersService {
       }
     });
 
-    return this.getOrder(orderId, userId);
+    const cancelled = await this.getOrder(orderId, userId);
+
+    // WhatsApp notification (fire-and-forget)
+    const cAddr = cancelled.shippingAddress as Record<string, string>;
+    whatsappService.orderCancelled({
+      phone:       cAddr['phone'],
+      name:        cAddr['fullName'] ?? 'Customer',
+      orderNumber: cancelled.orderNumber,
+      reason,
+    }).catch(() => {});
+
+    return cancelled;
   }
 
   // Admin: update order status
@@ -289,7 +340,37 @@ export class OrdersService {
       }
     });
 
-    return Order.findByPk(orderId, { include: ORDER_INCLUDE }) as Promise<Order>;
+    const updated = await Order.findByPk(orderId, { include: ORDER_INCLUDE }) as Order;
+
+    // WhatsApp notifications (fire-and-forget)
+    const addr2 = updated.shippingAddress as Record<string, string>;
+    const waOpts = {
+      phone:       addr2['phone'],
+      name:        addr2['fullName'] ?? 'Customer',
+      orderNumber: updated.orderNumber,
+    };
+    if (status === 'confirmed')        whatsappService.orderConfirmed(waOpts).catch(() => {});
+    if (status === 'shipped')          whatsappService.orderShipped({
+      ...waOpts,
+      courierName: updated.courierName ?? updated.courier ?? 'Courier',
+      awbCode:     updated.awbCode ?? updated.trackingNumber ?? '',
+      trackingUrl: updated.trackingUrl ?? '',
+    }).catch(() => {});
+    if (status === 'out_for_delivery') whatsappService.orderOutForDelivery(waOpts).catch(() => {});
+    if (status === 'delivered')        whatsappService.orderDelivered(waOpts).catch(() => {});
+
+    // Earn loyalty points on delivery (fire-and-forget)
+    if (status === 'delivered') {
+      loyaltyService.earn(
+        updated.userId,
+        updated.total,
+        `Order #${updated.orderNumber} delivered`,
+        'order',
+        updated.id,
+      ).catch(() => {});
+    }
+
+    return updated;
   }
 
   // Admin: list all orders

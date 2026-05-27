@@ -1,9 +1,10 @@
 import { Request } from 'express';
 import { ReturnRequest, ReturnReason, ReturnStatus, RefundMethod } from '../../models/returnRequest.model';
 import { Order, OrderItem } from '../../models/index';
-import { AppError } from '../../shared/errors/AppError';
+import { AppError } from '../../middleware/errorHandler.middleware';
 import { getPagination } from '../../shared/utils/pagination.util';
 import { walletService } from '../wallet/wallet.service';
+import { whatsappService } from '../whatsapp/whatsapp.service';
 
 // Optional Razorpay — reuse instance from payments module if available
 let razorpay: import('razorpay') | null = null;
@@ -139,6 +140,18 @@ export class ReturnsService {
         referenceId:   request.id,
       });
       await request.update({ status: 'refund_completed', refundId: `WALLET-${request.id}` });
+
+      // WhatsApp notification
+      const order = request.order as Order;
+      if (order) {
+        const addr = order.shippingAddress as Record<string, string>;
+        whatsappService.refundInitiated({
+          phone:       addr['phone'],
+          name:        addr['fullName'] ?? 'Customer',
+          orderNumber: order.orderNumber,
+          amount:      refundAmount,
+        }).catch(() => {});
+      }
       return;
     }
 

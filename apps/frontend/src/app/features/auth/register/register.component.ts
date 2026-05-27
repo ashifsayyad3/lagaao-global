@@ -1,7 +1,7 @@
 import {
-  Component, ChangeDetectionStrategy, inject, signal
+  Component, ChangeDetectionStrategy, inject, signal, OnInit
 } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder, Validators, ReactiveFormsModule, FormsModule,
   AbstractControl, ValidationErrors
@@ -183,6 +183,27 @@ function strongPassword(c: AbstractControl): ValidationErrors | null {
           <div class="error-box">{{ errorMsg() }}</div>
         }
 
+        <!-- Referral code -->
+        @if (referralApplied()) {
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
+                      background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.25);margin-bottom:12px">
+            <mat-icon style="color:#16a34a;font-size:18px;width:18px;height:18px">card_giftcard</mat-icon>
+            <span style="font-size:.8125rem;color:#15803d;font-weight:600">
+              Referral code <strong>{{ referralCode }}</strong> applied — you'll get ₹50 on first order!
+            </span>
+          </div>
+        } @else {
+          <div class="field">
+            <label for="reg-ref" style="font-size:.8125rem;font-weight:600;color:var(--text-secondary)">
+              Referral code
+              <span style="font-weight:400;color:var(--text-muted)">(optional)</span>
+            </label>
+            <input id="reg-ref" [(ngModel)]="referralCode" [ngModelOptions]="{standalone:true}"
+                   type="text" placeholder="e.g. A3F91C42" style="text-transform:uppercase"
+                   class="inp" />
+          </div>
+        }
+
         <button type="submit" class="submit-btn" [disabled]="loading()">
           @if (loading()) {
             <mat-icon style="font-size:18px;width:18px;height:18px;animation:spin 1s linear infinite">refresh</mat-icon>
@@ -254,21 +275,29 @@ function strongPassword(c: AbstractControl): ValidationErrors | null {
     }
   `,
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   readonly #auth   = inject(AuthService);
   readonly #router = inject(Router);
   readonly #toast  = inject(ToastService);
   readonly #fb     = inject(FormBuilder);
+  readonly #route  = inject(ActivatedRoute);
 
   loginWithGoogle(): void { this.#auth.loginWithGoogle(); }
 
-  readonly loading  = signal(false);
-  readonly errorMsg = signal('');
-  readonly otpError = signal('');
-  readonly otpSent  = signal(false);
-  readonly showPw   = signal(false);
+  readonly loading      = signal(false);
+  readonly errorMsg     = signal('');
+  readonly otpError     = signal('');
+  readonly otpSent      = signal(false);
+  readonly showPw       = signal(false);
+  readonly referralApplied = signal(false);
 
-  otp = '';
+  otp          = '';
+  referralCode = '';
+
+  ngOnInit() {
+    const ref = this.#route.snapshot.queryParamMap.get('ref');
+    if (ref) { this.referralCode = ref; this.referralApplied.set(true); }
+  }
 
   form = this.#fb.nonNullable.group({
     name:     ['', [Validators.required, Validators.minLength(2)]],
@@ -313,7 +342,11 @@ export class RegisterComponent {
     this.loading.set(true);
     this.errorMsg.set('');
     const { name, email, password, phone } = this.form.getRawValue();
-    this.#auth.register({ name, email, password, phone: phone || undefined }).subscribe({
+    this.#auth.register({
+      name, email, password,
+      phone:        phone || undefined,
+      referralCode: this.referralCode || undefined,
+    }).subscribe({
       next: (res: any) => {
         this.loading.set(false);
         this.otpSent.set(true);

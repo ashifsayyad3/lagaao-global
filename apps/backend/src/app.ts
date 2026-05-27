@@ -35,6 +35,10 @@ import vendorPublicRoutes, { vendorRouter, adminVendorRouter } from './modules/v
 import cmsRoutes, { adminCmsRouter } from './modules/cms/cms.routes';
 import aiRoutes              from './modules/ai/ai.routes';
 import analyticsRoutes       from './modules/analytics/analytics.routes';
+import emailAdminRoutes      from './modules/email/email.routes';
+import notificationRoutes, { adminNotificationsRouter } from './modules/notifications/notification.routes';
+import trackingRoutes        from './modules/tracking/tracking.routes';
+import crmRoutes             from './modules/crm/crm.routes';
 
 // ─── Express App ──────────────────────────────────────────────
 const app  = express();
@@ -145,7 +149,12 @@ app.use('/api/v1/admin/vendors',   adminVendorRouter);
 app.use('/api/v1/cms',             cmsRoutes);
 app.use('/api/v1/admin/cms',       adminCmsRouter);
 app.use('/api/v1/ai',              aiRoutes);
-app.use('/api/v1/admin/analytics', analyticsRoutes);
+app.use('/api/v1/admin/analytics',      analyticsRoutes);
+app.use('/api/v1/admin/email',          emailAdminRoutes);
+app.use('/api/v1/notifications',        notificationRoutes);
+app.use('/api/v1/admin/notifications',  adminNotificationsRouter);
+app.use('/api/v1/admin/tracking',       trackingRoutes);
+app.use('/api/v1/admin/crm',            crmRoutes);
 
 // ─── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => {

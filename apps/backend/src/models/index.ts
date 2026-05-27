@@ -19,6 +19,9 @@ import { VendorProfile, VendorPayout } from './vendor.model';
 import {
   Banner, Announcement, NewsletterSubscriber, BlogPost, CmsPage,
 } from './cms.model';
+import { EmailLog }    from './emailLog.model';
+import { Notification } from './notification.model';
+import { Shipment }    from './shipment.model';
 
 export const sequelize = new Sequelize({
   dialect:  'mysql',
@@ -36,6 +39,7 @@ export const sequelize = new Sequelize({
     Order, OrderItem, OrderStatusHistory,
     VendorProfile, VendorPayout,
     Banner, Announcement, NewsletterSubscriber, BlogPost, CmsPage,
+    EmailLog, Notification, Shipment,
   ],
   logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
@@ -56,6 +60,7 @@ export {
   Order, OrderItem, OrderStatusHistory,
   VendorProfile, VendorPayout,
   Banner, Announcement, NewsletterSubscriber, BlogPost, CmsPage,
+  EmailLog, Notification, Shipment,
 };
 
 export async function connectDB(): Promise<void> {

@@ -3,6 +3,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { authorize as requireRole } from '../../middleware/rbac.middleware';
 import { ok, created } from '../../shared/utils/response.util';
 import { apiRateLimit } from '../../middleware/rateLimit.middleware';
+import { Role } from '../../shared/types/roles';
 import * as ai from './ai.service';
 
 const router = Router();
@@ -61,7 +62,7 @@ router.post('/chat', apiRateLimit, async (req: Request, res: Response, next: Nex
 router.post(
   '/generate-description',
   authenticate,
-  requireRole('vendor'),
+  requireRole(Role.VENDOR, Role.ADMIN, Role.SUPER_ADMIN),
   apiRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -130,6 +130,41 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'support/inbox',      loadComponent: () => import('./support/admin-support.component').then(m => m.AdminSupportComponent), title: 'Inbox — Admin' },
       { path: 'support/complaints', loadComponent: () => import('./support/admin-support.component').then(m => m.AdminSupportComponent), title: 'Complaints — Admin' },
 
+      // ── Email Center ──────────────────────────────────────
+      { path: 'email/logs',       loadComponent: () => import('./email/admin-email.component').then(m => m.AdminEmailComponent),         title: 'Email Logs — Admin' },
+      { path: 'email/templates',  loadComponent: () => import('./email/admin-email.component').then(m => m.AdminEmailComponent),         title: 'Email Templates — Admin' },
+      { path: 'email/campaigns',  loadComponent: () => import('./email/admin-email.component').then(m => m.AdminEmailComponent),         title: 'Email Campaigns — Admin' },
+      { path: 'email/newsletter', loadComponent: () => import('./email/admin-email.component').then(m => m.AdminEmailComponent),         title: 'Newsletter — Admin' },
+      { path: 'email/failed',     loadComponent: () => import('./email/admin-email.component').then(m => m.AdminEmailComponent),         title: 'Failed Emails — Admin' },
+
+      // ── Notification Center ───────────────────────────────
+      { path: 'notifications',              loadComponent: () => import('./notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent), title: 'Notifications — Admin' },
+      { path: 'notifications/push',         loadComponent: () => import('./notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent), title: 'Push Center — Admin' },
+      { path: 'notifications/sms',          loadComponent: () => import('./notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent), title: 'SMS Center — Admin' },
+      { path: 'notifications/preferences',  loadComponent: () => import('./notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent), title: 'Notification Preferences — Admin' },
+      { path: 'notifications/logs',         loadComponent: () => import('./notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent), title: 'Notification Logs — Admin' },
+
+      // ── Tracking Center ───────────────────────────────────
+      { path: 'tracking',           loadComponent: () => import('./tracking/admin-tracking.component').then(m => m.AdminTrackingComponent), title: 'Shipments — Admin' },
+      { path: 'tracking/couriers',  loadComponent: () => import('./tracking/admin-tracking.component').then(m => m.AdminTrackingComponent), title: 'Courier Logs — Admin' },
+      { path: 'tracking/failed',    loadComponent: () => import('./tracking/admin-tracking.component').then(m => m.AdminTrackingComponent), title: 'Failed Delivery — Admin' },
+      { path: 'tracking/returns',   loadComponent: () => import('./tracking/admin-tracking.component').then(m => m.AdminTrackingComponent), title: 'Return Shipments — Admin' },
+      { path: 'tracking/analytics', loadComponent: () => import('./tracking/admin-tracking.component').then(m => m.AdminTrackingComponent), title: 'Delivery Analytics — Admin' },
+
+      // ── CRM ───────────────────────────────────────────────
+      { path: 'crm',            loadComponent: () => import('./crm/admin-crm.component').then(m => m.AdminCrmComponent), title: 'CRM — Admin' },
+      { path: 'crm/segments',   loadComponent: () => import('./crm/admin-crm.component').then(m => m.AdminCrmComponent), title: 'Segments — Admin' },
+      { path: 'crm/activity',   loadComponent: () => import('./crm/admin-crm.component').then(m => m.AdminCrmComponent), title: 'Activity Logs — Admin' },
+      { path: 'crm/wishlist',   loadComponent: () => import('./crm/admin-crm.component').then(m => m.AdminCrmComponent), title: 'Wishlists — Admin' },
+      { path: 'crm/ltv',        loadComponent: () => import('./crm/admin-crm.component').then(m => m.AdminCrmComponent), title: 'LTV Report — Admin' },
+
+      // ── Monitoring ────────────────────────────────────────
+      { path: 'monitoring',              loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Health Monitor — Admin' },
+      { path: 'monitoring/api-logs',     loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'API Logs — Admin' },
+      { path: 'monitoring/errors',       loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Error Logs — Admin' },
+      { path: 'monitoring/metrics',      loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Server Metrics — Admin' },
+      { path: 'monitoring/backups',      loadComponent: () => import('./monitoring/admin-monitoring.component').then(m => m.AdminMonitoringComponent), title: 'Backups — Admin' },
+
       // ── Reports ───────────────────────────────────────────
       { path: 'reports/sales',    loadComponent: () => import('./reports/admin-reports.component').then(m => m.AdminReportsComponent), title: 'Sales Reports — Admin' },
       { path: 'reports/tax',      loadComponent: () => import('./reports/admin-reports.component').then(m => m.AdminReportsComponent), title: 'Tax Reports — Admin' },

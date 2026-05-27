@@ -118,6 +118,56 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    label: 'Email Center', icon: 'email',
+    children: [
+      { label: 'Email Logs',    icon: 'inbox',               route: '/admin/email/logs' },
+      { label: 'Templates',     icon: 'description',         route: '/admin/email/templates' },
+      { label: 'Campaigns',     icon: 'campaign',            route: '/admin/email/campaigns' },
+      { label: 'Newsletter',    icon: 'mail',                route: '/admin/email/newsletter' },
+      { label: 'Failed Emails', icon: 'error_outline',       route: '/admin/email/failed' },
+    ],
+  },
+  {
+    label: 'Notifications', icon: 'notifications',
+    children: [
+      { label: 'All',           icon: 'notifications_active', route: '/admin/notifications' },
+      { label: 'Push Center',   icon: 'phonelink_ring',      route: '/admin/notifications/push' },
+      { label: 'SMS Center',    icon: 'sms',                 route: '/admin/notifications/sms' },
+      { label: 'Preferences',   icon: 'tune',                route: '/admin/notifications/preferences' },
+      { label: 'Delivery Logs', icon: 'list_alt',            route: '/admin/notifications/logs' },
+    ],
+  },
+  {
+    label: 'Tracking Center', icon: 'local_shipping',
+    children: [
+      { label: 'Shipments',     icon: 'inventory_2',         route: '/admin/tracking' },
+      { label: 'Courier Logs',  icon: 'assignment',          route: '/admin/tracking/couriers' },
+      { label: 'Failed Delivery',icon:'not_listed_location', route: '/admin/tracking/failed' },
+      { label: 'Returns',       icon: 'assignment_return',   route: '/admin/tracking/returns' },
+      { label: 'Delivery Stats',icon: 'analytics',           route: '/admin/tracking/analytics' },
+    ],
+  },
+  {
+    label: 'CRM', icon: 'contact_support',
+    children: [
+      { label: 'Customer Profiles', icon: 'person_search',  route: '/admin/crm' },
+      { label: 'Segments',      icon: 'group_work',         route: '/admin/crm/segments' },
+      { label: 'Activity Logs', icon: 'timeline',           route: '/admin/crm/activity' },
+      { label: 'Wishlists',     icon: 'favorite',           route: '/admin/crm/wishlist' },
+      { label: 'LTV Report',    icon: 'trending_up',        route: '/admin/crm/ltv' },
+    ],
+  },
+  {
+    label: 'Monitoring', icon: 'monitor_heart',
+    children: [
+      { label: 'Health',        icon: 'health_and_safety',  route: '/admin/monitoring' },
+      { label: 'API Logs',      icon: 'api',                route: '/admin/monitoring/api-logs' },
+      { label: 'Error Logs',    icon: 'error',              route: '/admin/monitoring/errors' },
+      { label: 'Server Metrics',icon: 'speed',              route: '/admin/monitoring/metrics' },
+      { label: 'Backups',       icon: 'backup',             route: '/admin/monitoring/backups' },
+    ],
+  },
+  {
     label: 'Reports', icon: 'summarize',
     children: [
       { label: 'Sales Reports', icon: 'receipt',        route: '/admin/reports/sales' },

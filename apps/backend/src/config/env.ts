@@ -21,11 +21,13 @@ const schema = z.object({
   JWT_REFRESH_SECRET:   z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
-  SMTP_HOST:  z.string().optional(),
-  SMTP_PORT:  z.coerce.number().default(587),
-  SMTP_USER:  z.string().optional(),
-  SMTP_PASS:  z.string().optional(),
-  EMAIL_FROM: z.string().default('noreply@lagaao.com'),
+  SMTP_HOST:   z.string().optional(),
+  SMTP_PORT:   z.coerce.number().default(587),
+  SMTP_USER:   z.string().optional(),
+  SMTP_PASS:   z.string().optional(),
+  SMTP_SECURE: z.string().default('false'),
+  SMTP_FROM:   z.string().default('noreply@lagaao.com'),
+  EMAIL_FROM:  z.string().default('noreply@lagaao.com'),
 
   OPENAI_API_KEY: z.string().optional(),
 

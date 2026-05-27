@@ -49,6 +49,55 @@ export interface AdminPayout {
 
 export type PaginatedResponse<T> = { success: boolean; data: T[]; meta: { total: number; totalPages: number; page: number; limit: number } };
 
+// ─── Email ───────────────────────────────────────────────────────
+export interface AdminEmailLog {
+  id: number; type: string; to: string; subject: string;
+  status: 'sent' | 'failed' | 'queued'; messageId?: string;
+  error?: string; createdAt: string;
+}
+export interface AdminEmailStats {
+  total: number; sent: number; failed: number; queued: number;
+  openRate?: number; clickRate?: number;
+}
+
+// ─── Notifications ───────────────────────────────────────────────
+export interface AdminNotificationLog {
+  id: number; userId?: number; type: string; title: string;
+  body: string; channel: string; status: string; createdAt: string;
+  user?: { name: string; email: string };
+}
+
+// ─── Tracking ────────────────────────────────────────────────────
+export interface AdminShipment {
+  id: number; orderId: number; orderNumber?: string;
+  courier: string; trackingNumber: string; status: string;
+  estimatedDelivery?: string; failedAttempts: number;
+  events?: Array<{ timestamp: string; status: string; location?: string }>;
+  createdAt: string; updatedAt: string;
+  order?: { orderNumber: string; user?: { name: string } };
+}
+export interface AdminTrackingStats {
+  total: number; delivered: number; inTransit: number;
+  failed: number; returned: number; avgDeliveryDays: number;
+}
+
+// ─── CRM ─────────────────────────────────────────────────────────
+export interface AdminCrmCustomer {
+  id: number; name: string; email: string; phone?: string;
+  totalOrders: number; totalSpent: number; lastOrderAt?: string;
+  ltv: number; segment: string; joinedAt: string;
+}
+
+// ─── Monitoring ──────────────────────────────────────────────────
+export interface AdminHealthStatus {
+  status: string; uptime: number; env: string; version: string;
+  checks: { mysql: string; redis: string; elasticsearch: string };
+}
+export interface AdminApiLog {
+  id?: number; method: string; path: string; statusCode: number;
+  duration: number; ip: string; userId?: number; createdAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   readonly #http = inject(HttpClient);
@@ -110,6 +159,69 @@ export class AdminService {
     if (role) p = p.set('role', role);
     if (q)    p = p.set('q', q);
     return this.#http.get<any>(`${BASE}/users`, { params: p });
+  }
+
+  // ── Payouts ──────────────────────────────────────────────────
+  getPayouts(status?: string): Observable<PaginatedResponse<AdminPayout>> {
+    let p = new HttpParams().set('limit', 100);
+    if (status) p = p.set('status', status);
+    return this.#http.get<any>(`${ADMIN}/vendors/payouts`, { params: p });
+  }
+  updatePayoutStatus(id: number, status: 'paid' | 'rejected'): Observable<{ success: boolean; data: AdminPayout }> {
+    return this.#http.patch<any>(`${ADMIN}/vendors/payouts/${id}`, { status });
+  }
+
+  // ── Email ─────────────────────────────────────────────────────
+  getEmailLogs(page = 1, status?: string): Observable<PaginatedResponse<AdminEmailLog>> {
+    let p = new HttpParams().set('page', page).set('limit', 25);
+    if (status) p = p.set('status', status);
+    return this.#http.get<any>(`${ADMIN}/email/logs`, { params: p });
+  }
+  getEmailStats(): Observable<{ success: boolean; data: AdminEmailStats }> {
+    return this.#http.get<any>(`${ADMIN}/email/stats`);
+  }
+  retryEmail(id: number): Observable<{ success: boolean }> {
+    return this.#http.post<any>(`${ADMIN}/email/retry/${id}`, {});
+  }
+
+  // ── Notifications ─────────────────────────────────────────────
+  getNotificationLogs(page = 1): Observable<PaginatedResponse<AdminNotificationLog>> {
+    return this.#http.get<any>(`${ADMIN}/notifications/logs`, { params: new HttpParams().set('page', page).set('limit', 25) });
+  }
+  broadcastNotification(payload: { title: string; body: string; type: string }): Observable<{ success: boolean }> {
+    return this.#http.post<any>(`${ADMIN}/notifications/broadcast`, payload);
+  }
+
+  // ── Tracking ─────────────────────────────────────────────────
+  getShipments(page = 1, status?: string, q?: string): Observable<PaginatedResponse<AdminShipment>> {
+    let p = new HttpParams().set('page', page).set('limit', 20);
+    if (status) p = p.set('status', status);
+    if (q)      p = p.set('q', q);
+    return this.#http.get<any>(`${ADMIN}/tracking/shipments`, { params: p });
+  }
+  getTrackingStats(): Observable<{ success: boolean; data: AdminTrackingStats }> {
+    return this.#http.get<any>(`${ADMIN}/tracking/stats`);
+  }
+  updateShipment(id: number, payload: Partial<AdminShipment>): Observable<{ success: boolean; data: AdminShipment }> {
+    return this.#http.patch<any>(`${ADMIN}/tracking/shipments/${id}`, payload);
+  }
+
+  // ── CRM ───────────────────────────────────────────────────────
+  getCrmCustomers(page = 1, q?: string): Observable<PaginatedResponse<AdminCrmCustomer>> {
+    let p = new HttpParams().set('page', page).set('limit', 20);
+    if (q) p = p.set('q', q);
+    return this.#http.get<any>(`${ADMIN}/crm/customers`, { params: p });
+  }
+  getCustomerDetail(id: number): Observable<{ success: boolean; data: AdminCrmCustomer }> {
+    return this.#http.get<any>(`${ADMIN}/crm/customers/${id}`);
+  }
+
+  // ── Monitoring ────────────────────────────────────────────────
+  getHealthStatus(): Observable<{ success: boolean; data: AdminHealthStatus }> {
+    return this.#http.get<any>('/health');
+  }
+  getApiLogs(page = 1): Observable<PaginatedResponse<AdminApiLog>> {
+    return this.#http.get<any>(`${ADMIN}/monitoring/api-logs`, { params: new HttpParams().set('page', page).set('limit', 50) });
   }
 
   // ── CMS ──────────────────────────────────────────────────────

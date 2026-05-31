@@ -30,8 +30,8 @@ export const recommendationsService = {
           p.id,
           p.name,
           p.slug,
-          p.price,
-          p.mrp,
+          COALESCE(p.sale_price, p.base_price) AS price,
+          p.base_price AS mrp,
           (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS thumbnail,
           COALESCE(AVG(r.rating), 0)  AS avgRating,
           COUNT(DISTINCT r.id)        AS reviewCount,
@@ -39,8 +39,8 @@ export const recommendationsService = {
         FROM order_items oi
         JOIN orders o       ON o.id = oi.order_id AND o.deleted_at IS NULL
         JOIN order_items co ON co.order_id = o.id AND co.product_id != :productId
-        JOIN products p     ON p.id = co.product_id AND p.deleted_at IS NULL AND p.is_active = 1
-        LEFT JOIN reviews r ON r.product_id = p.id AND r.deleted_at IS NULL
+        JOIN products p     ON p.id = co.product_id AND p.deleted_at IS NULL AND p.status = 'active'
+        LEFT JOIN reviews r ON r.product_id = p.id
         WHERE oi.product_id = :productId
         GROUP BY p.id
         ORDER BY score DESC
@@ -58,7 +58,7 @@ export const recommendationsService = {
 
       const extras = await sequelize.query<RecommendedProduct>(`
         SELECT
-          p.id, p.name, p.slug, p.price, p.mrp,
+          p.id, p.name, p.slug, COALESCE(p.sale_price, p.base_price) AS price, p.base_price AS mrp,
           (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS thumbnail,
           COALESCE(AVG(r.rating), 0) AS avgRating,
           COUNT(DISTINCT r.id)       AS reviewCount,
@@ -66,10 +66,10 @@ export const recommendationsService = {
         FROM products p
         LEFT JOIN order_items oi ON oi.product_id = p.id
         LEFT JOIN orders o        ON o.id = oi.order_id AND o.deleted_at IS NULL
-        LEFT JOIN reviews r       ON r.product_id = p.id AND r.deleted_at IS NULL
+        LEFT JOIN reviews r       ON r.product_id = p.id
         WHERE p.category_id = :categoryId
           AND p.id != :productId
-          AND p.is_active = 1
+          AND p.status = 'active'
           AND p.deleted_at IS NULL
         GROUP BY p.id
         ORDER BY score DESC, avgRating DESC
@@ -126,7 +126,7 @@ export const recommendationsService = {
 
       const rows = await sequelize.query<RecommendedProduct>(`
         SELECT
-          p.id, p.name, p.slug, p.price, p.mrp,
+          p.id, p.name, p.slug, COALESCE(p.sale_price, p.base_price) AS price, p.base_price AS mrp,
           (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS thumbnail,
           COALESCE(AVG(r.rating), 0) AS avgRating,
           COUNT(DISTINCT r.id)       AS reviewCount,
@@ -134,9 +134,9 @@ export const recommendationsService = {
         FROM products p
         LEFT JOIN order_items oi ON oi.product_id = p.id
         LEFT JOIN orders o        ON o.id = oi.order_id AND o.deleted_at IS NULL
-        LEFT JOIN reviews r       ON r.product_id = p.id AND r.deleted_at IS NULL
+        LEFT JOIN reviews r       ON r.product_id = p.id
         WHERE p.category_id IN (:categoryIds)
-          AND p.is_active = 1
+          AND p.status = 'active'
           AND p.deleted_at IS NULL
           ${excludeClause}
         GROUP BY p.id
@@ -156,7 +156,7 @@ export const recommendationsService = {
     return cached(`rec:bestsellers:${limit}`, async () => {
       return sequelize.query<RecommendedProduct>(`
         SELECT
-          p.id, p.name, p.slug, p.price, p.mrp,
+          p.id, p.name, p.slug, COALESCE(p.sale_price, p.base_price) AS price, p.base_price AS mrp,
           (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order LIMIT 1) AS thumbnail,
           COALESCE(AVG(r.rating), 0) AS avgRating,
           COUNT(DISTINCT r.id)       AS reviewCount,
@@ -164,8 +164,8 @@ export const recommendationsService = {
         FROM products p
         LEFT JOIN order_items oi ON oi.product_id = p.id
         LEFT JOIN orders o        ON o.id = oi.order_id AND o.deleted_at IS NULL
-        LEFT JOIN reviews r       ON r.product_id = p.id AND r.deleted_at IS NULL
-        WHERE p.is_active = 1 AND p.deleted_at IS NULL
+        LEFT JOIN reviews r       ON r.product_id = p.id
+        WHERE p.status = 'active' AND p.deleted_at IS NULL
         GROUP BY p.id
         ORDER BY score DESC, avgRating DESC
         LIMIT :limit

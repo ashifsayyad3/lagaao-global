@@ -13,7 +13,10 @@ module.exports = {
       created_at:  { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at:  { type: Sequelize.DATE, allowNull: false, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP') },
     });
-    await queryInterface.addIndex('redirect_rules', ['from_path'], { unique: true });
+    // Use prefix index — MySQL utf8mb4 limits full-column unique index on VARCHAR(1000)
+    await queryInterface.sequelize.query(
+      'ALTER TABLE `redirect_rules` ADD UNIQUE KEY `redirect_rules_from_path` (`from_path`(768));'
+    );
     await queryInterface.addIndex('redirect_rules', ['is_active']);
   },
 

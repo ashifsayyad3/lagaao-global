@@ -2,7 +2,7 @@ import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DatePipe, NgClass, DecimalPipe } from '@angular/common';
+import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
@@ -38,7 +38,7 @@ interface AffiliateStats {
   selector: 'lg-profile-affiliate',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, DatePipe, NgClass, CurrencyInrPipe, DecimalPipe],
+  imports: [MatIconModule, DatePipe, NgClass, TitleCasePipe, CurrencyInrPipe],
   template: `
 <div class="max-w-2xl mx-auto p-6 space-y-6">
 
@@ -219,12 +219,12 @@ export class ProfileAffiliateComponent implements OnInit {
     this.#http.post<{ data: AffiliateStats }>(`${BASE}/apply`, {}).subscribe({
       next: r => {
         this.stats.set(r.data as any);
-        this.#toast.show('Application submitted! We\'ll review it shortly.', 'success');
+        this.#toast.success('Application submitted! We\'ll review it shortly.');
         this.applying.set(false);
         this.load();
       },
       error: (e) => {
-        this.#toast.show(e?.error?.message ?? 'Failed to apply', 'error');
+        this.#toast.error(e?.error?.message ?? 'Failed to apply');
         this.applying.set(false);
       },
     });

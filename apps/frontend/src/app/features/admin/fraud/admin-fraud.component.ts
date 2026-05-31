@@ -2,7 +2,7 @@ import {
   Component, ChangeDetectionStrategy, inject, signal, OnInit
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DatePipe, NgClass, CurrencyPipe } from '@angular/common';
+import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
@@ -33,7 +33,7 @@ interface PagedResult {
   selector: 'lg-admin-fraud',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, DatePipe, NgClass, CurrencyInrPipe],
+  imports: [MatIconModule, DatePipe, NgClass, TitleCasePipe, CurrencyInrPipe],
   template: `
 <div class="p-6 space-y-6 max-w-6xl mx-auto">
 
@@ -183,15 +183,15 @@ export class AdminFraudComponent implements OnInit {
 
   approve(id: number) {
     this.#http.post(`${BASE}/${id}/approve`, {}).subscribe({
-      next: () => { this.#toast.show('Order approved', 'success'); this.load(); },
-      error: () => this.#toast.show('Failed', 'error'),
+      next: () => { this.#toast.success('Order approved'); this.load(); },
+      error: () => this.#toast.error('Failed'),
     });
   }
 
   reject(id: number) {
     this.#http.post(`${BASE}/${id}/reject`, {}).subscribe({
-      next: () => { this.#toast.show('Order rejected', 'success'); this.load(); },
-      error: () => this.#toast.show('Failed', 'error'),
+      next: () => { this.#toast.success('Order rejected'); this.load(); },
+      error: () => this.#toast.error('Failed'),
     });
   }
 

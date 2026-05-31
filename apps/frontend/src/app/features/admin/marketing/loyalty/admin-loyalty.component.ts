@@ -178,12 +178,12 @@ export class AdminLoyaltyComponent implements OnInit {
     this.saving.set(true);
     this.#http.post(`${BASE}/adjust`, this.adj).subscribe({
       next: () => {
-        this.#toast.show('Adjustment applied', 'success');
+        this.#toast.success('Adjustment applied');
         this.adj = { userId: null, points: null, description: '' };
         this.saving.set(false);
         this.load();
       },
-      error: () => { this.#toast.show('Failed to adjust', 'error'); this.saving.set(false); },
+      error: () => { this.#toast.error('Failed to adjust'); this.saving.set(false); },
     });
   }
 
@@ -191,11 +191,11 @@ export class AdminLoyaltyComponent implements OnInit {
     this.expiring.set(true);
     this.#http.post<{ data: { expired: number } }>(`${BASE}/expire`, {}).subscribe({
       next: r => {
-        this.#toast.show(`Expired ${r.data.expired} points`, 'success');
+        this.#toast.success(`Expired ${r.data.expired} points`);
         this.expiring.set(false);
         this.load();
       },
-      error: () => { this.#toast.show('Failed to expire', 'error'); this.expiring.set(false); },
+      error: () => { this.#toast.error('Failed to expire'); this.expiring.set(false); },
     });
   }
 

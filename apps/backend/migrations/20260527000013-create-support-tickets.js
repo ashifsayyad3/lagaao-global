@@ -4,14 +4,14 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('support_tickets', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       ticket_number: { type: Sequelize.STRING(20), allowNull: false, unique: true },
       user_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       order_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: true,
+        type: Sequelize.INTEGER, allowNull: true,
         references: { model: 'orders', key: 'id' }, onDelete: 'SET NULL',
       },
       subject: { type: Sequelize.STRING(255), allowNull: false },
@@ -28,7 +28,7 @@ module.exports = {
         allowNull: false, defaultValue: 'medium',
       },
       assigned_to: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: true,
+        type: Sequelize.INTEGER, allowNull: true,
         references: { model: 'users', key: 'id' }, onDelete: 'SET NULL',
       },
       resolved_at: { type: Sequelize.DATE, allowNull: true },
@@ -42,13 +42,13 @@ module.exports = {
     await queryInterface.addIndex('support_tickets', ['ticket_number'], { unique: true });
 
     await queryInterface.createTable('support_messages', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       ticket_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'support_tickets', key: 'id' }, onDelete: 'CASCADE',
       },
       sender_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       sender_role: {

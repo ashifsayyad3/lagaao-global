@@ -2,7 +2,7 @@ import { Request } from 'express';
 import { ReturnRequest, ReturnReason, ReturnStatus, RefundMethod } from '../../models/returnRequest.model';
 import { Order, OrderItem } from '../../models/index';
 import { AppError } from '../../middleware/errorHandler.middleware';
-import { getPagination } from '../../shared/utils/pagination.util';
+import { getPagination } from '../../shared/utils/paginate.util';
 import { walletService } from '../wallet/wallet.service';
 import { whatsappService } from '../whatsapp/whatsapp.service';
 

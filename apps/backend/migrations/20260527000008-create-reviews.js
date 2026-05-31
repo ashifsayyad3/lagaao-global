@@ -62,7 +62,7 @@ module.exports = {
         defaultValue: false,
       },
       helpful_count: {
-        type: Sequelize.INTEGER.UNSIGNED,
+        type: Sequelize.INTEGER,
         allowNull: false,
         defaultValue: 0,
       },

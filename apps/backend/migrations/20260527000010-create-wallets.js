@@ -4,9 +4,9 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('wallets', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       user_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false, unique: true,
+        type: Sequelize.INTEGER, allowNull: false, unique: true,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       balance: { type: Sequelize.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
@@ -19,13 +19,13 @@ module.exports = {
     await queryInterface.addIndex('wallets', ['user_id'], { unique: true });
 
     await queryInterface.createTable('wallet_transactions', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       wallet_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'wallets', key: 'id' }, onDelete: 'CASCADE',
       },
       user_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       type: {
@@ -36,7 +36,7 @@ module.exports = {
       balance_after: { type: Sequelize.DECIMAL(12, 2), allowNull: false },
       description: { type: Sequelize.STRING(255), allowNull: true },
       reference_type: { type: Sequelize.STRING(50), allowNull: true },  // 'order', 'refund', 'admin', etc.
-      reference_id: { type: Sequelize.INTEGER.UNSIGNED, allowNull: true },
+      reference_id: { type: Sequelize.INTEGER, allowNull: true },
       meta: { type: Sequelize.JSON, allowNull: true },
       created_at: { type: Sequelize.DATE, allowNull: false },
       updated_at: { type: Sequelize.DATE, allowNull: false },

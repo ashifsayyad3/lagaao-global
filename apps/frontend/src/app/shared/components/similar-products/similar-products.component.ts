@@ -2,6 +2,7 @@ import {
   Component, ChangeDetectionStrategy, inject, input, OnChanges, signal
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RecommendationsService, RecommendedProduct } from '../../../core/services/recommendations.service';
 import { CurrencyInrPipe } from '../../pipes/currency-inr.pipe';
@@ -10,7 +11,7 @@ import { CurrencyInrPipe } from '../../pipes/currency-inr.pipe';
   selector: 'lg-similar-products',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, CurrencyInrPipe],
+  imports: [RouterLink, MatIconModule, DecimalPipe, CurrencyInrPipe],
   template: `
 @if (products().length > 0) {
   <section class="space-y-4">

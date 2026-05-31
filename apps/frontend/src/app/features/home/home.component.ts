@@ -11,562 +11,858 @@ import { AuthService } from '../../core/services/auth.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { SeoService } from '../../core/services/seo.service';
 import { YouMayLikeComponent } from '../../shared/components/you-may-like/you-may-like.component';
+import { CartService } from '../../core/services/cart.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'lg-home',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe, ProductCarouselComponent, ProductCardComponent, YouMayLikeComponent],
-  template: `
+  imports: [
+    RouterLink, MatIconModule, SkeletonCardComponent, CurrencyInrPipe,
+    ProductCarouselComponent, ProductCardComponent, YouMayLikeComponent,
+  ],
+  styles: [`
+    :host { display: block; background: var(--bg-page, #edeae5); }
 
-    <!-- ═══════════════════════════════════════════════════════
-         HERO SLIDER
-    ═══════════════════════════════════════════════════════ -->
-    <section class="relative overflow-hidden bg-[#f0f7f1]">
-      @if (heroBanners().length > 0) {
-        <!-- API banner -->
-        <div class="relative min-h-[480px] md:min-h-[560px] flex items-center"
-             [style.background-color]="heroBanners()[activeBanner()].bgColor ?? '#e8f4ea'">
-          @if (heroBanners()[activeBanner()].image) {
-            <img [src]="heroBanners()[activeBanner()].image"
-                 [alt]="heroBanners()[activeBanner()].title"
-                 class="absolute inset-0 w-full h-full object-cover" />
-            <div class="absolute inset-0 bg-gradient-to-r from-primary-900/70 via-primary-900/30 to-transparent"></div>
-          }
-          <div class="relative z-10 max-w-screen-xl mx-auto px-6 py-16">
-            <div class="max-w-lg">
-              <p class="text-primary-200 text-sm font-medium tracking-widest uppercase mb-3">
-                {{ heroBanners()[activeBanner()].subtitle ?? 'New Collection' }}
-              </p>
-              <h1 class="font-display text-4xl md:text-6xl font-semibold text-white leading-tight mb-5">
-                {{ heroBanners()[activeBanner()].title }}
-              </h1>
-              @if (heroBanners()[activeBanner()].link) {
-                <a [href]="heroBanners()[activeBanner()].link"
-                   class="btn-primary inline-flex text-base px-8 py-3.5">
-                  {{ heroBanners()[activeBanner()].ctaLabel ?? 'Shop Now' }}
-                  <mat-icon class="!text-base">arrow_forward</mat-icon>
-                </a>
-              }
+    /* ── Page outer wrapper ───────────────────────── */
+    .page-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    @media (min-width: 768px) { .page-wrap { padding: 16px 24px 32px; gap: 16px; } }
+
+    /* ── White card wrapper (each major section) ──── */
+    .w-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.03);
+      overflow: hidden;
+    }
+
+    /* ── Section layout ───────────────────────────── */
+    /* Inside .w-card sections, container removes extra side padding */
+    .container { max-width: 100%; margin: 0; padding: 0; }
+
+    /* ── Section heading ──────────────────────────── */
+    .sec-heading {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      font-weight: 700;
+      color: #111;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin: 0 0 32px;
+    }
+
+    /* ──────────────────────────────────────────────── */
+    /* HERO                                            */
+    /* ──────────────────────────────────────────────── */
+    .hero {
+      background: #fff;
+      border-radius: 24px;
+      overflow: hidden;
+      margin: 20px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 420px;
+      box-shadow: 0 2px 20px rgba(0,0,0,.06);
+    }
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; margin: 12px 12px; }
+    }
+
+    .hero-text {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 56px 48px;
+    }
+    @media (max-width: 768px) { .hero-text { padding: 40px 28px 24px; } }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0f7f1; color: #3d6b45;
+      font-size: .75rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 9999px;
+      margin-bottom: 20px; width: fit-content;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: #111;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin: 0 0 16px;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: #666;
+      line-height: 1.65;
+      margin: 0 0 32px;
+      max-width: 380px;
+    }
+
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--color-primary, #3d6b45);
+      color: #fff;
+      font-size: .9375rem; font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: background 200ms, transform 200ms;
+      width: fit-content;
+    }
+    .hero-cta:hover { background: var(--color-primary-dark, #2a4d31); transform: translateY(-1px); }
+
+    .hero-trust {
+      display: flex; flex-wrap: wrap; gap: 20px; margin-top: 28px;
+    }
+    .trust-pill {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .8125rem; color: #555; font-weight: 500;
+    }
+    .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: #3d6b45; flex-shrink: 0; }
+
+    .hero-image {
+      position: relative; overflow: hidden; background: #f0f7f1;
+    }
+    @media (max-width: 768px) { .hero-image { min-height: 260px; } }
+    .hero-image img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .hero-img-badge {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-radius: 12px; padding: 10px 16px;
+      font-size: .8125rem; font-weight: 700; color: #111;
+    }
+    .hero-img-badge span { color: #3d6b45; }
+
+    /* ──────────────────────────────────────────────── */
+    /* TRUST BAR                                       */
+    /* ──────────────────────────────────────────────── */
+    .trust-bar {
+      display: flex; justify-content: center; flex-wrap: wrap;
+      gap: 0;
+    }
+    .trust-bar-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 32px;
+      border-right: 1px solid #eee;
+      flex: 1; min-width: 200px; justify-content: center;
+    }
+    .trust-bar-item:last-child { border-right: none; }
+    .trust-bar-icon { color: #3d6b45; }
+    .trust-bar-text strong { display: block; font-size: .875rem; font-weight: 700; color: #111; }
+    .trust-bar-text span   { font-size: .75rem; color: #888; }
+
+    /* ──────────────────────────────────────────────── */
+    /* TOP CATEGORIES                                  */
+    /* ──────────────────────────────────────────────── */
+    .categories-section { padding: 48px 32px; }
+
+    .cat-mosaic {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 220px 220px;
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .cat-mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+      .cat-big { grid-column: span 2; height: 240px; }
+    }
+    @media (max-width: 600px) {
+      .cat-mosaic { grid-template-columns: 1fr 1fr; }
+      .cat-big { grid-column: span 2; }
+    }
+
+    .cat-big { grid-row: span 2; }
+
+    .cat-tile {
+      position: relative; overflow: hidden;
+      border-radius: 16px; cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .cat-tile img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 500ms ease;
+    }
+    .cat-tile:hover img { transform: scale(1.06); }
+
+    .cat-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 55%);
+    }
+    .cat-label {
+      position: absolute; bottom: 14px; left: 14px; right: 14px;
+    }
+    .cat-chip {
+      display: inline-block;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(6px);
+      color: #111; font-size: .8125rem; font-weight: 700;
+      padding: 5px 14px; border-radius: 9999px;
+    }
+
+    /* ──────────────────────────────────────────────── */
+    /* MOST POPULAR (product cards)                    */
+    /* ──────────────────────────────────────────────── */
+    .popular-section { padding: 48px 32px; }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px)  { .product-grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
+
+    .prod-card {
+      position: relative; border-radius: 16px;
+      overflow: hidden; background: #f5f2ee;
+      cursor: pointer; text-decoration: none;
+      display: block;
+      transition: transform 250ms ease, box-shadow 250ms ease;
+    }
+    .prod-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,.1); }
+    .prod-img-wrap {
+      aspect-ratio: 3/4; overflow: hidden; position: relative;
+    }
+    .prod-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 500ms ease;
+    }
+    .prod-card:hover .prod-img-wrap img { transform: scale(1.05); }
+
+    .prod-actions {
+      position: absolute; top: 12px; right: 12px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .prod-action-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(6px);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #555; transition: background 150ms, color 150ms, transform 150ms;
+      font-size: 0;
+    }
+    .prod-action-btn:hover { background: #fff; color: #111; transform: scale(1.1); }
+    .prod-action-btn.active { color: #c0392b; }
+
+    .prod-info {
+      padding: 14px 14px 16px;
+    }
+    .prod-name {
+      font-size: .9375rem; font-weight: 700; color: #111;
+      margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .prod-meta {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .prod-price { font-size: 1rem; font-weight: 800; color: #111; }
+    .prod-mrp   { font-size: .75rem; color: #aaa; text-decoration: line-through; margin-left: 6px; }
+    .prod-rating {
+      display: flex; align-items: center; gap: 3px;
+      font-size: .75rem; color: #888; font-weight: 500;
+    }
+
+    .prod-discount {
+      position: absolute; top: 12px; left: 12px;
+      background: #3d6b45; color: #fff;
+      font-size: .6875rem; font-weight: 800;
+      padding: 3px 10px; border-radius: 9999px;
+    }
+
+    .skeleton-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+    }
+    @media (max-width: 900px) { .skeleton-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .view-all-wrap { text-align: center; margin-top: 40px; }
+    .view-all-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1.5px solid #111; color: #111;
+      background: none; font-size: .9375rem; font-weight: 700;
+      padding: 12px 36px; border-radius: 9999px; cursor: pointer;
+      text-decoration: none;
+      transition: background 200ms, color 200ms;
+    }
+    .view-all-btn:hover { background: #111; color: #fff; }
+
+    /* ──────────────────────────────────────────────── */
+    /* ABOUT US (bento grid)                           */
+    /* ──────────────────────────────────────────────── */
+    .about-section { padding: 48px 32px; }
+
+    .about-bento {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      grid-template-rows: 240px 240px;
+      gap: 12px;
+    }
+    @media (max-width: 960px) {
+      .about-bento { grid-template-columns: 1fr; grid-template-rows: auto; }
+      .about-left  { grid-row: auto; }
+    }
+
+    .about-left {
+      grid-row: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .about-tile {
+      position: relative; overflow: hidden; border-radius: 16px;
+    }
+    .about-tile.span2 { grid-column: span 2; }
+    .about-tile img { width:100%; height:100%; object-fit:cover; transition: transform 500ms ease; }
+    .about-tile:hover img { transform: scale(1.04); }
+    .about-tile-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.6) 0%, transparent 50%);
+    }
+    .about-tile-label {
+      position: absolute; bottom: 16px; left: 16px;
+      font-family: var(--font-display);
+      font-size: 1.125rem; font-weight: 700; color: #fff;
+    }
+
+    .about-right {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .about-story {
+      background: #2d2d2d; border-radius: 16px; padding: 28px;
+      flex: 1;
+    }
+    .about-story h3 {
+      font-family: var(--font-display);
+      font-size: 1.375rem; font-weight: 700; color: #fff; margin: 0 0 14px;
+    }
+    .about-story p {
+      font-size: .9rem; color: rgba(255,255,255,.7); line-height: 1.7; margin: 0 0 12px;
+    }
+    .about-story p:last-child { margin: 0; }
+    .about-story a {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #7dc98a; font-size: .875rem; font-weight: 700;
+      text-decoration: none; margin-top: 8px;
+    }
+
+    /* ──────────────────────────────────────────────── */
+    /* AI PROMO STRIP                                  */
+    /* ──────────────────────────────────────────────── */
+    .ai-strip {
+      background: #fff; border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee; padding: 20px 24px;
+    }
+    .ai-strip-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .ai-strip-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: #f0f7f1; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; color: #3d6b45;
+    }
+    .ai-strip-text { flex: 1; }
+    .ai-strip-text strong { display: block; font-size: .9375rem; font-weight: 700; color: #111; margin-bottom: 2px; }
+    .ai-strip-text span   { font-size: .8125rem; color: #888; }
+    .ai-strip-cta {
+      padding: 10px 24px; background: #111; color: #fff;
+      border-radius: 9999px; font-size: .875rem; font-weight: 700;
+      text-decoration: none; white-space: nowrap;
+      transition: background 150ms;
+    }
+    .ai-strip-cta:hover { background: #3d6b45; }
+
+    /* ──────────────────────────────────────────────── */
+    /* NEW ARRIVALS                                    */
+    /* ──────────────────────────────────────────────── */
+    .arrivals-section { padding: 48px 32px; }
+
+    /* ──────────────────────────────────────────────── */
+    /* NEWSLETTER                                      */
+    /* ──────────────────────────────────────────────── */
+    .newsletter-section {
+      position: relative; overflow: hidden;
+      margin: 0; padding: 80px 24px;
+      background: #1e3326;
+    }
+    .newsletter-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1400&h=600&fit=crop');
+      background-size: cover; background-position: center;
+      opacity: .18;
+    }
+    .newsletter-inner {
+      position: relative; z-index: 1;
+      max-width: 560px; margin: 0 auto; text-align: center;
+    }
+    .newsletter-inner h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      font-weight: 700; color: #fff; letter-spacing: -0.02em;
+      margin: 0 0 12px;
+    }
+    .newsletter-inner p { font-size: .9375rem; color: rgba(255,255,255,.65); margin: 0 0 32px; line-height: 1.6; }
+    .newsletter-form {
+      display: flex; gap: 8px; max-width: 420px; margin: 0 auto;
+    }
+    .newsletter-inp {
+      flex: 1; height: 50px; padding: 0 20px;
+      border: none; border-radius: 9999px;
+      font-family: var(--font-sans); font-size: .9375rem;
+      color: #111; background: rgba(255,255,255,.95);
+      outline: none;
+    }
+    .newsletter-btn {
+      height: 50px; padding: 0 24px;
+      background: #3d6b45; color: #fff;
+      border: none; border-radius: 9999px;
+      font-family: var(--font-sans); font-size: .9375rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background 150ms, transform 150ms;
+    }
+    .newsletter-btn:hover { background: #2a4d31; transform: translateY(-1px); }
+    .newsletter-note { font-size: .75rem; color: rgba(255,255,255,.4); margin-top: 14px; }
+
+    /* ──────────────────────────────────────────────── */
+    /* BLOG                                            */
+    /* ──────────────────────────────────────────────── */
+    .blog-section { padding: 48px 32px; }
+    .blog-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    @media (max-width: 900px) { .blog-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .blog-grid { grid-template-columns: 1fr; } }
+
+    .blog-card {
+      background: #fff; border-radius: 18px; overflow: hidden;
+      text-decoration: none; display: block;
+      border: 1px solid #efefef;
+      transition: transform 250ms, box-shadow 250ms;
+    }
+    .blog-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.09); }
+    .blog-img { height: 190px; overflow: hidden; }
+    .blog-img img { width:100%; height:100%; object-fit:cover; transition: transform 500ms ease; }
+    .blog-card:hover .blog-img img { transform: scale(1.05); }
+    .blog-body { padding: 18px 18px 20px; }
+    .blog-tag {
+      display: inline-block; background: #f0f7f1; color: #3d6b45;
+      font-size: .6875rem; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 9999px; margin-bottom: 10px;
+    }
+    .blog-title {
+      font-size: .9375rem; font-weight: 700; color: #111;
+      line-height: 1.45; margin: 0 0 8px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .blog-read { font-size: .75rem; color: #aaa; font-weight: 500; }
+
+    /* ──────────────────────────────────────────────── */
+    /* SECTION header row                              */
+    /* ──────────────────────────────────────────────── */
+    .sec-row {
+      display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px;
+    }
+    .sec-row-left .sec-sub {
+      font-size: .75rem; font-weight: 800; letter-spacing: .1em;
+      text-transform: uppercase; color: #3d6b45; margin: 0 0 6px;
+    }
+    .sec-row-left .sec-heading-left {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 2.5vw, 2rem);
+      font-weight: 700; color: #111; letter-spacing: -0.02em; margin: 0;
+    }
+    .sec-row a {
+      display: flex; align-items: center; gap: 4px;
+      font-size: .875rem; font-weight: 700; color: #3d6b45;
+      text-decoration: none;
+    }
+    .sec-row a:hover { text-decoration: underline; }
+  `],
+  template: `
+  <div class="page-wrap">
+
+    <!-- ═══════════════════════════════════════════════
+         HERO — white card
+    ═══════════════════════════════════════════════ -->
+    <div class="w-card hero">
+      <div class="hero-text">
+        <div class="hero-badge">
+          <span style="width:6px;height:6px;border-radius:50%;background:#3d6b45;flex-shrink:0"></span>
+          10,000+ Happy Plant Parents
+        </div>
+        <h1 class="hero-title">
+          Bring Nature<br>Home With Our<br>Finest Plants
+        </h1>
+        <p class="hero-sub">
+          Explore our curated collection to discover the perfect plants for your unique space — delivered fresh with care.
+        </p>
+        <a routerLink="/products" class="hero-cta">
+          Explore Collection
+          <mat-icon style="font-size:18px;width:18px;height:18px">arrow_forward</mat-icon>
+        </a>
+        <div class="hero-trust">
+          @for (t of trustPills; track t.label) {
+            <div class="trust-pill">
+              <span class="trust-dot"></span>
+              {{ t.label }}
             </div>
-          </div>
-          <!-- Slide nav dots -->
-          @if (heroBanners().length > 1) {
-            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-              @for (b of heroBanners(); track b.id; let i = $index) {
-                <button (click)="activeBanner.set(i)"
-                        class="rounded-full transition-all duration-300"
-                        [class]="i === activeBanner()
-                          ? 'w-8 h-2 bg-white'
-                          : 'w-2 h-2 bg-white/40 hover:bg-white/70'">
-                </button>
-              }
-            </div>
-            <button (click)="prevBanner()"
-                    class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
-                           bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white
-                           flex items-center justify-center transition-all">
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-            <button (click)="nextBanner()"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
-                           bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white
-                           flex items-center justify-center transition-all">
-              <mat-icon>chevron_right</mat-icon>
-            </button>
           }
         </div>
-      } @else {
-        <!-- Default editorial hero -->
-        <div class="relative min-h-[520px] md:min-h-[620px] flex items-center overflow-hidden"
-             style="background: linear-gradient(135deg, #1e3a23 0%, #2d5535 40%, #3d6b45 100%)">
+      </div>
+      <div class="hero-image">
+        <img src="https://images.unsplash.com/photo-1545241047-6083a3684587?w=800&h=700&fit=crop&crop=center"
+             alt="Beautiful indoor plants" />
+        <div class="hero-img-badge">
+          🌿 <span>Farm Fresh</span> · Guaranteed Healthy
+        </div>
+      </div>
+    </div>
 
-          <!-- Decorative leaf circles -->
-          <div class="absolute -right-24 -top-24 w-96 h-96 rounded-full opacity-10"
-               style="background: radial-gradient(circle, #7a9e7e, transparent)"></div>
-          <div class="absolute right-32 bottom-0 w-64 h-64 rounded-full opacity-10"
-               style="background: radial-gradient(circle, #a8c4ab, transparent)"></div>
-          <div class="absolute -left-16 top-1/2 w-48 h-48 rounded-full opacity-10"
-               style="background: radial-gradient(circle, #5a8f64, transparent)"></div>
-
-          <div class="relative z-10 max-w-screen-xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-12 items-center">
-            <!-- Left text -->
-            <div class="animate-fade-up">
-              <span class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm
-                           text-primary-100 text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-white/20">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse"></span>
-                10,000+ Happy Plant Parents
-              </span>
-
-              <h1 class="font-display text-white leading-[1.1] mb-5"
-                  style="font-size: clamp(2.4rem, 5.5vw, 4rem); font-weight: 600;">
-                Bring Nature<br>
-                <em class="not-italic text-green-300">Home.</em>
-              </h1>
-
-              <p class="text-primary-200 text-lg leading-relaxed mb-8 max-w-md">
-                Handpicked indoor plants, rare varieties, gardening essentials — delivered fresh to your door
-                with our expert care guarantee.
-              </p>
-
-              <div class="flex flex-wrap gap-3 mb-10">
-                <a routerLink="/products" [queryParams]="{ category: 'plants' }"
-                   class="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-primary-700
-                          font-semibold rounded-full hover:bg-primary-50 transition-all
-                          shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm">
-                  <mat-icon class="!text-base">local_florist</mat-icon>
-                  Shop Plants
-                </a>
-                <a routerLink="/products" [queryParams]="{ category: 'plant-care' }"
-                   class="inline-flex items-center gap-2 px-7 py-3.5 border border-white/40
-                          text-white font-medium rounded-full hover:bg-white/10 transition-all text-sm">
-                  Plant Care
-                  <mat-icon class="!text-base">arrow_forward</mat-icon>
-                </a>
-              </div>
-
-              <!-- Trust pills -->
-              <div class="flex flex-wrap gap-3">
-                @for (trust of trustPills; track trust.label) {
-                  <div class="flex items-center gap-1.5 text-xs text-primary-200">
-                    <mat-icon class="!text-sm text-green-300">{{ trust.icon }}</mat-icon>
-                    {{ trust.label }}
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Right — featured plant card -->
-            <div class="hidden lg:flex justify-center items-center animate-fade-up"
-                 style="animation-delay: 150ms">
-              <div class="relative">
-                <!-- Card glow -->
-                <div class="absolute inset-0 rounded-3xl blur-2xl opacity-30 scale-95"
-                     style="background: linear-gradient(135deg, #7a9e7e, #3d6b45)"></div>
-
-                <div class="relative bg-white rounded-3xl overflow-hidden w-80 shadow-2xl">
-                  <div class="h-64 bg-primary-50 relative overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1545241047-6083a3684587?w=600&h=600&fit=crop&crop=center"
-                         alt="Money Plant"
-                         class="w-full h-full object-cover" />
-                    <span class="absolute top-3 left-3 bg-terracotta-500 text-white text-xs
-                                 font-bold px-3 py-1 rounded-full">Bestseller</span>
-                    <span class="absolute top-3 right-3 bg-white text-primary-600 text-xs
-                                 font-bold px-2 py-1 rounded-full shadow">🌿 Easy Care</span>
-                  </div>
-                  <div class="p-5">
-                    <p class="text-xs text-sage-500 font-semibold uppercase tracking-widest mb-1">
-                      Epipremnum aureum
-                    </p>
-                    <h3 class="font-display text-lg font-semibold text-primary-900 mb-1">
-                      Golden Money Plant
-                    </h3>
-                    <div class="flex items-center gap-1 mb-3">
-                      @for (i of [1,2,3,4,5]; track i) {
-                        <mat-icon class="!text-xs text-amber-400">star</mat-icon>
-                      }
-                      <span class="text-xs text-stone ml-1">(2.4k reviews)</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <span class="font-bold text-xl text-primary-800">{{ 299 | currencyInr }}</span>
-                        <span class="text-sm text-stone line-through ml-2">{{ 499 | currencyInr }}</span>
-                      </div>
-                      <button class="btn-primary text-xs px-4 py-2">Add to Cart</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <!-- ═══════════════════════════════════════════════
+         TRUST BAR — white card
+    ═══════════════════════════════════════════════ -->
+    <div class="w-card trust-bar">
+      @for (t of trustBar; track t.label) {
+        <div class="trust-bar-item">
+          <mat-icon class="trust-bar-icon" style="font-size:22px;width:22px;height:22px">{{ t.icon }}</mat-icon>
+          <div class="trust-bar-text">
+            <strong>{{ t.label }}</strong>
+            <span>{{ t.sub }}</span>
           </div>
         </div>
       }
-    </section>
+    </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         SHOP BY CATEGORY — icon grid
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="text-center mb-10">
-          <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-2">Browse</p>
-          <h2 class="section-title">Shop by Category</h2>
+    <!-- ═══════════════════════════════════════════════
+         TOP CATEGORIES — white card
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card categories-section">
+      <div class="container">
+        <h2 class="sec-heading">Top Categories</h2>
+
+        <div class="cat-mosaic">
+          <!-- Big left tile -->
+          <a [routerLink]="['/products']" [queryParams]="{ category: 'indoor-plants' }"
+             class="cat-tile cat-big">
+            <img src="https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=600&h=700&fit=crop&crop=center"
+                 alt="Indoor Plants" loading="lazy" />
+            <div class="cat-overlay"></div>
+            <div class="cat-label"><span class="cat-chip">Indoor Plants</span></div>
+          </a>
+          <!-- Top-right tiles -->
+          <a [routerLink]="['/products']" [queryParams]="{ category: 'pots-planters' }"
+             class="cat-tile">
+            <img src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&h=300&fit=crop"
+                 alt="Pots & Planters" loading="lazy" />
+            <div class="cat-overlay"></div>
+            <div class="cat-label"><span class="cat-chip">Pots & Planters</span></div>
+          </a>
+          <a [routerLink]="['/products']" [queryParams]="{ category: 'succulents' }"
+             class="cat-tile">
+            <img src="https://images.unsplash.com/photo-1520412099551-62b6bafeb5bb?w=400&h=300&fit=crop"
+                 alt="Succulents" loading="lazy" />
+            <div class="cat-overlay"></div>
+            <div class="cat-label"><span class="cat-chip">Succulents</span></div>
+          </a>
+          <!-- Bottom-right tiles -->
+          <a [routerLink]="['/products']" [queryParams]="{ category: 'flowering-plants' }"
+             class="cat-tile">
+            <img src="https://images.unsplash.com/photo-1508022713622-df2d8fb7b4cd?w=400&h=300&fit=crop"
+                 alt="Flowering Plants" loading="lazy" />
+            <div class="cat-overlay"></div>
+            <div class="cat-label"><span class="cat-chip">Flowering</span></div>
+          </a>
+          <a [routerLink]="['/products']" [queryParams]="{ category: 'plant-care' }"
+             class="cat-tile">
+            <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"
+                 alt="Plant Care" loading="lazy" />
+            <div class="cat-overlay"></div>
+            <div class="cat-label"><span class="cat-chip">Plant Care</span></div>
+          </a>
         </div>
 
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-          @for (cat of shopCategories; track cat.label) {
+        <!-- Extra category chips row -->
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;justify-content:center">
+          @for (cat of quickCats; track cat.slug) {
             <a [routerLink]="['/products']" [queryParams]="{ category: cat.slug }"
-               class="flex flex-col items-center gap-2.5 p-3 rounded-2xl group cursor-pointer
-                      hover:bg-primary-50 transition-all duration-200 hover:-translate-y-1">
-              <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl
-                          shadow-warm-sm group-hover:shadow-warm-md transition-all duration-200"
-                   [style.background]="cat.bg">
-                {{ cat.emoji }}
-              </div>
-              <span class="text-xs font-medium text-text-secondary group-hover:text-primary-600
-                           text-center leading-tight transition-colors">
-                {{ cat.label }}
-              </span>
+               style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;
+                      background:#fff;border:1.5px solid #e5e5e5;border-radius:9999px;
+                      font-size:.875rem;font-weight:600;color:#333;text-decoration:none;
+                      transition:border-color 150ms,color 150ms">
+              {{ cat.emoji }} {{ cat.label }}
             </a>
           }
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════
-         HERO BANNER STRIP — two promo cards
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-6 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-4">
-        <!-- Promo 1 -->
-        <div class="relative overflow-hidden rounded-2xl min-h-[180px] flex items-center px-8
-                    bg-gradient-to-br from-[#1e3a23] to-[#3d6b45]">
-          <div class="relative z-10">
-            <p class="text-green-300 text-xs font-semibold uppercase tracking-widest mb-1">
-              Low Maintenance
-            </p>
-            <h3 class="font-display text-white text-2xl font-semibold mb-3">
-              Plants for<br>Busy People
-            </h3>
-            <a routerLink="/products" [queryParams]="{ category: 'low-maintenance' }"
-               class="inline-flex items-center gap-1.5 text-sm font-semibold text-white
-                      bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all">
-              Explore <mat-icon class="!text-sm">arrow_forward</mat-icon>
-            </a>
-          </div>
-          <div class="absolute -right-4 -bottom-4 text-[120px] opacity-20 leading-none select-none">
-            🪴
-          </div>
-        </div>
+    <!-- ═══════════════════════════════════════════════
+         MOST POPULAR — white card
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card popular-section">
+      <div class="container">
+        <h2 class="sec-heading">Most Popular</h2>
 
-        <!-- Promo 2 -->
-        <div class="relative overflow-hidden rounded-2xl min-h-[180px] flex items-center px-8"
-             style="background: linear-gradient(135deg, #5c2817, #a04828)">
-          <div class="relative z-10">
-            <p class="text-orange-200 text-xs font-semibold uppercase tracking-widest mb-1">
-              Gift a Garden
-            </p>
-            <h3 class="font-display text-white text-2xl font-semibold mb-3">
-              Plant Gift<br>Hampers
-            </h3>
-            <a routerLink="/products" [queryParams]="{ category: 'gifts-combos' }"
-               class="inline-flex items-center gap-1.5 text-sm font-semibold text-white
-                      bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-all">
-              Shop Gifts <mat-icon class="!text-sm">arrow_forward</mat-icon>
-            </a>
-          </div>
-          <div class="absolute -right-4 -bottom-4 text-[120px] opacity-20 leading-none select-none">
-            🎁
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         BESTSELLERS
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--color-cream)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Top Picks</p>
-            <h2 class="section-title">Bestselling Plants</h2>
-          </div>
-          <a routerLink="/products" [queryParams]="{ sort: 'popular' }"
-             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
-                    hover:text-primary-700 transition-colors">
-            View all <mat-icon class="!text-base">east</mat-icon>
-          </a>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          @if (bestsellers().length === 0) {
-            @for (i of [1,2,3,4,5]; track i) {
+        @if (bestsellers().length === 0) {
+          <div class="skeleton-grid">
+            @for (i of [1,2,3]; track i) {
               <lg-skeleton-card></lg-skeleton-card>
             }
-          } @else {
-            @for (p of bestsellers(); track p.id) {
-              <lg-product-card [product]="p"></lg-product-card>
-            }
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         NEW ARRIVALS — horizontal scroll carousel
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Fresh Stock</p>
-            <h2 class="section-title">New Arrivals</h2>
           </div>
-          <a routerLink="/products" [queryParams]="{ sort: 'newest' }"
-             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
-                    hover:text-primary-700 transition-colors">
-            View all <mat-icon class="!text-base">east</mat-icon>
+        } @else {
+          <div class="product-grid">
+            @for (p of bestsellers().slice(0, 6); track p.id) {
+              <a [routerLink]="['/products', p.slug]" class="prod-card">
+                <div class="prod-img-wrap">
+                  <img [src]="getImage(p)" [alt]="p.name" loading="lazy" />
+                  <!-- Discount badge -->
+                  @if (p.salePrice) {
+                    <span class="prod-discount">{{ getDiscount(p) }}% OFF</span>
+                  }
+                  <!-- Action buttons -->
+                  <div class="prod-actions" (click)="$event.preventDefault()">
+                    <button class="prod-action-btn" (click)="toggleWishlist(p, $event)" title="Wishlist">
+                      <mat-icon style="font-size:17px;width:17px;height:17px">favorite_border</mat-icon>
+                    </button>
+                    <button class="prod-action-btn" (click)="addToCart(p, $event)" title="Add to cart">
+                      <mat-icon style="font-size:17px;width:17px;height:17px">shopping_bag</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <div class="prod-info">
+                  <div class="prod-name">{{ p.name }}</div>
+                  <div class="prod-meta">
+                    <div>
+                      <span class="prod-price">{{ getPrice(p) | currencyInr }}</span>
+                      @if (p.salePrice) {
+                        <span class="prod-mrp">{{ p.basePrice | currencyInr }}</span>
+                      }
+                    </div>
+                    @if (p.reviewCount > 0) {
+                      <div class="prod-rating">
+                        <mat-icon style="font-size:12px;width:12px;height:12px;color:#f59e0b">star</mat-icon>
+                        {{ p.rating }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        }
+
+        <div class="view-all-wrap">
+          <a routerLink="/products" [queryParams]="{ sort: 'popular' }" class="view-all-btn">
+            View All
           </a>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          @if (newArrivals().length === 0) {
-            @for (i of [1,2,3,4]; track i) {
-              <lg-skeleton-card></lg-skeleton-card>
-            }
-          } @else {
-            @for (p of newArrivals(); track p.id) {
-              <lg-product-card [product]="p"></lg-product-card>
-            }
-          }
-        </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════
-         WHY LAGAAO — trust section
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-16 bg-primary-800">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="text-center mb-12">
-          <h2 class="font-display text-3xl font-semibold text-white mb-3">
-            Why Plant Parents Love Lagaao
-          </h2>
-          <p class="text-primary-300 max-w-lg mx-auto">
-            We grow happy, healthy plants and ship them with care — straight to your home.
-          </p>
-        </div>
+    <!-- ═══════════════════════════════════════════════
+         ABOUT US — white card bento grid
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card about-section">
+      <div class="container">
+        <h2 class="sec-heading">About Us</h2>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-          @for (feat of whyUs; track feat.title) {
-            <div class="flex flex-col items-center text-center p-6 rounded-2xl
-                        bg-white/5 hover:bg-white/10 border border-white/10
-                        transition-all duration-300 group hover:-translate-y-1">
-              <div class="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center
-                          mb-4 group-hover:bg-terracotta-500 transition-colors text-2xl">
-                {{ feat.emoji }}
-              </div>
-              <h4 class="font-semibold text-white text-sm mb-2">{{ feat.title }}</h4>
-              <p class="text-primary-300 text-xs leading-relaxed">{{ feat.desc }}</p>
+        <div class="about-bento">
+          <!-- Left 2×2 grid -->
+          <div class="about-left">
+            <div class="about-tile span2">
+              <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=800&h=320&fit=crop&crop=center"
+                   alt="Exclusive Collections" loading="lazy" />
+              <div class="about-tile-overlay"></div>
+              <div class="about-tile-label">Exclusive Collections</div>
             </div>
-          }
+            <div class="about-tile">
+              <img src="https://images.unsplash.com/photo-1584479898061-15742e14f50d?w=400&h=280&fit=crop"
+                   alt="Handmade Crafts" loading="lazy" />
+              <div class="about-tile-overlay"></div>
+              <div class="about-tile-label">Expert Nurseries</div>
+            </div>
+            <div class="about-tile">
+              <img src="https://images.unsplash.com/photo-1516048015710-7a3b4c86be43?w=400&h=280&fit=crop"
+                   alt="50+ Nurseries" loading="lazy" />
+              <div class="about-tile-overlay"></div>
+              <div class="about-tile-label">50+ Nursery Partners</div>
+            </div>
+          </div>
+
+          <!-- Right: photo + story card -->
+          <div class="about-right">
+            <div class="about-tile" style="flex:1">
+              <img src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=400&h=280&fit=crop"
+                   alt="Happy plant parents" loading="lazy" />
+              <div class="about-tile-overlay"></div>
+              <div class="about-tile-label">Satisfied Customers</div>
+            </div>
+            <div class="about-story">
+              <h3>Our Story</h3>
+              <p>
+                At Lagaao, we believe in the transformative power of living greenery. From easy-care beginner plants to rare collector varieties, our handpicked selection brings nature into every home.
+              </p>
+              <p>
+                Discover the perfect plants that speak to your space. Welcome to Lagaao, where every leaf matters.
+              </p>
+              <a routerLink="/products">
+                Shop Now <mat-icon style="font-size:16px;width:16px;height:16px">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════
-         PLANT CARE PRODUCTS
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">
-              Keep Them Thriving
-            </p>
-            <h2 class="section-title">Plant Care Essentials</h2>
+    <!-- ═══════════════════════════════════════════════
+         AI STRIP — white card
+    ═══════════════════════════════════════════════ -->
+    <div class="w-card ai-strip">
+      <div class="ai-strip-inner">
+        <div class="ai-strip-icon">
+          <mat-icon style="font-size:22px;width:22px;height:22px">psychology</mat-icon>
+        </div>
+        <div class="ai-strip-text">
+          <strong>"Which plant suits my balcony?" — Just ask our AI</strong>
+          <span>Describe your space, light conditions or mood — get personalised plant picks instantly.</span>
+        </div>
+        <a routerLink="/search" [queryParams]="{ ai: '1' }" class="ai-strip-cta">Try AI Search 🌿</a>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         NEW ARRIVALS — white card
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card arrivals-section">
+      <div class="container">
+        <div class="sec-row">
+          <div class="sec-row-left">
+            <p class="sec-sub">Fresh Stock</p>
+            <h2 class="sec-heading-left">New Arrivals</h2>
           </div>
-          <a routerLink="/products" [queryParams]="{ category: 'plant-care' }"
-             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
-                    hover:text-primary-700 transition-colors">
-            View all <mat-icon class="!text-base">east</mat-icon>
+          <a routerLink="/products" [queryParams]="{ sort: 'newest' }">
+            View all <mat-icon style="font-size:16px;width:16px;height:16px">east</mat-icon>
           </a>
         </div>
 
-        <!-- Care category pills -->
-        <div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 mb-6">
-          @for (tag of careTags; track tag.label) {
-            <a [routerLink]="['/products']" [queryParams]="{ category: tag.slug }"
-               class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-sand
-                      bg-[var(--bg-base)] hover:bg-primary-50 hover:border-primary-300
-                      text-sm font-medium text-text-secondary hover:text-primary-600
-                      transition-all whitespace-nowrap flex-shrink-0">
-              {{ tag.emoji }} {{ tag.label }}
-            </a>
-          }
-        </div>
+        @if (newArrivals().length === 0) {
+          <div class="skeleton-grid">
+            @for (i of [1,2,3]; track i) { <lg-skeleton-card></lg-skeleton-card> }
+          </div>
+        } @else {
+          <div class="product-grid">
+            @for (p of newArrivals().slice(0, 3); track p.id) {
+              <a [routerLink]="['/products', p.slug]" class="prod-card">
+                <div class="prod-img-wrap">
+                  <img [src]="getImage(p)" [alt]="p.name" loading="lazy" />
+                  @if (p.salePrice) {
+                    <span class="prod-discount">{{ getDiscount(p) }}% OFF</span>
+                  }
+                  <div class="prod-actions" (click)="$event.preventDefault()">
+                    <button class="prod-action-btn" (click)="toggleWishlist(p, $event)">
+                      <mat-icon style="font-size:17px;width:17px;height:17px">favorite_border</mat-icon>
+                    </button>
+                    <button class="prod-action-btn" (click)="addToCart(p, $event)">
+                      <mat-icon style="font-size:17px;width:17px;height:17px">shopping_bag</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <div class="prod-info">
+                  <div class="prod-name">{{ p.name }}</div>
+                  <div class="prod-meta">
+                    <span class="prod-price">{{ getPrice(p) | currencyInr }}</span>
+                    @if (p.salePrice) { <span class="prod-mrp">{{ p.basePrice | currencyInr }}</span> }
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    </section>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          @if (careProducts().length === 0) {
-            @for (i of [1,2,3,4,5]; track i) {
-              <lg-skeleton-card></lg-skeleton-card>
-            }
-          } @else {
-            @for (p of careProducts(); track p.id) {
-              <lg-product-card [product]="p"></lg-product-card>
-            }
+    <!-- ═══════════════════════════════════════════════
+         NEWSLETTER — dark rounded card
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card newsletter-section">
+      <div class="newsletter-bg"></div>
+      <div class="newsletter-inner">
+        <h2>Stay in the Loop for<br>Exclusive Offers!</h2>
+        <p>Subscribe to our newsletter to be the first to receive exclusive offers. Discover what's trending and grow your plant collection with us.</p>
+        <div class="newsletter-form">
+          <input type="email" class="newsletter-inp" placeholder="Enter your email" />
+          <button class="newsletter-btn">Subscribe</button>
+        </div>
+        <p class="newsletter-note">Unsubscribe anytime. No spam, ever.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         BLOG — white card
+    ═══════════════════════════════════════════════ -->
+    <section class="w-card blog-section">
+      <div class="container">
+        <div class="sec-row">
+          <div class="sec-row-left">
+            <p class="sec-sub">Learn & Grow</p>
+            <h2 class="sec-heading-left">Plant Care Blog</h2>
+          </div>
+          <a routerLink="/blog">
+            All articles <mat-icon style="font-size:16px;width:16px;height:16px">east</mat-icon>
+          </a>
+        </div>
+        <div class="blog-grid">
+          @for (post of blogPreviews; track post.title) {
+            <a [routerLink]="['/blog', post.slug]" class="blog-card">
+              <div class="blog-img">
+                <img [src]="post.image" [alt]="post.title" loading="lazy" />
+              </div>
+              <div class="blog-body">
+                <span class="blog-tag">{{ post.tag }}</span>
+                <h4 class="blog-title">{{ post.title }}</h4>
+                <span class="blog-read">{{ post.readTime }}</span>
+              </div>
+            </a>
           }
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════
-         AI RECOMMENDATIONS (if logged in / recently viewed)
-    ═══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════
+         AI RECOMMENDATIONS
+    ═══════════════════════════════════════════════ -->
     @if (forYou().length > 0) {
-      <section class="py-6 max-w-screen-xl mx-auto px-4 md:px-6">
+      <section class="w-card" style="padding:40px 32px">
         <lg-product-carousel title="Picked For You" [products]="forYou()" viewAllLink="/search"></lg-product-carousel>
       </section>
     }
     @if (recentlyViewed().length > 0) {
-      <section class="py-6 max-w-screen-xl mx-auto px-4 md:px-6">
+      <section class="w-card" style="padding:40px 32px">
         <lg-product-carousel title="Recently Viewed" [products]="recentlyViewed()"></lg-product-carousel>
       </section>
     }
 
-    <!-- ═══════════════════════════════════════════════════════
-         AI CHAT PROMO STRIP
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-6 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="rounded-2xl overflow-hidden bg-gradient-to-r from-primary-700 to-primary-500
-                    flex flex-col md:flex-row items-center gap-6 px-8 py-7">
-          <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-            <mat-icon class="!text-2xl text-white">psychology</mat-icon>
-          </div>
-          <div class="flex-1 text-center md:text-left">
-            <h3 class="font-display text-xl font-semibold text-white mb-1">
-              "Which plant suits my balcony?" — Just ask our AI
-            </h3>
-            <p class="text-primary-200 text-sm">
-              Describe your space, light conditions or mood — get personalised plant picks instantly.
-            </p>
-          </div>
-          <a routerLink="/search" [queryParams]="{ ai: '1' }"
-             class="flex-shrink-0 px-6 py-2.5 bg-white text-primary-700 font-semibold
-                    text-sm rounded-full hover:bg-primary-50 transition-colors whitespace-nowrap">
-            Try AI Search 🌿
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         COMBO PACKS
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--color-cream)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Bundle & Save</p>
-            <h2 class="section-title">Combo Packs</h2>
-          </div>
-          <a routerLink="/products" [queryParams]="{ category: 'combo-packs' }"
-             class="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary-600
-                    hover:text-primary-700 transition-colors">
-            View all <mat-icon class="!text-base">east</mat-icon>
-          </a>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          @if (comboProducts().length === 0) {
-            @for (i of [1,2,3,4]; track i) {
-              <lg-skeleton-card></lg-skeleton-card>
-            }
-          } @else {
-            @for (p of comboProducts(); track p.id) {
-              <lg-product-card [product]="p"></lg-product-card>
-            }
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         CUSTOMER GALLERY STRIP
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="text-center mb-10">
-          <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-2">#LagaaoHomes</p>
-          <h2 class="section-title">From Our Plant Community</h2>
-          <p class="text-text-muted text-sm mt-2">Real homes, real plants, real joy</p>
-        </div>
-        <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
-          @for (photo of galleryPhotos; track photo.id) {
-            <div class="aspect-square rounded-xl overflow-hidden bg-primary-50 group cursor-pointer">
-              <img [src]="photo.src" [alt]="photo.alt"
-                   class="w-full h-full object-cover transition-transform duration-500
-                          group-hover:scale-110" />
-            </div>
-          }
-        </div>
-        <div class="text-center mt-8">
-          <a href="#" class="btn-outline inline-flex">
-            <mat-icon class="!text-base">photo_camera</mat-icon>
-            Tag us @lagaao to be featured
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         BLOG SECTION
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-14 bg-[var(--bg-subtle)]">
-      <div class="max-w-screen-xl mx-auto px-4 md:px-6">
-        <div class="flex items-end justify-between mb-8">
-          <div>
-            <p class="text-sage-500 text-sm font-semibold uppercase tracking-widest mb-1">Learn & Grow</p>
-            <h2 class="section-title">Plant Care Blog</h2>
-          </div>
-          <a routerLink="/blog" class="hidden sm:flex items-center gap-1 text-sm font-semibold
-                                        text-primary-600 hover:text-primary-700 transition-colors">
-            All articles <mat-icon class="!text-base">east</mat-icon>
-          </a>
-        </div>
-        <div class="grid md:grid-cols-3 gap-6">
-          @for (post of blogPreviews; track post.title) {
-            <a [routerLink]="['/blog', post.slug]"
-               class="group rounded-2xl overflow-hidden bg-[var(--bg-subtle)] border border-sand
-                      hover:border-primary-200 transition-all duration-300 hover:-translate-y-1
-                      hover:shadow-warm-md block">
-              <div class="h-48 overflow-hidden">
-                <img [src]="post.image" [alt]="post.title"
-                     class="w-full h-full object-cover transition-transform duration-500
-                            group-hover:scale-105" />
-              </div>
-              <div class="p-5">
-                <span class="badge-green text-[11px] mb-3 inline-flex">{{ post.tag }}</span>
-                <h4 class="font-semibold text-text-primary text-sm leading-snug mb-2
-                           group-hover:text-primary-600 transition-colors line-clamp-2">
-                  {{ post.title }}
-                </h4>
-                <p class="text-xs text-text-muted">{{ post.readTime }}</p>
-              </div>
-            </a>
-          }
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         NEWSLETTER
-    ═══════════════════════════════════════════════════════ -->
-    <section class="py-16 bg-[var(--linen)]">
-      <div class="max-w-lg mx-auto px-6 text-center">
-        <div class="text-5xl mb-4">🌱</div>
-        <h2 class="font-display text-3xl font-semibold text-primary-800 mb-3">
-          Get Growing Tips Weekly
-        </h2>
-        <p class="text-text-secondary text-sm mb-8">
-          Join 50,000+ plant lovers. Get care guides, seasonal tips and exclusive deals — no spam.
-        </p>
-        <div class="flex gap-2 max-w-sm mx-auto">
-          <input type="email" placeholder="your@email.com"
-                 class="flex-1 px-4 py-3 rounded-full border border-sand bg-[var(--bg-base)] text-sm
-                        outline-none focus:border-primary-400 transition-colors" />
-          <button class="btn-primary px-6 py-3 whitespace-nowrap">Subscribe</button>
-        </div>
-        <p class="text-xs text-text-muted mt-3">Unsubscribe anytime. We respect your inbox.</p>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════
-         PERSONALISED RECOMMENDATIONS
-    ═══════════════════════════════════════════════════════ -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- YOU MAY LIKE -->
+    <section class="w-card" style="padding:40px 32px">
       <lg-you-may-like title="Recommended For You" />
     </section>
 
+  </div><!-- /page-wrap -->
   `,
 })
 export class HomeComponent implements OnInit {
@@ -575,6 +871,8 @@ export class HomeComponent implements OnInit {
   readonly #auth    = inject(AuthService);
   readonly #product = inject(ProductService);
   readonly #seo     = inject(SeoService);
+  readonly #cart    = inject(CartService);
+  readonly #toast   = inject(ToastService);
 
   heroBanners    = signal<Banner[]>([]);
   midBanners     = signal<Banner[]>([]);
@@ -587,87 +885,60 @@ export class HomeComponent implements OnInit {
   comboProducts  = signal<Product[]>([]);
 
   readonly trustPills = [
-    { icon: 'eco',           label: '100% Healthy Plants' },
-    { icon: 'local_shipping',label: 'Free Delivery ₹499+' },
-    { icon: 'replay',        label: '7-Day Replacement' },
-    { icon: 'support_agent', label: 'Expert Plant Care' },
+    { label: '100% Healthy Plants' },
+    { label: 'Free Delivery ₹499+' },
+    { label: '7-Day Replacement' },
   ];
 
-  readonly whyUs = [
-    { emoji: '🌿', title: 'Farm Fresh Plants',      desc: 'Sourced directly from trusted nurseries across India' },
-    { emoji: '📦', title: 'Safe Packaging',         desc: 'Every plant secured with our special transit packaging' },
-    { emoji: '🔄', title: '7-Day Replacement',      desc: 'Not happy with your plant? We replace it, no questions' },
-    { emoji: '🧑‍🌾', title: 'Expert Care Guidance',  desc: 'Each plant ships with a care card + our 24/7 support' },
+  readonly trustBar = [
+    { icon: 'eco',            label: 'Farm Fresh Plants',  sub: 'Sourced from top nurseries' },
+    { icon: 'local_shipping', label: 'Free Delivery',      sub: 'On orders above ₹499' },
+    { icon: 'replay',         label: '7-Day Guarantee',    sub: 'Replace any unhealthy plant' },
+    { icon: 'support_agent',  label: 'Expert Care Help',   sub: 'Available 7 days a week' },
   ];
 
-  readonly shopCategories = [
-    { label: 'Indoor Plants',    emoji: '🪴', slug: 'indoor-plants',   bg: '#a8d5b0' },
-    { label: 'Outdoor Plants',   emoji: '🌳', slug: 'outdoor-plants',  bg: '#b5dbb9' },
-    { label: 'Flowering',        emoji: '🌸', slug: 'flowering-plants',bg: '#f5b8a0' },
-    { label: 'Succulents',       emoji: '🌵', slug: 'succulents',      bg: '#99c9a8' },
-    { label: 'Seeds',            emoji: '🌱', slug: 'seeds',           bg: '#d4d97a' },
-    { label: 'Pots & Planters',  emoji: '🏺', slug: 'pots-planters',   bg: '#f0c8b0' },
-    { label: 'Plant Care',       emoji: '🧪', slug: 'plant-care',      bg: '#b0d4c8' },
-    { label: 'Gifts',            emoji: '🎁', slug: 'gifts-combos',    bg: '#f5c0b8' },
-    { label: 'Air Purifying',    emoji: '💨', slug: 'air-purifying',   bg: '#a8c4f0' },
-    { label: 'Pet Friendly',     emoji: '🐾', slug: 'pet-friendly',    bg: '#f0d890' },
-    { label: 'Low Maintenance',  emoji: '⏱️', slug: 'low-maintenance',  bg: '#b8d4b0' },
-    { label: 'Medicinal',        emoji: '🌿', slug: 'medicinal',       bg: '#90c4a0' },
-    { label: 'Fruit Plants',     emoji: '🍋', slug: 'fruit-plants',    bg: '#f0e090' },
-    { label: 'XL Plants',        emoji: '🌴', slug: 'xl-plants',       bg: '#a8c8b8' },
-    { label: 'Combos',           emoji: '📦', slug: 'combo-packs',     bg: '#f0b8a0' },
-    { label: 'New Arrivals',     emoji: '✨', slug: 'new-arrivals',    bg: '#c8b8f0' },
-  ];
-
-  readonly careTags = [
-    { label: 'Potting Mix',   emoji: '🌍', slug: 'potting-mix' },
-    { label: 'Fertilizers',   emoji: '🧪', slug: 'fertilizers' },
-    { label: 'Garden Tools',  emoji: '🔧', slug: 'garden-tools' },
-    { label: 'Watering',      emoji: '💧', slug: 'watering-tools' },
-    { label: 'Pest Control',  emoji: '🐛', slug: 'pest-control' },
-    { label: 'Pebbles',       emoji: '🪨', slug: 'pebbles' },
-  ];
-
-  readonly galleryPhotos = [
-    { id: 1, src: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=300&h=300&fit=crop', alt: 'Indoor plant' },
-    { id: 2, src: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=300&h=300&fit=crop', alt: 'Shelf plants' },
-    { id: 3, src: 'https://images.unsplash.com/photo-1520412099551-62b6bafeb5bb?w=300&h=300&fit=crop', alt: 'Succulent' },
-    { id: 4, src: 'https://images.unsplash.com/photo-1508022713622-df2d8fb7b4cd?w=300&h=300&fit=crop', alt: 'Potted plant' },
-    { id: 5, src: 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?w=300&h=300&fit=crop', alt: 'Balcony garden' },
-    { id: 6, src: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&h=300&fit=crop', alt: 'Hanging plant' },
+  readonly quickCats = [
+    { label: 'Outdoor Plants',  emoji: '🌳', slug: 'outdoor-plants' },
+    { label: 'Seeds',           emoji: '🌱', slug: 'seeds' },
+    { label: 'Gifts & Combos',  emoji: '🎁', slug: 'gifts-combos' },
+    { label: 'Air Purifying',   emoji: '💨', slug: 'air-purifying' },
+    { label: 'Pet Friendly',    emoji: '🐾', slug: 'pet-friendly' },
+    { label: 'Low Maintenance', emoji: '⏱️', slug: 'low-maintenance' },
+    { label: 'Medicinal',       emoji: '🌿', slug: 'medicinal' },
+    { label: 'XL Plants',       emoji: '🌴', slug: 'xl-plants' },
   ];
 
   readonly blogPreviews = [
     {
-      slug:      'how-to-care-for-indoor-plants',
-      title:     "The Complete Beginner's Guide to Indoor Plant Care",
-      tag:       'Plant Care',
-      image:     'https://images.unsplash.com/photo-1545241047-6083a3684587?w=600&h=400&fit=crop',
-      readTime:  '5 min read',
+      slug:     'how-to-care-for-indoor-plants',
+      title:    "The Complete Beginner's Guide to Indoor Plant Care",
+      tag:      'Plant Care',
+      image:    'https://images.unsplash.com/photo-1545241047-6083a3684587?w=600&h=400&fit=crop',
+      readTime: '5 min read',
     },
     {
-      slug:      'best-air-purifying-plants',
-      title:     '10 Best Air Purifying Plants for Your Home in 2024',
-      tag:       'Indoor Plants',
-      image:     'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop',
-      readTime:  '4 min read',
+      slug:     'best-air-purifying-plants',
+      title:    '10 Best Air Purifying Plants for Your Home in 2024',
+      tag:      'Indoor Plants',
+      image:    'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop',
+      readTime: '4 min read',
     },
     {
-      slug:      'how-to-water-plants',
-      title:     'Stop Overwatering: The Right Way to Water Every Plant',
-      tag:       'Tips & Tricks',
-      image:     'https://images.unsplash.com/photo-1627424171666-8f35dc3c6a18?w=600&h=400&fit=crop',
-      readTime:  '3 min read',
+      slug:     'how-to-water-plants',
+      title:    'Stop Overwatering: The Right Way to Water Every Plant',
+      tag:      'Tips & Tricks',
+      image:    'https://images.unsplash.com/photo-1627424171666-8f35dc3c6a18?w=600&h=400&fit=crop',
+      readTime: '3 min read',
     },
   ];
 
   ngOnInit() {
     this.#seo.setMeta({
-      title:       'Lagaao — Shop Everything Online',
-      description: 'Discover fashion, electronics, home décor & more on Lagaao — India\'s AI-powered marketplace. Free delivery on orders above ₹499.',
+      title:       'Lagaao — India\'s Premier Plant Store',
+      description: 'Shop 1000+ indoor & outdoor plants, pots, seeds and care accessories. Free delivery above ₹499. 7-day plant guarantee.',
       canonical:   'https://lagaao.com/',
       type:        'website',
-      keywords:    'online shopping India, fashion, electronics, home décor, Lagaao',
+      keywords:    'buy plants online India, indoor plants, outdoor plants, succulents, Lagaao',
     });
     this.#seo.setOrganizationSchema();
 
@@ -677,14 +948,41 @@ export class HomeComponent implements OnInit {
     if (this.#auth.isLoggedIn()) {
       this.#ai.getForYou().subscribe({ next: r => this.forYou.set(r.data), error: () => {} });
     }
-    this.#product.getProducts({ sort: 'rating', limit: 10 })
+    this.#product.getProducts({ sort: 'rating', limit: 12 })
       .subscribe({ next: r => this.bestsellers.set(r.data), error: () => {} });
-    this.#product.getProducts({ sort: 'newest', limit: 8 })
+    this.#product.getProducts({ sort: 'newest', limit: 6 })
       .subscribe({ next: r => this.newArrivals.set(r.data), error: () => {} });
     this.#product.getProducts({ category: 'plant-care', sort: 'rating', limit: 10 })
       .subscribe({ next: r => this.careProducts.set(r.data), error: () => {} });
     this.#product.getProducts({ category: 'gifts-combos', sort: 'rating', limit: 8 })
       .subscribe({ next: r => this.comboProducts.set(r.data), error: () => {} });
+  }
+
+  getImage(p: Product): string {
+    return this.#product.getPrimaryImage(p);
+  }
+
+  getPrice(p: Product): number {
+    return this.#product.getEffectivePrice(p);
+  }
+
+  getDiscount(p: Product): number {
+    return this.#product.getDiscountPct(p);
+  }
+
+  addToCart(p: Product, e: Event): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.#cart.addItem(p.id, null, 1).subscribe({
+      next: () => this.#toast.success('Added to cart', p.name),
+      error: err => this.#toast.error('Error', err?.error?.message ?? 'Could not add'),
+    });
+  }
+
+  toggleWishlist(_p: Product, e: Event): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.#toast.info('Coming soon', 'Wishlist feature is on its way!');
   }
 
   prevBanner(): void { this.activeBanner.update(i => i > 0 ? i - 1 : this.heroBanners().length - 1); }

@@ -92,7 +92,17 @@ app.use(helmet({
     ? { maxAge: 31536000, includeSubDomains: true, preload: true }
     : false,
 }));
-app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+app.use(cors({
+  origin: env.FRONTEND_URL,
+  credentials: true,
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-session-id',
+    'x-refresh-token',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use(compression() as any);
 // Capture raw body for Razorpay webhook HMAC verification

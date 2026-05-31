@@ -4,17 +4,17 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('return_requests', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       order_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'orders', key: 'id' }, onDelete: 'CASCADE',
       },
       order_item_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: true,
+        type: Sequelize.INTEGER, allowNull: true,
         references: { model: 'order_items', key: 'id' }, onDelete: 'SET NULL',
       },
       user_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       reason: {
@@ -41,7 +41,7 @@ module.exports = {
       refund_id: { type: Sequelize.STRING(64), allowNull: true },    // Razorpay refund ID
       admin_note: { type: Sequelize.TEXT, allowNull: true },
       reviewed_by: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: true,
+        type: Sequelize.INTEGER, allowNull: true,
         references: { model: 'users', key: 'id' }, onDelete: 'SET NULL',
       },
       reviewed_at: { type: Sequelize.DATE, allowNull: true },

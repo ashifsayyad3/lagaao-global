@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { SupportTicket, SupportMessage, TicketStatus, TicketPriority, TicketCategory } from '../../models/supportTicket.model';
-import { AppError } from '../../shared/errors/AppError';
-import { getPagination } from '../../shared/utils/pagination.util';
+import { AppError } from '../../middleware/errorHandler.middleware';
+import { getPagination } from '../../shared/utils/paginate.util';
 
 function genTicketNumber(): string {
   const ts  = Date.now().toString(36).toUpperCase();

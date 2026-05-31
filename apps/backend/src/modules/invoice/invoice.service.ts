@@ -1,5 +1,5 @@
 import { Order, OrderItem, Product, User } from '../../models/index';
-import { AppError } from '../../shared/errors/AppError';
+import { AppError } from '../../middleware/errorHandler.middleware';
 import { env } from '../../config/env';
 
 interface GstLineItem {

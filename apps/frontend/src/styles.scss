@@ -48,7 +48,7 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background-color: var(--bg-subtle);
+  background-color: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -126,9 +126,9 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--linen) 25%,
-    var(--cream) 50%,
-    var(--linen) 75%
+    var(--color-linen) 25%,
+    var(--color-cream) 50%,
+    var(--color-linen) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s linear infinite;
@@ -155,8 +155,8 @@ body {
 }
 
 // ─── Section wrappers ─────────────────────────────────────────
-.section-cream { background-color: var(--cream); }
-.section-linen { background-color: var(--linen); }
+.section-cream { background-color: var(--color-cream); }
+.section-linen { background-color: var(--color-linen); }
 .section-white { background-color: var(--bg-base); }
 
 // ─── Btn overrides ────────────────────────────────────────────
@@ -273,3 +273,29 @@ body {
   font-family: var(--font-sans);
   h1, h2, h3 { font-family: var(--font-display); }
 }
+
+// ─── Section card system ──────────────────────────────────────
+// Major page sections sit as white rounded cards on the parchment bg
+.section-card {
+  background: var(--bg-card);
+  border-radius: var(--section-radius);
+  box-shadow: var(--section-shadow);
+  overflow: hidden;
+}
+
+// ─── Page layout wrapper ──────────────────────────────────────
+.page-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .page-sections { padding: 16px 24px; gap: 16px; }
+}
+
+// ─── Scrollbar thumb ─────────────────────────────────────────
+::-webkit-scrollbar-thumb { background: var(--color-stone, #c4b8a8); border-radius: 3px; }

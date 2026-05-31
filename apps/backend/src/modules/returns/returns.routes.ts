@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticate } from '../../shared/middleware/auth.middleware';
-import { authorize } from '../../shared/middleware/authorize.middleware';
+import { authenticate } from '../../middleware/auth.middleware';
+import { authorize } from '../../middleware/rbac.middleware';
 import { Role } from '../../shared/types/roles';
 import { returnsService } from './returns.service';
 import { ok, created } from '../../shared/utils/response.util';

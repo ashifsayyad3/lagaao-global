@@ -48,16 +48,26 @@
   --color-info:            #2563eb;
   --color-info-bg:         #eff6ff;
 
+  // ── Page chrome ───────────────────────────────────────────────
+  --bg-page:               #edeae5;          // warm parchment — outer page bg
+  --bg-card:               #ffffff;          // white card surface (sections)
+  --bg-card-hover:         #fafaf8;
+
   // ── Surfaces — elevation layers (light mode) ──────────────────
   --bg-base:               #ffffff;          // page background
-  --bg-subtle:             #faf6f0;          // warm cream, section bg
-  --bg-muted:              #f2ebe0;          // linen, alt rows
+  --bg-subtle:             #f7f5f1;          // warm off-white, alt rows
+  --bg-muted:              #f0ede8;          // parchment, input backgrounds
   --bg-inverted:           #131313;          // dark overlay
   --surface-1:             #ffffff;          // cards, panels
   --surface-2:             #faf8f5;          // nested cards
   --surface-3:             #f5f0e8;          // input backgrounds
-  --surface-overlay:       rgba(255,255,255,.92); // modals/sheets
-  --surface-frosted:       rgba(255,255,255,.72); // glassmorphism
+  --surface-overlay:       rgba(255,255,255,.96); // modals/sheets
+  --surface-frosted:       rgba(255,255,255,.80); // glassmorphism
+
+  // ── Section card system ───────────────────────────────────────
+  --section-radius:        20px;             // section card corner radius
+  --section-shadow:        0 2px 16px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
+  --section-shadow-hover:  0 8px 32px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.05);
 
   // ── Interactive states ────────────────────────────────────────
   --color-hover:           rgba(61,107,69,.06);

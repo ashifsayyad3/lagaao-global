@@ -1,8 +1,8 @@
 import { Request } from 'express';
 import { Op } from 'sequelize';
 import { Wishlist, WishlistItem, Product, ProductImage } from '../../models/index';
-import { AppError } from '../../shared/errors/AppError';
-import { getPagination } from '../../shared/utils/pagination.util';
+import { AppError } from '../../middleware/errorHandler.middleware';
+import { getPagination } from '../../shared/utils/paginate.util';
 
 export class WishlistService {
   /** Get or create the user's default wishlist */

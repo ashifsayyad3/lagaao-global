@@ -81,9 +81,8 @@ export class ThemeService {
   }
 
   #loadSavedMode(): ThemeMode {
-    if (!this.#isBrowser) return 'system';
-    const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
-    return 'system'; // default: follow OS
+    // Light-only — dark theme removed from UI; always force light.
+    if (this.#isBrowser) localStorage.setItem(STORAGE_KEY, 'light');
+    return 'light';
   }
 }

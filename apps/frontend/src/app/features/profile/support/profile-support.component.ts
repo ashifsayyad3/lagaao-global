@@ -270,7 +270,7 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
           @if (!['resolved','closed'].includes(activeTicket()!.status)) {
             <div class="reply-row">
               <textarea class="reply-input" [(ngModel)]="replyBody" rows="2"
-                        placeholder="Type your reply…" (keydown.enter)="$event.shiftKey ? null : (sendReply(); $event.preventDefault())"></textarea>
+                        placeholder="Type your reply…" (keydown.enter)="onReplyEnter($event)"></textarea>
               <button class="send-btn" [disabled]="!replyBody.trim() || sending()" (click)="sendReply()">
                 <mat-icon style="font-size:18px;width:18px;height:18px">send</mat-icon>
                 {{ sending() ? '…' : 'Send' }}
@@ -351,6 +351,12 @@ export class ProfileSupportComponent implements OnInit {
       },
       error: err => { this.creating.set(false); this.#toast.error('Error', err?.error?.message ?? 'Could not create ticket'); },
     });
+  }
+
+  onReplyEnter(event: Event): void {
+    if ((event as KeyboardEvent).shiftKey) return;
+    event.preventDefault();
+    this.sendReply();
   }
 
   sendReply(): void {

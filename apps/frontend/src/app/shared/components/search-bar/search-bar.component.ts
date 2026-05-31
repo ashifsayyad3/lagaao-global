@@ -253,7 +253,7 @@ import { SearchService } from '../../../core/services/search.service';
 
         <input
           class="search-input"
-          [(ngModel)]="query"
+          [ngModel]="query()"
           (ngModelChange)="onQueryChange($event)"
           (keydown.enter)="submitSearch()"
           (keydown.arrowDown)="moveFocus(1)"
@@ -266,7 +266,7 @@ import { SearchService } from '../../../core/services/search.service';
           aria-label="Search"
         />
 
-        @if (query.length > 0) {
+        @if (query().length > 0) {
           <button class="clear-btn" (click)="clear()" aria-label="Clear">
             <mat-icon class="dd-icon" style="font-size:14px;width:14px;height:14px">close</mat-icon>
           </button>
@@ -309,7 +309,7 @@ import { SearchService } from '../../../core/services/search.service';
             </div>
           }
 
-          @if (query.length === 0 && searchSvc.recentSearches().length > 0) {
+          @if (query().length === 0 && searchSvc.recentSearches().length > 0) {
             <div>
               <div class="dd-header">
                 <span class="dd-section-label">Recent Searches</span>
@@ -326,7 +326,7 @@ import { SearchService } from '../../../core/services/search.service';
             </div>
           }
 
-          @if (query.length === 0 && searchSvc.recentSearches().length === 0) {
+          @if (query().length === 0 && searchSvc.recentSearches().length === 0) {
             <div>
               <div class="dd-section-label" style="padding:12px 16px 6px">Popular Searches</div>
               @for (t of trendingItems(); track t.label) {
@@ -362,7 +362,7 @@ export class SearchBarComponent implements OnInit, OnDestroy {
   /** Show quick-filter chips below the bar (opt-in via host) */
   @Input() showChips = false;
 
-  query        = '';
+  readonly query        = signal('');
   readonly suggestions  = signal<string[]>([]);
   readonly trending     = signal<string[]>([]);
   readonly showDropdown = signal(false);
@@ -421,6 +421,7 @@ export class SearchBarComponent implements OnInit, OnDestroy {
   }
 
   onQueryChange(q: string): void {
+    this.query.set(q);
     this.focusIndex.set(-1);
     this.#query$.next(q);
     if (!this.showDropdown()) this.showDropdown.set(true);
@@ -435,19 +436,20 @@ export class SearchBarComponent implements OnInit, OnDestroy {
     const cur = this.focusIndex();
     const next = Math.max(-1, Math.min(max, cur + dir));
     this.focusIndex.set(next);
-    if (next >= 0) this.query = this.suggestions()[next];
+    if (next >= 0) this.query.set(this.suggestions()[next]);
   }
 
   selectSuggestion(s: string): void {
-    this.query = s;
+    this.query.set(s);
     this.closeDropdown();
     this.navigate(s);
   }
 
   submitSearch(): void {
-    if (!this.query.trim()) return;
+    const q = this.query().trim();
+    if (!q) return;
     this.closeDropdown();
-    this.navigate(this.query.trim());
+    this.navigate(q);
   }
 
   closeDropdown(): void {
@@ -456,14 +458,15 @@ export class SearchBarComponent implements OnInit, OnDestroy {
   }
 
   clear(): void {
-    this.query = '';
+    this.query.set('');
     this.suggestions.set([]);
     this.focusIndex.set(-1);
   }
 
   highlight(text: string): string {
-    if (!this.query) return text;
-    const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const q = this.query();
+    if (!q) return text;
+    const escaped = q.replace(/[.*+?^${}()|[\\\]{}()*+?.^$|]/g, '\\$&');
     return text.replace(
       new RegExp(`(${escaped})`, 'gi'),
       '<mark style="background:var(--color-primary-100);color:var(--color-primary-dark);border-radius:3px;padding:0 1px">$1</mark>'

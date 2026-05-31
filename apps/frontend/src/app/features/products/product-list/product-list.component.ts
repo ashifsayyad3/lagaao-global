@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, inject, signal, OnInit, computed
+  Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, effect
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +27,7 @@ import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
       display: block;
     }
     .page-wrap {
-      max-width: 1440px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 24px 64px;
     }
@@ -64,7 +64,14 @@ import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
       display: none;
     }
     @media (min-width: 1024px) {
-      .sidebar { display: block; }
+      .sidebar {
+        display: block;
+        position: sticky;
+        top: 88px;          /* below 64px header + 24px nav */
+        align-self: flex-start;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
     }
 
     .filter-card {
@@ -632,7 +639,8 @@ import { CurrencyInrPipe } from '../../../shared/pipes/currency-inr.pipe';
           } @else {
             <div [class]="viewMode() === 'grid' ? 'grid-4' : 'grid-list'">
               @for (product of products(); track product.id) {
-                <lg-product-card [product]="product" style="animation:fadeUp .4s both"
+                <lg-product-card [product]="product" [mode]="viewMode()"
+                                 style="animation:fadeUp .4s both"
                                  [style.animation-delay.ms]="$index * 40"></lg-product-card>
               }
             </div>
@@ -779,14 +787,28 @@ export class ProductListComponent implements OnInit {
     return pages;
   });
 
+  readonly #categoriesReady = signal(false);
+
   ngOnInit(): void {
-    this.productSvc.loadCategories().subscribe();
+    // Load reference data first, then trigger product load
+    this.productSvc.loadCategories().subscribe(() => {
+      this.#categoriesReady.set(true);
+    });
     this.productSvc.loadBrands().subscribe();
 
+    // Re-run loadProducts whenever categories become available OR query params change
     this.#route.queryParams.subscribe(params => {
       if (params['category']) this.selectedCategory = params['category'];
+      else this.selectedCategory = null;
       this.loadProducts();
     });
+
+    // Also reload once categories finish loading (fixes race condition on first nav)
+    effect(() => {
+      if (this.#categoriesReady()) {
+        this.loadProducts();
+      }
+    }, { allowSignalWrites: true });
   }
 
   loadProducts(): void {

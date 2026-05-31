@@ -2,7 +2,7 @@ import {
   ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode, ErrorHandler,
 } from '@angular/core';
 import {
-  provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions,
+  provideRouter, withComponentInputBinding, withInMemoryScrolling,
   withPreloading,
 } from '@angular/router';
 import { SelectivePreloadStrategy } from './core/strategies/selective-preload.strategy';
@@ -24,8 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(
       routes,
       withComponentInputBinding(),
-      withViewTransitions(),
-      withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
       withPreloading(SelectivePreloadStrategy),
     ),
     provideClientHydration(withEventReplay()),

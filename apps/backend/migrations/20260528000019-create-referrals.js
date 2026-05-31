@@ -13,13 +13,13 @@ module.exports = {
 
     // Create referrals table
     await queryInterface.createTable('referrals', {
-      id:            { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+      id:            { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
       referrer_id:   {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       referred_id:   {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false, unique: true,
+        type: Sequelize.INTEGER, allowNull: false, unique: true,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
         comment: 'One referral row per referred user',
       },

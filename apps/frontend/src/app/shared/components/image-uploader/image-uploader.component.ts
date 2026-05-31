@@ -184,7 +184,7 @@ interface FileItem {
     <!-- Drop zone -->
     <div class="drop-zone"
          [class.drag-over]="dragging()"
-         (click)="fileInput().nativeElement.click()"
+         (click)="triggerFileInput()"
          (dragover)="$event.preventDefault(); dragging.set(true)"
          (dragleave)="dragging.set(false)"
          (drop)="onDrop($event)">
@@ -276,6 +276,10 @@ export class ImageUploaderComponent {
   readonly uploadedCount = signal(0);
 
   // ── Handlers ──────────────────────────────────────
+  triggerFileInput(): void {
+    this.fileInput().nativeElement.click();
+  }
+
   onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragging.set(false);

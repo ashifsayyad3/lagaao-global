@@ -57,6 +57,18 @@ module.exports = {
         error:   '#c0392b',
         info:    '#2e7d9f',
 
+        // ── Text tokens (map CSS vars so text-text-* classes work) ──
+        text: {
+          primary:   '#111827',
+          secondary: '#374151',
+          tertiary:  '#6b7280',
+          muted:     '#9ca3af',
+          disabled:  '#d1d5db',
+          inverted:  '#f9fafb',
+          brand:     '#3d6b45',
+          accent:    '#c8603a',
+        },
+
         // ── Surface (dark mode charcoal) ───────────────────────
         surface: {
           50:  '#faf8f5',

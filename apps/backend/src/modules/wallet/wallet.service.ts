@@ -2,8 +2,8 @@ import { Request } from 'express';
 import { Transaction as SequelizeTransaction } from 'sequelize';
 import { sequelize } from '../../models/index';
 import { Wallet, WalletTransaction, WalletTxType } from '../../models/wallet.model';
-import { AppError } from '../../shared/errors/AppError';
-import { getPagination } from '../../shared/utils/pagination.util';
+import { AppError } from '../../middleware/errorHandler.middleware';
+import { getPagination } from '../../shared/utils/paginate.util';
 
 interface CreditInput {
   userId: number;

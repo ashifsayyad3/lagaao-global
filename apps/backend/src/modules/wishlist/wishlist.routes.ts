@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authenticate } from '../../middleware/auth.middleware';
 import { wishlistService } from './wishlist.service';
 import { ok, created } from '../../shared/utils/response.util';
 

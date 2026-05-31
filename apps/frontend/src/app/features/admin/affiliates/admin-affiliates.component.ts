@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe, NgClass, TitleCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
@@ -41,7 +41,7 @@ interface ConversionRow {
   selector: 'lg-admin-affiliates',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, FormsModule, DatePipe, NgClass, CurrencyInrPipe],
+  imports: [MatIconModule, FormsModule, DatePipe, NgClass, TitleCasePipe, CurrencyInrPipe],
   template: `
 <div class="p-6 space-y-6 max-w-6xl mx-auto">
 
@@ -233,19 +233,19 @@ export class AdminAffiliatesComponent implements OnInit {
 
   setStatus(id: number, status: 'active' | 'suspended') {
     this.#http.patch(`${BASE}/${id}`, { status }).subscribe({
-      next: () => { this.#toast.show(`Affiliate ${status}`, 'success'); this.loadAffiliates(); },
-      error: () => this.#toast.show('Failed', 'error'),
+      next: () => { this.#toast.success(`Affiliate ${status}`); this.loadAffiliates(); },
+      error: () => this.#toast.error('Failed'),
     });
   }
 
   payout(id: number) {
     this.#http.post<{ data: { paid: number } }>(`${BASE}/${id}/payout`, {}).subscribe({
       next: r => {
-        this.#toast.show(`Marked ₹${r.data.paid} as paid`, 'success');
+        this.#toast.success(`Marked ₹${r.data.paid} as paid`);
         this.loadAffiliates();
         this.conversions.set([]);
       },
-      error: (e) => this.#toast.show(e?.error?.message ?? 'No approved earnings to pay', 'error'),
+      error: (e) => this.#toast.error(e?.error?.message ?? 'No approved earnings to pay'),
     });
   }
 
@@ -253,12 +253,12 @@ export class AdminAffiliatesComponent implements OnInit {
     this.approving.set(true);
     this.#http.post<{ data: { approved: number } }>(`${BASE}/conversions/approve`, {}).subscribe({
       next: r => {
-        this.#toast.show(`${r.data.approved} conversions approved`, 'success');
+        this.#toast.success(`${r.data.approved} conversions approved`);
         this.approving.set(false);
         this.conversions.set([]);
         this.loadConversions();
       },
-      error: () => { this.#toast.show('Failed', 'error'); this.approving.set(false); },
+      error: () => { this.#toast.error('Failed'); this.approving.set(false); },
     });
   }
 }

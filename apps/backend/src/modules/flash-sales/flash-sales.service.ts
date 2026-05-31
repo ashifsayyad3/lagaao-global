@@ -15,7 +15,7 @@ const ITEM_INCLUDE = [
     attributes: ['id', 'name', 'slug', 'basePrice'],
     include: [{ model: ProductImage, attributes: ['url'], limit: 1, order: [['sort_order', 'ASC']] }],
   },
-  { model: ProductVariant, attributes: ['id', 'sku', 'attrs'], required: false },
+  { model: ProductVariant, attributes: ['id', 'sku', 'attributes'], required: false },
 ];
 
 export class FlashSalesService {

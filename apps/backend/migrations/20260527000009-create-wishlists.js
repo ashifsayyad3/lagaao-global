@@ -4,9 +4,9 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('wishlists', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       user_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'users', key: 'id' }, onDelete: 'CASCADE',
       },
       name: { type: Sequelize.STRING(120), allowNull: false, defaultValue: 'My Wishlist' },
@@ -18,13 +18,13 @@ module.exports = {
     await queryInterface.addIndex('wishlists', ['user_id']);
 
     await queryInterface.createTable('wishlist_items', {
-      id: { type: Sequelize.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+      id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       wishlist_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'wishlists', key: 'id' }, onDelete: 'CASCADE',
       },
       product_id: {
-        type: Sequelize.INTEGER.UNSIGNED, allowNull: false,
+        type: Sequelize.INTEGER, allowNull: false,
         references: { model: 'products', key: 'id' }, onDelete: 'CASCADE',
       },
       created_at: { type: Sequelize.DATE, allowNull: false },
